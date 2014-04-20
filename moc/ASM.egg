@@ -53,7 +53,7 @@ INSTS -> #gen ;
 
 ADR -> opar nb cpar nb osbra ident csbra #gen ;
 #gen {
-    ADR^asm_code = "(" + nb^txt + ") " + nb^txt + '[' + ident^txt+ ']';
+    ADR^asm_code = "(" + nb^txt + ") " + nb1^txt + '[' + ident^txt+ ']';
 }
 
 ADR -> var #gen ;
