@@ -1,26 +1,26 @@
-// assembleur inline en dehors d'une fonction
+// inline assembly outside functions
 asm {
-    CALL (LB) _main   ; appel au point d'entrée du programme
-    HALT              ; arrêt de la machine
+    CALL (LB) _main   ; call to the entry point of the program
+    HALT              ; stop the machine
 }
 
-// assembleur inline dans une fonction
-int * malloc(int taille) {
+// inline assembly inside a function
+int * malloc(int size) {
     asm {
-        LOAD %taille    ; accès au paramètre taille
+        LOAD %size      ; access parameter size
         SUBR Malloc     ; allocation
         RETURN (1) 1
     }
 }
 
-// assembleur inline dans une fonction
-void log(char *message, int valeur) {
+// inline assembly inside a function
+void log(char *message, int value) {
     int x = 12;
     asm {
-        LOAD %message        ; accès au premier paramètre
+        LOAD %message        ; access the first parameter
         SUBR Sout
-        LOAD %valeur         ; accès au deuxieme paramètre
-        LOAD %x              ; accès à la variable x
+        LOAD %value          ; access the second parameter
+        LOAD %x              ; access variable x
         SUBR IAdd
         SUBR IOUT
         SUBR LN
@@ -28,13 +28,13 @@ void log(char *message, int valeur) {
     }
 }
 
-// la classe mère de toutes les classes
+// one class to rule them all
 @class NSObject {
 }
 +(void)init {}
 @end
 
-// un point
+// a point
 @class Point2D : NSObject {
     int x;
     int y;
@@ -51,7 +51,7 @@ void log(char *message, int valeur) {
 }
 @end
 
-// un point coloré
+// a colored point
 @class Point2DCol:Point2D {
     int col;
 }

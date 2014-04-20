@@ -1,11 +1,10 @@
 package moc.gc;
 
 /**
- * Cette classe décrit une adresse mémoire (déplacement par rapport à un registre)
+ * This class describes a memory address (offset from a register)
  */
-public class Emplacement {
+public class Location {
     private int dep;
-
     private Register reg;
 
     public int getDep() {
@@ -22,12 +21,10 @@ public class Emplacement {
     }
 
     /**
-     * Emplacement = adresse = deplacement / registre.
+     * Location = address = offset / register.
      */
-    public Emplacement(int dep, Register reg) {
-        super();
+    public Location(int dep, Register reg) {
         this.dep = dep;
         this.reg = reg;
     }
-
 }

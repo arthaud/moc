@@ -3,16 +3,16 @@ package moc.gc;
 import moc.compiler.MOCException;
 
 /**
- * Cette interface décrit une machine cible.
+ * This interface describes a target machine
  */
 public interface IMachine {
     /**
-     * Suffixe du fichier cible (.tam par exemple)
+     * Target file suffix (.tam for example)
      */
-    String getSuffixe();
+    String getSuffix();
 
     /**
-     * Écrit le code dans un fichier à partir du nom du fichier source et du suffixe
+     * Writes the code in a file from the source file name and the suffix
      */
     void writeCode(String fileName, String code) throws MOCException;
 }

@@ -12,7 +12,7 @@
       main="false"
   >
     <import lib="moc.compiler.*" />
-    <import lib="moc.tds.*" />
+    <import lib="moc.st.*" />
     <import lib="moc.type.*" />
     <import lib="moc.gc.*" />
     <import lib="java.util.*" />

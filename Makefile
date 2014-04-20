@@ -1,9 +1,9 @@
 #--------------------------------------------------------
-# la grammaire
+# the grammar
 XMOC=MOC
 XASM=ASM
 #--------------------------------------------------------
-# répertoires contenant egg
+# directories containing egg
 EJAR=eggc-6.0.0.jar
 GJAR=$(EJAR):.
 #--------------------------------------------------------
@@ -18,7 +18,7 @@ src:
 
 att:
 	$(JDIR)/javac -classpath $(GJAR) moc/compiler/*.java
-	$(JDIR)/javac -classpath $(GJAR) moc/tds/*.java
+	$(JDIR)/javac -classpath $(GJAR) moc/st/*.java
 	$(JDIR)/javac -classpath $(GJAR) moc/type/*.java
 	$(JDIR)/javac -classpath $(GJAR) moc/gc/*.java
 
@@ -26,8 +26,5 @@ class:
 	$(JDIR)/javac -classpath $(GJAR) moc/egg/*.java
 
 clean:
-	rm -f moc/compiler/*.class
-	rm -f moc/tds/*.class
-	rm -f moc/type/*.class
-	rm -f moc/gc/*.class
+	find . -name '*.class' -delete
 	rm -rf moc/egg

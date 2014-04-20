@@ -1,310 +1,296 @@
-----------------------------------------------------------------------------
--- Grammaires de MC et MOC                                                --
--- La grammaire de MOC est obtenue en décommentant les parties indiquées. --
-----------------------------------------------------------------------------
+-------------------------
+-- MC and MOC grammars --
+-------------------------
 
 option auto = true;
 option version = 0.0.1;
 option k = 2;
 
-inh source : MOCSourceFile for PROGRAMME;
+inh source : MOCSourceFile for PROGRAM;
 inh machine : IMachine for
-         ENTITES, FONCTION, INST, BLOC, INSTS, SIX,
-         PARFS, PARF, PARFSX, ARGS,ARGSX,
-         E, AFFX, A, AX, R, RX, T, TX, F
---       -- décommenter la ligne suivante pour MOC
---       ,IMPLEMENTATION, METHODES, METHODE, ATTRIBUTS, MPARF, MPARFS,MARG, MARGS
+         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         E, EX, A, AX, R, RX, T, TX, F
+--       -- TODO: MOC
+--       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
          ;
 
--- ces attributs permettent de récupérer les instructions du code ASM inline
-syn code_asm : STRING for ASM;
--- la table des symboles courante
-inh tds_asm : TDS for ASM;
+-- these attributes allow to get inline assembly
+syn asm_code : STRING for ASM;
+inh asm_st : ST for ASM;
 
-space separateur is  "[\r\n\t ]+" ;
+space separator  is  "[\r\n\t ]+" ;
 space comm       is  "\/\/[^\n]*\n" ;
-sugar paro       is  "\(" ;
-sugar parf       is  "\)" ;
-sugar aco        is  "\{" ;
-sugar acf        is  "\}" ;
-sugar virg       is  "," ;
-sugar pv         is  "\;" ;
+sugar opar       is  "\(" ;
+sugar cpar       is  "\)" ;
+sugar ocbra      is  "\{" ;
+sugar ccbra      is  "\}" ;
+sugar comma      is  "," ;
+sugar semicolon  is  "\;" ;
 sugar affect     is  "=" ;
-sugar si         is  "if" ;
-sugar sinon      is  "else" ;
+sugar if         is  "if" ;
+sugar else       is  "else" ;
 sugar void       is  "void" ;
 sugar asm        is  "asm" ;
 sugar int        is  "int" ;
 sugar char       is  "char" ;
-sugar retour     is  "return" ;
+sugar return     is  "return" ;
 sugar null       is  "NULL" ;
 sugar nil        is  "nil" ;
 sugar inf        is  "\<" ;
-sugar infeg      is  "\<=" ;
+sugar infeq      is  "\<=" ;
 sugar sup        is  "\>" ;
-sugar supeg      is  "\>=" ;
-sugar eg         is  "==" ;
-sugar neg        is  "\!=" ;
+sugar supeq      is  "\>=" ;
+sugar eq         is  "==" ;
+sugar neq        is  "\!=" ;
 sugar plus       is  "\+" ;
-sugar moins      is  "\-" ;
-sugar ou         is  "\|\|" ;
+sugar minus      is  "\-" ;
+sugar or         is  "\|\|" ;
+sugar and        is  "\&\&" ;
 sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
-sugar et         is  "\&\&" ;
-sugar non        is  "\!" ;
+sugar not        is  "\!" ;
 
----- décommenter pour MOC
---sugar dpts       is  "\:" ;
---sugar cro        is  "\[" ;
---sugar crf        is  "\]" ;
+---- TODO: MOC
+--sugar colon      is  "\:" ;
+--sugar osbra      is  "\[" ;
+--sugar csbra      is  "\]" ;
 --sugar id         is  "id" ;
---sugar classe     is  "@class" ;
---sugar fin        is  "@end" ;
+--sugar class      is  "@class" ;
+--sugar end        is  "@end" ;
 --sugar self       is "self" ;
 --sugar bool       is  "BOOL" ;
 --sugar super      is "super" ;
 --sugar yes        is "YES" ;
 --sugar no         is "NO" ;
 
-term entier      is  "[0-9]+" ;
-term caractere   is  "\'[^\']\'" ;
-term chaine      is  "\"[^\"]*\"" ;
+term integer     is  "[0-9]+" ;
+term character   is  "\'[^\']\'" ;
+term string      is  "\"[^\"]*\"" ;
 term ident       is  "[a-z][_0-9A-Za-z]*" ;
----- décommenter pour MOC
---term identc      is  "[A-Z][_0-9A-Za-z]*" ; -- nom de classe
---term chaineo     is  "@\"[^\"]*\"" ; -- chaine MOC
+---- TODO: MOC
+--term class_ident is  "[A-Z][_0-9A-Za-z]*" ; -- class name
+--term stringo     is  "@\"[^\"]*\"" ; -- MOC string
 
--- pour les instructions en assembleur 'inline'
+-- for inline assembly
 compil ASM;
 
 
-PROGRAMME -> #init ENTITES #gen ;
+PROGRAM -> #init ENTITIES #gen ;
 global IMachine machine;
 
--- transmission de la machine cible (choisie par l'option -m au lancement)
 #init {
-    machine = PROGRAMME^source.getMachine();
+    machine = PROGRAM^source.getMachine();
 
     if (machine == null) {
-        error(NO_MACH, PROGRAMME^source.getMachName());
+        error(NO_MACH, PROGRAM^source.getMachName());
     }
     else {
-        ENTITES^machine = machine;
+        ENTITIES^machine = machine;
     }
 }
 
 #gen {
-    -- écrit le code dans un fichier
-    machine.writeCode(PROGRAMME^source.getFileName(), "; no code\n");
+    -- write in a file
+    machine.writeCode(PROGRAM^source.getFileName(), "; no code\n");
 }
 
-ENTITES -> ;
-ENTITES -> asm #tds ASM ENTITES #gen ;
-#tds {
-    -- Remplacer 'null' par la table courante pour que
-    -- le code ASM puisse accéder aux variables de MC ou MOC
-    ASM^tds_asm = null;
+ENTITIES -> ;
+ENTITIES -> asm #st ASM ENTITIES #gen ;
+#st {
+    -- Replace null with the current symbols table so that the ASM
+    -- code can access MC or MOC variables
+    ASM^asm_st = null;
 }
 
 #gen {
-    -- ASM^code_asm contient le code ASM inline;
+    -- ASM^asm_code contains the inline assembly
 }
 
-ENTITES -> FONCTION ENTITES ;
+ENTITIES -> FUNCTION ENTITIES ;
 
--- fonctions
-FONCTION -> TYPE ident paro PARFS parf BLOC ;
+-- functions
+FUNCTION -> TYPE ident opar FUNC_PARAMETERS cpar BLOC ;
 
--- paramètres de fonctions
-PARFS -> ;
-PARFS -> PARF PARFSX ;
-PARFSX -> ;
-PARFSX -> virg PARF PARFSX ;
-PARF -> TYPE ident ;
+-- functions parameters
+FUNC_PARAMETERS -> ;
+FUNC_PARAMETERS -> FUNC_PARAMETER FUNC_PARAMETERSX ;
+FUNC_PARAMETERSX -> ;
+FUNC_PARAMETERSX -> comma FUNC_PARAMETER FUNC_PARAMETERSX ;
+FUNC_PARAMETER -> TYPE ident ;
 
--- les types (de base et pointeurs)
+-- base types and pointers
 TYPE -> STYPE REFS ;
 REFS -> ;
 REFS -> mult REFS ;
 
--- types de base
+-- base types
 STYPE-> void ;
 STYPE-> int ;
 STYPE-> char ;
 
--- corps de méthode et bloc d'instructions
-BLOC -> aco INSTS acf ;
+-- method body and instructions blocks
+BLOC -> ocbra INSTS ccbra ;
 
 -- instructions
 INSTS -> ;
 INSTS -> INST INSTS ;
 
--- déclaration de variable locale avec ou sans init
-INST -> TYPE ident AFFX pv ;
+-- local variable declaration with or without initialization
+INST -> TYPE ident EX semicolon ;
 
--- instruction expression (affectation et appel de procédure)
-INST -> E pv ;
+-- expression instruction (affectation and procedure call)
+INST -> E semicolon ;
 
--- bloc d'instructions
+-- instruction block
 INST -> BLOC ;
 
--- conditionnelle
-INST -> si paro E parf BLOC SIX ;
-SIX -> sinon BLOC ;
-SIX -> ;
+-- conditional
+INST -> if opar E cpar BLOC ELSE ;
+ELSE -> else BLOC ;
+ELSE -> ;
 
--- retour de fonction
-INST -> retour E pv ;
+-- function return
+INST -> return E semicolon ;
+
 -- inline asm
-INST -> asm #tds ASM #gen ;
-#tds {
-    -- À remplacer par la table courante pour que
-    -- l'assembleur puisse accéder aux variables
-    ASM^tds_asm = null;
+INST -> asm #st ASM #gen ;
+#st {
+    -- to replace by the current symbols table so that inline
+    -- assembly can access variables
+    ASM^asm_st = null;
 }
 
 #gen {
-    -- ASM^code_asm contient le code assembleur inline
-    -- dans lequel les noms de variables ont été remplacés
-    -- par leurs adresses.
+    -- ASM^code_asm contains the inline assembly in which variable
+    -- names have been replaced by their addresses
 }
 
--- les expressions
+-- expressions
 -----------------------------------------------------------------------
--- E = expression (y compris l'affectation)
--- A = expression figurant dans une affectation
--- R = expression figurant dans une expression relationnelle
--- T = expression figurant dans une expression additive (TERME)
--- F = expression figurant dans une expression multiplicative (FACTEUR)
+-- E = expression (including affectation)
+-- A = expression figuring in an affectation
+-- R = expression figuring in a relational expression
+-- T = expression figuring in an additive expression (TERME)
+-- F = expression figuring in a multiplicative expression (FACTOR)
 -----------------------------------------------------------------------
-
-E -> A AFFX ;
 
 -- affectation
-AFFX -> affect A ;
-AFFX -> ;
+E -> A EX ;
+EX -> affect A ;
+EX -> ;
 
 -- relation
 A -> R AX ;
 AX -> OPREL R ;
 AX -> ;
 
--- opérateurs relationnels
+-- relation operators
 OPREL -> inf ;
 OPREL -> sup ;
-OPREL -> infeg ;
-OPREL -> supeg ;
-OPREL -> eg ;
-OPREL -> neg ;
+OPREL -> infeq ;
+OPREL -> supeq ;
+OPREL -> eq ;
+OPREL -> neq ;
 
--- additions ...
+-- additions
 R -> T RX ;
 RX -> OPADD T RX ;
 RX -> ;
 
--- opérateurs additifs
+-- addition operators
 OPADD -> plus ;
-OPADD -> moins ;
-OPADD -> ou ;
+OPADD -> minus ;
+OPADD -> or ;
 
--- multiplication, ...
+-- multiplications
 T -> F TX ;
 TX -> OPMUL F TX ;
 TX -> ;
 
--- opérateurs multiplicatifs
+-- multiplication operators
 OPMUL -> mult ;
 OPMUL -> div ;
 OPMUL -> mod ;
-OPMUL -> et ;
+OPMUL -> and ;
 
--- expressions de base
-
--- Constante entière
-F -> entier ;
--- Constante chaine
-F -> chaine ;
--- Constante caractère
-F -> caractere ;
--- expression unaire
+-- base expressions
+F -> integer ;
+F -> string ;
+F -> character ;
+F -> null ;
 F -> OPUN F ;
 
--- opérateurs unaires
+-- unary expressions
 OPUN -> plus ;
-OPUN -> moins ;
-OPUN -> non ;
+OPUN -> minus ;
+OPUN -> not ;
 
--- pointeur NULL
-F -> null ;
+-- parenthesised expression
+F -> opar E cpar ;
+F -> opar TYPE cpar F ;
 
--- expression parenthésée
-F -> paro E parf ;
-F -> paro TYPE parf F ;
-
--- appel de sous-programme
-F -> ident paro ARGS parf ;
+-- subprogram call
+F -> ident opar ARGS cpar ;
 F -> ident ;
 
----- accès zone pointée
+-- pointed-to memory access
 F -> mult F ;
 
--- arguments appel de sous-programme
+-- subprogram call arguments
 ARGS -> ;
 ARGS -> E ARGSX ;
 ARGSX -> ;
-ARGSX -> virg E ARGSX ;
+ARGSX -> comma E ARGSX ;
 
 ----============ MOC extension =================
---ENTITES -> IMPLEMENTATION ENTITES ;
----- définition d'une classe
---IMPLEMENTATION -> classe identc SUPER aco ATTRIBUTS acf METHODES fin ;
----- surclasse
+--ENTITIES -> IMPLEMENTATION ENTITIES ;
+---- class definition
+--IMPLEMENTATION -> class class_ident SUPER ocbra ATTRIBUTES ccbra METHODS end ;
+---- superclass
 --SUPER -> ;
---SUPER -> dpts identc ;
----- attributs
---ATTRIBUTS -> ;
---ATTRIBUTS -> TYPE ident pv ATTRIBUTS ;
----- méthodes
---METHODES -> ;
---METHODES -> METHODE METHODES ;
---METHODE -> QUAL PTYPE MPARFS BLOC ;
----- qualificateur attribut ou méthode: + = de classe, - = d'instance
+--SUPER -> colon class_ident ;
+---- attributes
+--ATTRIBUTES -> ;
+--ATTRIBUTES -> TYPE ident semicolon ATTRIBUTES ;
+---- methods
+--METHODS -> ;
+--METHODS -> METHOD METHODS ;
+--METHOD -> QUAL PTYPE MFUNC_PARAMETERS BLOC ;
+---- method or attribute qualifier: + = class, - = instance
 --QUAL -> plus ;
---QUAL -> moins ;
----- type classe
---STYPE-> identc ;
+--QUAL -> minus ;
+---- type class
+--STYPE-> class_ident ;
 ---- type BOOL
 --STYPE-> bool ;
 ---- type "any"
 --TYPE -> id ;
----- type argument (ou retour) de méthode entre parenthèses
---PTYPE-> paro TYPE parf ;
----- paramètres de méthodes
---MPARFS -> ;
---MPARFS -> MPARF MPARFS ;
----- sélecteur sans paramètre
---MPARF -> ident ;
----- sélecteur + type paramètre + nom paramètre
---MPARF -> ident dpts PTYPE ident ;
----- object nil
+---- method return type between parentheses
+--PTYPE-> opar TYPE cpar ;
+---- method parameters
+--MFUNC_PARAMETERS -> ;
+--MFUNC_PARAMETERS -> MFUNC_PARAMETER MFUNC_PARAMETERS ;
+---- selector without parameters
+--MFUNC_PARAMETER -> ident ;
+---- selector  + parameter type + parameter name
+--MFUNC_PARAMETER -> ident colon PTYPE ident ;
 --F -> nil ;
----- Constante 'YES'
 --F -> yes ;
----- Constante 'NO'
 --F -> no ;
----- chaîne MOC (commence par @)
---F -> chaineo ;
+---- MOC string (starts with @)
+--F -> stringo ;
 --F -> self ;
 --F -> super ;
----- Appel de méthode
---F -> cro F MARGS crf ;
----- pour appel méthode de classe
---F -> cro identc MARGS crf ;
----- arguments appel de méthode
+---- method call
+--F -> osbra F MARGS csbra ;
+---- for class method call
+--F -> osbra class_ident MARGS csbra ;
+---- method call arguments
 --MARGS -> ;
 --MARGS -> MARG MARGS ;
----- sélecteur + arg
---MARG -> ident dpts E ;
----- sélecteur sans arg
+---- selector + arg
+--MARG -> ident colon E ;
+---- selector without arg
 --MARG -> ident ;

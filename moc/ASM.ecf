@@ -11,7 +11,7 @@
       dst="false"
       main="false"
   >
-    <import lib="moc.tds.*" />
+    <import lib="moc.st.*" />
     <import lib="moc.type.*" />
     <import lib="java.util.*" />
     <import lib="moc.gc.*" />

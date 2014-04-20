@@ -1,13 +1,12 @@
 package moc.gc;
 
-
 /**
- * La machine TAM et ses fonctions de génération
+ * The TAM machine and its generation functions
  */
 public class MTAM extends AbstractMachine {
 
     @Override
-    public String getSuffixe() {
+    public String getSuffix() {
         return "tam";
     }
 }

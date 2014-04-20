@@ -5,14 +5,14 @@ import moc.gc.AbstractMachine;
 import moc.gc.MTAM;
 
 /**
- * Décrit une unité de compilation MOC
+ * Describes a MOC compilation unit
  */
 public class MOCSourceFile extends SourceUnit {
 
-    // obligatoire pour un SourceUnit : le nom du fichier
+    // mandatory for a SourceUnit
     private String fileName;
 
-    // la machine cible
+    // target machine
     private AbstractMachine machine;
 
     private String machName;
@@ -23,7 +23,7 @@ public class MOCSourceFile extends SourceUnit {
     }
 
     /**
-     * Affiche les options disponibles
+     * Print available options
      */
     private void usage(String a) throws MOCException {
         throw new MOCException("Option incorrecte : " + a + ". "
@@ -31,17 +31,16 @@ public class MOCSourceFile extends SourceUnit {
     }
 
     /**
-     * Analyse les arguments supplémentaires du compilateur
+     * Analyse supplementary arguments of the compiler
      */
     public void analyze(String[] args) throws MOCException {
         int argc = args.length;
         fileName = args[0];
 
-        // machine cible ?
         if (argc == 1) {
             setMachine("tam");
         } else {
-            // nom de la machine ?
+            // machine name
             for (int i = 1; i < argc; i++) {
                 String a = args[i];
                 if ("-m".equals(a)) {
@@ -59,15 +58,14 @@ public class MOCSourceFile extends SourceUnit {
     }
 
     /**
-     * Fixe et créé la machine cible
+     * Determines and creates the target machine
      */
     private void setMachine(String mach) {
         machName = mach;
         if ("tam".equals(mach)) {
             machine = new MTAM();
         } else {
-            // TODO si la machine n'est pas tam
-            // machine = new ???();
+            // TODO: x86_32
         }
     }
 
@@ -82,5 +80,4 @@ public class MOCSourceFile extends SourceUnit {
     public String getFileName() {
         return fileName;
     }
-
 }
