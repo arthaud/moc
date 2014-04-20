@@ -1,0 +1,10 @@
+#!/bin/sh
+
+#--------------------------------------------------------
+# les jars associes
+EJAR=eggc-6.0.0.jar
+#--------------------------------------------------------
+# java, javac, jar
+JDIR=/usr/bin
+
+$JDIR/java -classpath .:$EJAR moc.compiler.MOCC $*

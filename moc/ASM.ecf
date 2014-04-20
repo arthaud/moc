@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Config file for EGG Grammar  -->
+
+  <egg
+      module="true"
+      lang="java"
+      scanner="jlex"
+      gen="egg"
+      prefix="moc"
+      so="false"
+      dst="false"
+      main="false"
+  >
+    <import lib="moc.tds.*" />
+    <import lib="moc.type.*" />
+    <import lib="java.util.*" />
+    <import lib="moc.gc.*" />
+  </egg>

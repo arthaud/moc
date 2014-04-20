@@ -1,0 +1,80 @@
+// assembleur inline en dehors d'une fonction
+asm {
+    CALL (LB) _main   ; appel au point d'entrée du programme
+    HALT              ; arrêt de la machine
+}
+
+// assembleur inline dans une fonction
+int * malloc(int taille) {
+    asm {
+        LOAD %taille    ; accès au paramètre taille
+        SUBR Malloc     ; allocation
+        RETURN (1) 1
+    }
+}
+
+// assembleur inline dans une fonction
+void log(char *message, int valeur) {
+    int x = 12;
+    asm {
+        LOAD %message        ; accès au premier paramètre
+        SUBR Sout
+        LOAD %valeur         ; accès au deuxieme paramètre
+        LOAD %x              ; accès à la variable x
+        SUBR IAdd
+        SUBR IOUT
+        SUBR LN
+        RETURN (2) 0
+    }
+}
+
+// la classe mère de toutes les classes
+@class NSObject {
+}
++(void)init {}
+@end
+
+// un point
+@class Point2D : NSObject {
+    int x;
+    int y;
+}
+-(int)x {
+    return x;
+}
+-(int)y {
+    return y;
+}
+-(void)x:(int)a y:(int)b {
+    x = a;
+    y = b;
+}
+@end
+
+// un point coloré
+@class Point2DCol:Point2D {
+    int col;
+}
+-(int) colx {
+    return col;
+}
+-(void) x:(int)a y:(int)b col:(int)c {
+    int z = [self colx];
+    [self x:a y:b];
+    col = 99;
+}
+@end
+
+int main() {
+    log(@"Hello, GEO!");
+    char c = 'a';
+    Point2DCol *org = [Point2DCol alloc];
+    id object = org;
+    [org x:0 y:0 col:4];
+    Point2D ** pp = nil;
+    org = [[Point2DCol alloc] init];
+    log(@"PointColore = ", [org x], [org y], [org col]);
+    int y = 999;
+    log(@"y = 36 = %d", y);
+    return y;
+}
