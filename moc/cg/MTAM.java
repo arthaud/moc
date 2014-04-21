@@ -1,4 +1,4 @@
-package moc.gc;
+package moc.cg;
 
 /**
  * The TAM machine and its generation functions

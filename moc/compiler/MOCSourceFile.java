@@ -1,8 +1,8 @@
 package moc.compiler;
 
 import mg.egg.eggc.runtime.libjava.SourceUnit;
-import moc.gc.AbstractMachine;
-import moc.gc.MTAM;
+import moc.cg.AbstractMachine;
+import moc.cg.MTAM;
 
 /**
  * Describes a MOC compilation unit

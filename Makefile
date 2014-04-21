@@ -20,7 +20,7 @@ att:
 	$(JDIR)/javac -classpath $(GJAR) moc/compiler/*.java
 	$(JDIR)/javac -classpath $(GJAR) moc/st/*.java
 	$(JDIR)/javac -classpath $(GJAR) moc/type/*.java
-	$(JDIR)/javac -classpath $(GJAR) moc/gc/*.java
+	$(JDIR)/javac -classpath $(GJAR) moc/cg/*.java
 
 class:
 	$(JDIR)/javac -classpath $(GJAR) moc/egg/*.java

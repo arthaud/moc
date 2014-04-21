@@ -1,4 +1,4 @@
-package moc.gc;
+package moc.cg;
 
 /**
  * This class describes a registry of a machine

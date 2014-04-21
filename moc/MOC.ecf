@@ -14,6 +14,6 @@
     <import lib="moc.compiler.*" />
     <import lib="moc.st.*" />
     <import lib="moc.type.*" />
-    <import lib="moc.gc.*" />
+    <import lib="moc.cg.*" />
     <import lib="java.util.*" />
   </egg>

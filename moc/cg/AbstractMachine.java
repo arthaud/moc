@@ -1,4 +1,4 @@
-package moc.gc;
+package moc.cg;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

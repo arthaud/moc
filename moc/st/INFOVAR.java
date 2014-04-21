@@ -1,6 +1,6 @@
 package moc.st;
 
-import moc.gc.Location;
+import moc.cg.Location;
 import moc.type.DTYPE;
 
 /**

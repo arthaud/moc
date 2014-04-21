@@ -1,4 +1,4 @@
-package moc.gc;
+package moc.cg;
 
 /**
  * This class describes a memory address (offset from a register)

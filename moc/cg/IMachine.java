@@ -1,4 +1,4 @@
-package moc.gc;
+package moc.cg;
 
 import moc.compiler.MOCException;
 
