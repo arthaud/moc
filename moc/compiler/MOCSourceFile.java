@@ -17,6 +17,8 @@ public class MOCSourceFile extends SourceUnit {
 
     private String machName;
 
+    private int verbosity = 1;
+
     public MOCSourceFile(String[] args) throws MOCException {
         super(args[0]);
         analyze(args);
@@ -50,7 +52,10 @@ public class MOCSourceFile extends SourceUnit {
                     } else {
                         usage(a);
                     }
-                } else {
+                } else if(a.startsWith("-v")) {
+                    verbosity = a.length() - 1;
+                }
+                else {
                     usage(a);
                 }
             }
@@ -79,5 +84,9 @@ public class MOCSourceFile extends SourceUnit {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public int getVerbosity() {
+        return verbosity;
     }
 }
