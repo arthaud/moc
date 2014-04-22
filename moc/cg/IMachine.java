@@ -33,5 +33,15 @@ public interface IMachine {
     Code genCast(DType type, Code CastedCode);
 
     Code genCall(String ident, Code arguments);
-     
+
+    String genComment(String comm);
+
+    int getIntSize();
+
+    int getCharSize();
+
+    int getBoolSize();
+
+    int getPointerSize();
+ 
    }
