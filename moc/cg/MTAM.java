@@ -1,5 +1,7 @@
 package moc.cg;
 
+import moc.type.TTYPE;
+
 /**
  * The TAM machine and its generation functions
  */
@@ -10,21 +12,55 @@ public class MTAM extends AbstractMachine {
         return "tam";
     }
 
-    int getIntSize() {
+    public int getIntSize() {
         return 1;
     }
 
-    int getCharSize() {
+    public int getCharSize() {
         return 1;
     }
 
-    int getBoolSize() {
+    public int getBoolSize() {
         return 1;
     }
 
-    int getPointerSize() {
+    public int getPointerSize() {
         return 1;
     }
 
+    public Code genFunction(String label, int paramSize, int retSize, Code code) {
+        return null;
+    }
 
+    public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
+        return null;
+    }
+
+    public Code genReturn(Code returnVal) {
+        return null;
+    }
+
+    public Code includeAsm(String asmCode) {
+        return null;
+    }
+
+    public Code genAffectation(Code address, Code affectedVal) {
+        return null;
+    }
+
+    public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
+        return null;
+    }
+
+    public Code genUnary(Code operand, String operator) {
+        return null;
+    }
+
+    public Code genCast(TTYPE type, Code castedCode) {
+        return null;
+    }
+
+    public Code genCall(String ident, Code arguments) {
+        return null;
+    }
 }

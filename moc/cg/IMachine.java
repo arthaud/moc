@@ -1,6 +1,7 @@
 package moc.cg;
 
 import moc.compiler.MOCException;
+import moc.type.TTYPE;
 
 /**
  * This interface describes a target machine
@@ -23,14 +24,14 @@ public interface IMachine {
     Code genReturn(Code returnVal);
 
     Code includeAsm(String asmCode);
-    
-    Code genAffectation(Code Adress, Code affectedVal);
 
-    Code genBinary(Code leftOperand, Code rightOperand, String Operator);
+    Code genAffectation(Code address, Code affectedVal);
 
-    Code genUnary(Code Operand, String Operator);
+    Code genBinary(Code leftOperand, Code rightOperand, String operator);
 
-    Code genCast(DType type, Code CastedCode);
+    Code genUnary(Code operand, String operator);
+
+    Code genCast(TTYPE type, Code castedCode);
 
     Code genCall(String ident, Code arguments);
 
@@ -43,5 +44,4 @@ public interface IMachine {
     int getBoolSize();
 
     int getPointerSize();
- 
-   }
+}
