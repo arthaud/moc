@@ -69,8 +69,7 @@ ADR -> var #gen ;
                 case INFOVAR {
                     INFOVAR v = i;
                     Location l = v.getLocation();
-                    Register r = l.getReg();
-                    ADR^asm_code = "(" + v.getType().getSize() + ") " + l.getDep() + "[" + r.getName() + "]";
+                    ADR^asm_code = "(";
                 }
                 default {
                     error(NOT_A_VAR, var^txt);

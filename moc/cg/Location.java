@@ -4,7 +4,7 @@ package moc.cg;
  * This class describes a memory address (offset from a register)
  */
 public class Location {
-    public Enum LocationType {
+    public enum LocationType {
         REGISTER, STACKFRAME, ABSOLUTE
     }
     
