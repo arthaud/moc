@@ -9,6 +9,10 @@ public class TPOINTER implements TTYPE {
         this.size = size;
     }
 
+    public TTYPE getType() {
+        return type;
+    }
+
     public int getSize() {
         return size;
     }

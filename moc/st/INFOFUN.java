@@ -3,18 +3,18 @@ package moc.st;
 import moc.type.TFUNCTION;
 
 public class INFOFUN implements INFO {
-    protected TFUNCTION function;
+    protected TFUNCTION type;
 
-    public TFUNCTION getFunction() {
-        return function;
+    public TFUNCTION getType() {
+        return type;
     }
 
-    public INFOFUN(TFUNCTION fun) {
-        function = fun;
+    public INFOFUN(TFUNCTION type) {
+        this.type = type;
     }
 
     @Override
     public String toString() {
-        return "INFOFUN [" + function.toString() + "]";
+        return "INFOFUN [" + type.toString() + "]";
     }
 }

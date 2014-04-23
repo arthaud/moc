@@ -6,7 +6,13 @@ option auto = true;
 option version = 0.0.1;
 option k = 2;
 
-inh source : MOCSourceFile for PROGRAM;
+inh source : MOCSourceFile for
+         PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         E, EX, A, AX, R, RX, T, TX, F
+--       -- TODO: MOC
+--       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
+         ;
 inh machine : IMachine for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
@@ -22,9 +28,12 @@ inh st : ST for
 --       -- TODO: MOC
 --       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
          ;
-inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX;
-syn type : TTYPE for TYPE, FUNC_PARAMETER, STYPE, REFS;
-inh htype : TTYPE for REFS;
+inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
+syn type : TTYPE for
+         TYPE, FUNC_PARAMETER, STYPE, REFS,
+         E, EX, A, AX, R, RX, T, TX, F;
+inh htype : TTYPE for REFS, EX, AX, RX, TX;
+syn name : STRING for OPREL, OPADD, OPMUL, OPUN;
 
 -- these attributes allow to get inline assembly
 syn asm_code : STRING for ASM;
@@ -214,14 +223,44 @@ STYPE -> char #type ;
 }
 
 -- method body and instructions blocks
-BLOC -> ocbra INSTS ccbra ;
+BLOC -> ocbra #trans INSTS ccbra #gen ;
+global ST st;
+
+#trans {
+    st = new ST(BLOC^st);
+    INSTS^st = st;
+}
+
+#gen {
+    -- debug
+    if (BLOC^source.getVerbosity() >= 2) {
+        write("### symbols table ###\n");
+        write(st);
+        write("#####################\n");
+    }
+}
 
 -- instructions
 INSTS -> ;
 INSTS -> INST INSTS ;
 
 -- local variable declaration with or without initialization
-INST -> TYPE ident EX semicolon ;
+INST -> TYPE ident #trans EX semicolon #gen ;
+#trans {
+    EX^htype = TYPE^type;
+}
+
+#gen {
+    INFO i = INST^st.globalSearch(ident^txt);
+
+    if (i != null) {
+        error(VAR_exists, ident^txt);
+    }
+    else {
+        INFOVAR info = new INFOVAR(TYPE^type, null);
+        INST^st.insert(ident^txt, info);
+    }
+}
 
 -- expression instruction (affectation and procedure call)
 INST -> E semicolon ;
@@ -258,72 +297,259 @@ INST -> asm #st ASM #gen ;
 -----------------------------------------------------------------------
 
 -- affectation
-E -> A EX ;
-EX -> affect A ;
-EX -> ;
+E -> A #trans EX #gen ;
+#trans {
+    EX^htype = A^type;
+}
+
+#gen {
+    E^type = EX^type;
+}
+
+EX -> affect A #gen ;
+#gen {
+    EX^type = A^type;
+}
+
+EX -> #gen ;
+#gen {
+    EX^type = EX^htype;
+}
 
 -- relation
-A -> R AX ;
-AX -> OPREL R ;
-AX -> ;
+A -> R #trans AX #gen ;
+#trans {
+    AX^htype = R^type;
+}
+
+#gen {
+    A^type = AX^type;
+}
+
+AX -> OPREL R #gen ;
+#gen {
+    AX^type = new TINTEGER(AX^machine.getIntSize());
+}
+
+AX -> #gen ;
+#gen {
+    AX^type = AX^htype;
+}
 
 -- relation operators
-OPREL -> inf ;
-OPREL -> sup ;
-OPREL -> infeq ;
-OPREL -> supeq ;
-OPREL -> eq ;
-OPREL -> neq ;
+OPREL -> inf #name ;
+#name { OPREL^name = "<"; }
+
+OPREL -> sup #name ;
+#name { OPREL^name = ">"; }
+
+OPREL -> infeq #name ;
+#name { OPREL^name = "<="; }
+
+OPREL -> supeq #name ;
+#name { OPREL^name = ">="; }
+
+OPREL -> eq #name ;
+#name { OPREL^name = "=="; }
+
+OPREL -> neq #name ;
+#name { OPREL^name = "!="; }
 
 -- additions
-R -> T RX ;
-RX -> OPADD T RX ;
-RX -> ;
+R -> T #trans RX #gen ;
+#trans {
+    RX^htype = T^type;
+}
+
+#gen {
+    R^type = RX^type;
+}
+
+RX -> OPADD T #trans RX #gen ;
+#trans {
+    RX1^htype = RX^htype;
+}
+
+#gen {
+    RX^type = RX1^type;
+}
+
+RX -> #gen ;
+#gen {
+    RX^type = RX^htype;
+}
 
 -- addition operators
-OPADD -> plus ;
-OPADD -> minus ;
-OPADD -> or ;
+OPADD -> plus #name ;
+#name { OPADD^name = "+"; }
+
+OPADD -> minus #name ;
+#name { OPADD^name = "-"; }
+
+OPADD -> or #name ;
+#name { OPADD^name = "||"; }
 
 -- multiplications
-T -> F TX ;
-TX -> OPMUL F TX ;
-TX -> ;
+T -> F #trans TX #gen ;
+#trans {
+    TX^htype = F^type;
+}
+
+#gen {
+    T^type = TX^type;
+}
+
+TX -> OPMUL F #trans TX #gen ;
+#trans {
+    TX1^htype = TX^htype;
+}
+
+#gen {
+    TX^type = TX1^type;
+}
+
+TX -> #gen ;
+#gen {
+    TX^type = TX^htype;
+}
 
 -- multiplication operators
-OPMUL -> mult ;
-OPMUL -> div ;
-OPMUL -> mod ;
-OPMUL -> and ;
+OPMUL -> mult #name ;
+#name { OPMUL^name = "*"; }
+
+OPMUL -> div #name ;
+#name { OPMUL^name = "/"; }
+
+OPMUL -> mod #name ;
+#name { OPMUL^name = "%"; }
+
+OPMUL -> and #name ;
+#name { OPMUL^name = "&&"; }
 
 -- base expressions
-F -> integer ;
-F -> string ;
-F -> character ;
-F -> null ;
-F -> OPUN F ;
+F -> integer #gen ;
+#gen {
+    F^type = new TINTEGER(F^machine.getIntSize());
+}
+
+F -> string #gen ;
+#gen {
+    F^type = new TPOINTER(new TCHAR(F^machine.getCharSize()), F^machine.getPointerSize());
+}
+
+F -> character #gen ;
+#gen {
+    F^type = new TCHAR(F^machine.getCharSize());
+}
+
+F -> null #gen ;
+#gen {
+    F^type = new TNULL();
+}
+
+F -> OPUN F #gen ;
+#gen {
+    F^type = F1^type;
+}
 
 -- unary expressions
-OPUN -> plus ;
-OPUN -> minus ;
-OPUN -> not ;
+OPUN -> plus #name ;
+#name { OPUN^name = "+"; }
+
+OPUN -> minus #name ;
+#name { OPUN^name = "-"; }
+
+OPUN -> not #name ;
+#name { OPUN^name = "!"; }
 
 -- parenthesised expression
-F -> opar E cpar ;
-F -> opar TYPE cpar F ;
+F -> opar E cpar #gen ;
+#gen {
+    F^type = E^type;
+}
+
+F -> opar TYPE cpar F #gen ;
+#gen {
+    F^type = TYPE^type;
+}
 
 -- subprogram call
-F -> ident opar ARGS cpar ;
-F -> ident ;
+F -> ident opar #hgen ARGS cpar #gen ;
+global LTYPES args_types;
+
+#hgen {
+    args_types = new LTYPES();
+    ARGS^types = args_types;
+}
+
+#gen {
+    INFO i = F^st.globalSearch(ident^txt);
+
+    if (i == null) {
+        error(FUN_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOFUN {
+                INFOFUN info = i;
+                -- check arguments types
+                F^type = info.getType().getReturnType();
+            }
+            default {
+                error(INFO_not_fun, ident^txt);
+            }
+        }
+    }
+}
+
+F -> ident #gen ;
+#gen {
+    INFO i = F^st.globalSearch(ident^txt);
+
+    if (i == null) {
+        error(VAR_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOVAR {
+                INFOVAR info = i;
+                F^type = info.getType();
+            }
+            default {
+                error(INFO_not_var, ident^txt);
+            }
+        }
+    }
+}
 
 -- pointed-to memory access
-F -> mult F ;
+F -> mult F #gen ;
+#gen {
+    match (F1^type) {
+        case TPOINTER {
+            TPOINTER p = F1^type;
+            F^type = p.getType();
+        }
+        default {
+            error(TYPE_not_pointer, F1^type);
+        }
+    }
+}
 
 -- subprogram call arguments
 ARGS -> ;
-ARGS -> E ARGSX ;
+ARGS -> E #trans ARGSX ;
+#trans {
+    ARGS^types.add(E^type);
+    ARGSX^types = ARGS^types;
+}
+
 ARGSX -> ;
-ARGSX -> comma E ARGSX ;
+ARGSX -> comma E #trans ARGSX ;
+#trans {
+    ARGSX^types.add(E^type);
+    ARGSX1^types = ARGSX^types;
+}
 
 ----============ MOC extension =================
 --ENTITIES -> IMPLEMENTATION ENTITIES ;
