@@ -17,7 +17,7 @@ public class MOCSourceFile extends SourceUnit {
 
     private String machName;
 
-    private int verbosity = 1;
+    private int verbosity = 0;
 
     public MOCSourceFile(String[] args) throws MOCException {
         super(args[0]);

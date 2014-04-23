@@ -10,10 +10,21 @@ inh source : MOCSourceFile for PROGRAM;
 inh machine : IMachine for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         TYPE, STYPE, REFS,
          E, EX, A, AX, R, RX, T, TX, F
 --       -- TODO: MOC
 --       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
          ;
+inh st : ST for
+         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         E, EX, A, AX, R, RX, T, TX, F
+--       -- TODO: MOC
+--       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
+         ;
+inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX;
+syn type : TTYPE for TYPE, FUNC_PARAMETER, STYPE, REFS;
+inh htype : TTYPE for REFS;
 
 -- these attributes allow to get inline assembly
 syn asm_code : STRING for ASM;
@@ -78,7 +89,9 @@ compil ASM;
 
 
 PROGRAM -> #init ENTITIES #gen ;
-global IMachine machine;
+global
+    IMachine machine;
+    ST st;
 
 #init {
     machine = PROGRAM^source.getMachine();
@@ -89,9 +102,19 @@ global IMachine machine;
     else {
         ENTITIES^machine = machine;
     }
+
+    st = new ST();
+    ENTITIES^st = st;
 }
 
 #gen {
+    -- debug
+    if (PROGRAM^source.getVerbosity() >= 1) {
+        write("### final symbols table ###\n");
+        write(st);
+        write("###########################\n");
+    }
+
     -- write in a file
     machine.writeCode(PROGRAM^source.getFileName(), "; no code\n");
 }
@@ -99,9 +122,7 @@ global IMachine machine;
 ENTITIES -> ;
 ENTITIES -> asm #st ASM ENTITIES #gen ;
 #st {
-    -- Replace null with the current symbols table so that the ASM
-    -- code can access MC or MOC variables
-    ASM^asm_st = null;
+    ASM^asm_st = ENTITIES^st;
 }
 
 #gen {
@@ -111,24 +132,86 @@ ENTITIES -> asm #st ASM ENTITIES #gen ;
 ENTITIES -> FUNCTION ENTITIES ;
 
 -- functions
-FUNCTION -> TYPE ident opar FUNC_PARAMETERS cpar BLOC ;
+FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC ;
+global LTYPES param_types;
+
+#trans {
+    param_types = new LTYPES();
+    FUNC_PARAMETERS^types = param_types;
+}
+
+#st {
+    INFO i = FUNCTION^st.localSearch(ident^txt);
+
+    if (i != null) {
+        error(VAR_exists, ident^txt);
+    }
+    else {
+        TFUNCTION fun = new TFUNCTION(ident^txt, TYPE^type, param_types);
+        FUNCTION^st.insert(ident^txt, new INFOFUN(fun));
+    }
+}
 
 -- functions parameters
 FUNC_PARAMETERS -> ;
-FUNC_PARAMETERS -> FUNC_PARAMETER FUNC_PARAMETERSX ;
+
+FUNC_PARAMETERS -> FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
+#trans {
+    FUNC_PARAMETERS^types.add(FUNC_PARAMETER^type);
+    FUNC_PARAMETERSX^types = FUNC_PARAMETERS^types;
+}
+
 FUNC_PARAMETERSX -> ;
-FUNC_PARAMETERSX -> comma FUNC_PARAMETER FUNC_PARAMETERSX ;
-FUNC_PARAMETER -> TYPE ident ;
+FUNC_PARAMETERSX -> comma FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
+#trans {
+    FUNC_PARAMETERSX^types.add(FUNC_PARAMETER^type);
+    FUNC_PARAMETERSX1^types = FUNC_PARAMETERSX^types;
+}
+
+FUNC_PARAMETER -> TYPE ident #type ;
+#type {
+    FUNC_PARAMETER^type = TYPE^type;
+}
 
 -- base types and pointers
-TYPE -> STYPE REFS ;
-REFS -> ;
-REFS -> mult REFS ;
+TYPE -> STYPE #trans REFS #type ;
+#trans {
+    REFS^htype = STYPE^type;
+}
+
+#type {
+    TYPE^type = REFS^type;
+}
+
+REFS -> #type ;
+#type {
+    REFS^type = REFS^htype;
+}
+
+REFS -> mult #trans REFS #type ;
+#trans {
+    REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
+}
+
+#type {
+    REFS^type = REFS1^type;
+}
 
 -- base types
-STYPE-> void ;
-STYPE-> int ;
-STYPE-> char ;
+STYPE -> void #type ;
+#type {
+    STYPE^type = new TVOID();
+}
+
+STYPE -> int #type ;
+#type {
+    STYPE^type = new TINTEGER(STYPE^machine.getIntSize());
+}
+
+STYPE -> char #type ;
+#type {
+    STYPE^type = new TCHAR(STYPE^machine.getCharSize());
+}
 
 -- method body and instructions blocks
 BLOC -> ocbra INSTS ccbra ;
@@ -157,9 +240,7 @@ INST -> return E semicolon ;
 -- inline asm
 INST -> asm #st ASM #gen ;
 #st {
-    -- to replace by the current symbols table so that inline
-    -- assembly can access variables
-    ASM^asm_st = null;
+    ASM^asm_st = INST^st;
 }
 
 #gen {

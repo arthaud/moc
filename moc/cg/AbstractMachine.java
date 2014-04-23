@@ -30,4 +30,8 @@ public abstract class AbstractMachine implements IMachine {
             throw new MOCException(e.getMessage());
         }
     }
+
+    public String genComment(String comm) {
+        return "; " + comm +"\n";
+    }
 }
