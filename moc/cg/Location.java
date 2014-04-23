@@ -4,27 +4,28 @@ package moc.cg;
  * This class describes a memory address (offset from a register)
  */
 public class Location {
-    private int dep;
-    private Register reg;
+    public enum LocationType {
+        REGISTER, STACKFRAME, ABSOLUTE
+    }
+    
+    private int memory_offset;
+    private LocationType memory_type;
 
-    public int getDep() {
-        return dep;
+    public int getOffset() {
+        return memory_offset;
     }
 
-    public Register getReg() {
-        return reg;
+    public LocationType getType() {
+        return memory_type;
     }
 
     @Override
     public String toString() {
-        return "[" + dep + "/" + reg + "]";
+        return memory_offset + "@" + memory_type;
     }
 
-    /**
-     * Location = address = offset / register.
-     */
-    public Location(int dep, Register reg) {
-        this.dep = dep;
-        this.reg = reg;
+    public Location(LocationType memory_type, int memory_offset) {
+        this.memory_offset = memory_offset;
+        this.memory_type = memory_type;
     }
 }
