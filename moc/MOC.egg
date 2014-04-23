@@ -54,6 +54,9 @@ sugar void       is  "void" ;
 sugar asm        is  "asm" ;
 sugar int        is  "int" ;
 sugar char       is  "char" ;
+sugar bool       is  "bool" ;
+sugar true       is  "true" ;
+sugar false      is  "false" ;
 sugar return     is  "return" ;
 sugar null       is  "NULL" ;
 sugar nil        is  "nil" ;
@@ -222,6 +225,11 @@ STYPE -> char #type ;
     STYPE^type = new TCHAR(STYPE^machine.getCharSize());
 }
 
+STYPE -> bool #type ;
+#type {
+    STYPE^type = new TBOOL(STYPE^machine.getBoolSize());
+}
+
 -- method body and instructions blocks
 BLOC -> ocbra #trans INSTS ccbra #gen ;
 global ST st;
@@ -328,7 +336,7 @@ A -> R #trans AX #gen ;
 
 AX -> OPREL R #gen ;
 #gen {
-    AX^type = new TINTEGER(AX^machine.getIntSize());
+    AX^type = new TBOOL(AX^machine.getBoolSize());
 }
 
 AX -> #gen ;
@@ -445,6 +453,16 @@ F -> character #gen ;
 F -> null #gen ;
 #gen {
     F^type = new TNULL();
+}
+
+F -> true #gen ;
+#gen {
+    F^type = new TBOOL(F^machine.getBoolSize());
+}
+
+F -> false #gen ;
+#gen {
+    F^type = new TBOOL(F^machine.getBoolSize());
 }
 
 F -> OPUN F #gen ;
