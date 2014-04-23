@@ -17,7 +17,7 @@ public interface IMachine {
      */
     void writeCode(String fileName, String code) throws MOCException;
 
-    Code genFunction(String label, int paramSize, int retSize, Code code);
+    Code genFunction(TFUNCTION function, Code code);
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 

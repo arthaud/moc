@@ -1,7 +1,7 @@
 package moc.cg;
 
 public class Code {
-    private String asm;
+    protected String asm;
 
     public Code() {
         this(null);

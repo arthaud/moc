@@ -5,15 +5,15 @@ import moc.type.TTYPE;
 /**
  * The TAM machine and its generation functions
  */
-public class MTAM extends AbstractMachine {
+public class Mx86 extends AbstractMachine {
 
     @Override
     public String getSuffix() {
-        return "tam";
+        return "x86";
     }
 
     public int getIntSize() {
-        return 1;
+        return 4;
     }
 
     public int getCharSize() {
