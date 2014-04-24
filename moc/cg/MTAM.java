@@ -1,6 +1,7 @@
 package moc.cg;
 
 import moc.type.TTYPE;
+import moc.type.TFUNCTION;
 
 /**
  * The TAM machine and its generation functions
