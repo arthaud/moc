@@ -8,24 +8,24 @@ public class Location {
         REGISTER, STACKFRAME, ABSOLUTE
     }
     
-    private int memory_offset;
-    private LocationType memory_type;
+    private int memoryOffset;
+    private LocationType memoryType;
 
     public int getOffset() {
-        return memory_offset;
+        return memoryOffset;
     }
 
     public LocationType getType() {
-        return memory_type;
+        return memoryType;
     }
 
     @Override
     public String toString() {
-        return memory_offset + "@" + memory_type;
+        return memoryOffset + "@" + memoryType;
     }
 
-    public Location(LocationType memory_type, int memory_offset) {
-        this.memory_offset = memory_offset;
-        this.memory_type = memory_type;
+    public Location(LocationType memoryType, int memoryOffset) {
+        this.memoryOffset = memoryOffset;
+        this.memoryType = memoryType;
     }
 }
