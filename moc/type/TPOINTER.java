@@ -17,8 +17,48 @@ public class TPOINTER implements TTYPE {
         return size;
     }
 
-    public boolean compareTo(TTYPE other) {
-        return false; /* TODO */
+    public boolean constructFrom(TTYPE other) {
+        if(other instanceof TPOINTER)
+        {
+            TPOINTER p = (TPOINTER) other;
+            return type.equals(p.getType());
+        }
+        else
+            return other instanceof TNULL;
+    }
+
+    public boolean comparableWith(TTYPE other, String op) {
+        if(!op.equals("==") && !op.equals("!="))
+            return false;
+
+        if(other instanceof TPOINTER)
+        {
+            TPOINTER p = (TPOINTER) other;
+            return type.equals(p.getType());
+        }
+        else
+            return other instanceof TNULL;
+    }
+
+    public boolean binaryUsable(TTYPE other, String op) {
+        return false;
+    }
+
+    public boolean unaryUsable(String op) {
+        return false;
+    }
+
+    public boolean testable() {
+        return false;
+    }
+
+    public boolean equals(TTYPE other) {
+        if(other instanceof TPOINTER) {
+            TPOINTER p = (TPOINTER) other;
+            return type.equals(p.getType());
+        }
+        else
+            return false;
     }
 
     public String toString() {

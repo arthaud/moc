@@ -169,6 +169,7 @@ global LTYPES param_types;
     else {
         TFUNCTION fun = new TFUNCTION(ident^txt, TYPE^type, param_types);
         FUNCTION^st.insert(ident^txt, new INFOFUN(fun));
+        FUNCTION^st.setCurrentFunction(fun);
     }
 }
 
@@ -297,7 +298,7 @@ INST -> TYPE ident #trans EX semicolon #gen ;
 }
 
 #gen {
-    INFO i = INST^st.globalSearch(ident^txt);
+    INFO i = INST^st.localSearch(ident^txt);
 
     if (i != null) {
         error(VAR_exists, ident^txt);
@@ -315,12 +316,24 @@ INST -> E semicolon ;
 INST -> BLOC ;
 
 -- conditional
-INST -> if opar E cpar BLOC ELSE ;
+INST -> if opar E cpar #type BLOC ELSE ;
+#type {
+    if (!E^type.testable()) {
+        error(TYPE_not_bool, E^type);
+    }
+}
+
 ELSE -> else BLOC ;
 ELSE -> ;
 
 -- function return
-INST -> return E semicolon ;
+INST -> return E semicolon #gen ;
+#gen {
+    TTYPE return_type = INST^st.getCurrentFunction().getReturnType();
+    if (!return_type.constructFrom(E^type)) {
+        error(TYPES_incompatible, return_type, E^type);
+    }
+}
 
 -- inline asm
 INST -> asm #st ASM #gen ;
@@ -354,6 +367,10 @@ E -> A #trans EX #gen ;
 
 EX -> affect A #gen ;
 #gen {
+    if (!EX^htype.constructFrom(A^type)) {
+        error(TYPES_incompatible, EX^htype, A^type);
+    }
+
     EX^type = A^type;
 }
 
@@ -374,6 +391,10 @@ A -> R #trans AX #gen ;
 
 AX -> OPREL R #gen ;
 #gen {
+    if (!AX^htype.comparableWith(R^type, OPREL^name)) {
+        error(TYPES_incomparable, AX^htype, R^type, OPREL^name);
+    }
+
     AX^type = new TBOOL(AX^machine.getBoolSize());
 }
 
@@ -413,6 +434,10 @@ R -> T #trans RX #gen ;
 
 RX -> OPADD T #trans RX #gen ;
 #trans {
+    if (!RX^htype.binaryUsable(T^type, OPADD^name)) {
+        error(TYPES_binary_unusable, RX^htype, T^type, OPADD^name);
+    }
+
     RX1^htype = RX^htype;
 }
 
@@ -447,6 +472,10 @@ T -> F #trans TX #gen ;
 
 TX -> OPMUL F #trans TX #gen ;
 #trans {
+    if (!TX^htype.binaryUsable(F^type, OPMUL^name)) {
+        error(TYPES_binary_unusable, TX^htype, F^type, OPMUL^name);
+    }
+
     TX1^htype = TX^htype;
 }
 
@@ -505,6 +534,10 @@ F -> false #gen ;
 
 F -> OPUN F #gen ;
 #gen {
+    if (!F1^type.unaryUsable(OPUN^name)) {
+        error(TYPE_unary_unusable, F1^type, OPUN^name);
+    }
+
     F^type = F1^type;
 }
 
@@ -526,6 +559,7 @@ F -> opar E cpar #gen ;
 
 F -> opar TYPE cpar F #gen ;
 #gen {
+    -- TODO: check type for cast
     F^type = TYPE^type;
 }
 
@@ -548,7 +582,7 @@ global LTYPES args_types;
         match (i) {
             case INFOFUN {
                 INFOFUN info = i;
-                -- check arguments types
+                -- TODO: check arguments types
                 F^type = info.getType().getReturnType();
             }
             default {

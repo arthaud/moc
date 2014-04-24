@@ -11,8 +11,28 @@ public class TBOOL implements TTYPE {
         return size;
     }
 
-    public boolean compareTo(TTYPE other) {
-        return false; /* TODO */
+    public boolean constructFrom(TTYPE other) {
+        return other instanceof TBOOL;
+    }
+
+    public boolean comparableWith(TTYPE other, String op) {
+        return (op.equals("==") || op.equals("!=")) && other instanceof TBOOL;
+    }
+
+    public boolean binaryUsable(TTYPE other, String op) {
+        return (op.equals("||") || op.equals("&&")) && other instanceof TBOOL;
+    }
+
+    public boolean unaryUsable(String op) {
+        return op.equals("!");
+    }
+
+    public boolean testable() {
+        return true;
+    }
+
+    public boolean equals(TTYPE other) {
+        return other instanceof TBOOL;
     }
 
     public String toString() {

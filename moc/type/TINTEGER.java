@@ -11,8 +11,28 @@ public class TINTEGER implements TTYPE {
         return size;
     }
 
-    public boolean compareTo(TTYPE other) {
-        return false; /* TODO */
+    public boolean constructFrom(TTYPE other) {
+        return other instanceof TINTEGER;
+    }
+
+    public boolean comparableWith(TTYPE other, String op) {
+        return other instanceof TINTEGER;
+    }
+
+    public boolean binaryUsable(TTYPE other, String op) {
+        return !op.equals("&&") && !op.equals("||") && other instanceof TINTEGER;
+    }
+
+    public boolean unaryUsable(String op) {
+        return op.equals("+") || op.equals("-");
+    }
+
+    public boolean testable() {
+        return false;
+    }
+
+    public boolean equals(TTYPE other) {
+        return other instanceof TINTEGER;
     }
 
     public String toString() {

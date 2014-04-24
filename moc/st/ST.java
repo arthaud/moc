@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import moc.type.TFUNCTION;
+
 /**
  * A hierarchical symbols table
  */
@@ -14,6 +16,11 @@ public class ST extends HashMap<String, INFO> {
      * The mother ST
      */
     private ST mother;
+
+    /**
+     * The current function
+     */
+    private TFUNCTION currentFunction;
 
     /**
      * Constructor for a symbols table without mother
@@ -28,6 +35,7 @@ public class ST extends HashMap<String, INFO> {
     public ST(ST p) {
         super();
         mother = p;
+        currentFunction = null;
     }
 
     public ST getMother() {
@@ -59,6 +67,18 @@ public class ST extends HashMap<String, INFO> {
      */
     public void insert(String n, INFO i) {
         put(n, i);
+    }
+
+    public void setCurrentFunction(TFUNCTION function) {
+        currentFunction = function;
+    }
+
+    public TFUNCTION getCurrentFunction() {
+        if (currentFunction == null && mother != null) {
+            return mother.getCurrentFunction();
+        }
+
+        return currentFunction;
     }
 
     public String toString() {

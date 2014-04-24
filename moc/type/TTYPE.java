@@ -7,9 +7,31 @@ public interface TTYPE {
     public int getSize();
 
     /**
-     * Compatibility function with another type
+     * Returns true if we can do "a = b" with b of type other
      */
-    public boolean compareTo(TTYPE other);
+    public boolean constructFrom(TTYPE other);
+
+    /**
+     * Returns true if we can compare the two types
+     */
+    public boolean comparableWith(TTYPE other, String op);
+
+    /**
+     * Returns true if we can use the binary op
+     */
+    public boolean binaryUsable(TTYPE other, String op);
+
+    /**
+     * Returns true if we can use the unary op
+     */
+    public boolean unaryUsable(String op);
+
+    /**
+     * Returns true if we can test the type, with if(..)
+     */
+    public boolean testable();
+
+    public boolean equals(TTYPE other);
 
     public String toString();
 }

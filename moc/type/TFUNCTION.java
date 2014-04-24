@@ -27,8 +27,28 @@ public class TFUNCTION implements TTYPE {
         return parameterTypes;
     }
 
-    public boolean compareTo(TTYPE other) {
-        return false; /* TODO */
+    public boolean constructFrom(TTYPE other) {
+        return false;
+    }
+
+    public boolean comparableWith(TTYPE other, String op) {
+        return false;
+    }
+
+    public boolean binaryUsable(TTYPE other, String op) {
+        return false;
+    }
+
+    public boolean unaryUsable(String op) {
+        return false;
+    }
+
+    public boolean testable() {
+        return false;
+    }
+
+    public boolean equals(TTYPE other) {
+        return false; // no need
     }
 
     public String toString() {
