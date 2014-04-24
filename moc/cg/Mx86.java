@@ -7,6 +7,10 @@ import moc.type.TFUNCTION;
  * The TAM machine and its generation functions
  */
 public class Mx86 extends AbstractMachine {
+    
+    public static final String[] registerNames = {
+        "eax", "ebx", "ecx", "edx", "esi", "edi"
+    };
 
     @Override
     public String getSuffix() {
@@ -26,7 +30,7 @@ public class Mx86 extends AbstractMachine {
     }
 
     public int getPointerSize() {
-        return 1;
+        return 4;
     }
 
     public class X86ParametersLocator implements ParametersLocator {
@@ -48,7 +52,8 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genFunction(TFUNCTION function, Code code) {
-        return null;
+        code.prependAsm(function.getName() + ":");
+        return code;
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
@@ -56,23 +61,44 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genReturn(Code returnVal) {
-        return null;
+        if(! returnVal.resultRegisterName().equals("eax")) {
+            returnVal.appendAsm("mov eax " + returnVal.resultRegisterName());
+        }
+        return returnVal;
     }
 
     public Code includeAsm(String asmCode) {
-        return null;
+        return new x86Code(asmCode);
     }
 
     public Code genAffectation(Code address, Code affectedVal) {
-        return null;
+        address.appendAsm("mov [" + address.resultRegisterName() + "] " + affectedVal.resultRegisterName());
+        return address;
     }
 
     public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
-        return null;
+        switch(operator) {
+            case "+":
+                leftOperand.appendAsm("add " + leftOperand.resultRegisterName() + " " + rightOperand.resultRegisterName());
+                break;
+            case "-":
+                leftOperand.appendAsm("sub " + leftOperand.resultRegisterName() + " " + rightOperand.resultRegisterName());
+                break;
+            default:
+                throw new RuntimeException("Unknown operator.");
+        }
+        return leftOperand;
     }
 
     public Code genUnary(Code operand, String operator) {
-        return null;
+        switch(operator) {
+            case "-":
+                operand.append("neg " + operand.resultRegisterName());
+                break;
+            default:
+                throw new RuntimeException("Unknown operator.");
+        }
+        return operand;
     }
 
     public Code genCast(TTYPE type, Code castedCode) {
@@ -80,6 +106,8 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genCall(String ident, Code arguments) {
-        return null;
+        arguments.appendAsm("call " + ident);
+        arguments.setResultRegister(0);
+        return arguments;
     }
 }
