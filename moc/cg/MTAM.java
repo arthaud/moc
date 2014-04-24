@@ -29,6 +29,24 @@ public class MTAM extends AbstractMachine {
         return 1;
     }
 
+    public class TamParametersLocator implements ParametersLocator {
+        private int offset;
+
+        public TamParametersLocator() {
+            offset = -1;
+        }
+
+        public Location generate(TTYPE param) {
+            int res = offset;
+            offset -= param.getSize();
+            return new Location(Location.LocationType.STACKFRAME, res);
+        }
+    }
+
+    public ParametersLocator getParametersLocator() {
+        return new TamParametersLocator();
+    }
+
     public Code genFunction(TFUNCTION function, Code code) {
         return null;
     }

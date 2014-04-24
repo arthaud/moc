@@ -38,6 +38,12 @@ public interface IMachine {
 
     String genComment(String comm);
 
+    ParametersLocator getParametersLocator();
+
+    /**
+     * Size of basic types
+     */
+
     int getIntSize();
 
     int getCharSize();

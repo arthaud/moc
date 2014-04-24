@@ -33,7 +33,8 @@ syn type : TTYPE for
          TYPE, FUNC_PARAMETER, STYPE, REFS,
          E, EX, A, AX, R, RX, T, TX, F;
 inh htype : TTYPE for REFS, EX, AX, RX, TX;
-syn name : STRING for OPREL, OPADD, OPMUL, OPUN;
+syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
+inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 
 -- these attributes allow to get inline assembly
 syn asm_code : STRING for ASM;
@@ -148,8 +149,15 @@ FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC ;
 global LTYPES param_types;
 
 #trans {
+    -- symbols table for parameters
+    ST st = new ST(FUNCTION^st);
+    FUNC_PARAMETERS^st = st;
+    BLOC^st = st;
+
+    -- management of parameters
     param_types = new LTYPES();
     FUNC_PARAMETERS^types = param_types;
+    FUNC_PARAMETERS^locator = FUNCTION^machine.getParametersLocator();
 }
 
 #st {
@@ -169,20 +177,50 @@ FUNC_PARAMETERS -> ;
 
 FUNC_PARAMETERS -> FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
 #trans {
-    FUNC_PARAMETERS^types.add(FUNC_PARAMETER^type);
+    STRING param_name = FUNC_PARAMETER^name;
+    TTYPE param_type = FUNC_PARAMETER^type;
+
+    FUNC_PARAMETERS^types.add(param_type);
     FUNC_PARAMETERSX^types = FUNC_PARAMETERS^types;
+
+    -- useless, there is no other arguments for now
+    INFO i = FUNC_PARAMETERS^st.localSearch(param_name);
+
+    if (i != null) {
+        error(PARAM_exists, param_name);
+    }
+    else {
+        Location loc = FUNC_PARAMETERS^locator.generate(param_type);
+        INFOVAR info = new INFOVAR(param_type, loc);
+        FUNC_PARAMETERS^st.insert(param_name, info);
+    }
 }
 
 FUNC_PARAMETERSX -> ;
 FUNC_PARAMETERSX -> comma FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
 #trans {
-    FUNC_PARAMETERSX^types.add(FUNC_PARAMETER^type);
+    STRING param_name = FUNC_PARAMETER^name;
+    TTYPE param_type = FUNC_PARAMETER^type;
+
+    FUNC_PARAMETERSX^types.add(param_type);
     FUNC_PARAMETERSX1^types = FUNC_PARAMETERSX^types;
+
+    INFO i = FUNC_PARAMETERSX^st.localSearch(param_name);
+
+    if (i != null) {
+        error(PARAM_exists, param_name);
+    }
+    else {
+        Location loc = FUNC_PARAMETERSX^locator.generate(param_type);
+        INFOVAR info = new INFOVAR(param_type, loc);
+        FUNC_PARAMETERSX^st.insert(param_name, info);
+    }
 }
 
 FUNC_PARAMETER -> TYPE ident #type ;
 #type {
     FUNC_PARAMETER^type = TYPE^type;
+    FUNC_PARAMETER^name = ident^txt;
 }
 
 -- base types and pointers
