@@ -3,6 +3,11 @@ package moc.cg;
 public class x86Code extends Code {
     protected int resultRegister = -1;
 
+    public x86Code(String asm, int resultRegister) {
+        this.asm = asm;
+        this.resultRegister = resultRegister;
+    }
+
     public int getResultRegister()
     {
         return resultRegister;

@@ -60,23 +60,32 @@ public class Mx86 extends AbstractMachine {
         return null;
     }
 
-    public Code genReturn(Code returnVal) {
+    public Code genReturn(Code returnVal_) {
+        x86Code returnVal = (x86Code) returnVal_;
+
         if(! returnVal.resultRegisterName().equals("eax")) {
             returnVal.appendAsm("mov eax " + returnVal.resultRegisterName());
         }
+
         return returnVal;
     }
 
     public Code includeAsm(String asmCode) {
-        return new x86Code(asmCode);
+        return new Code(asmCode);
     }
 
-    public Code genAffectation(Code address, Code affectedVal) {
+    public Code genAffectation(Code address_, Code affectedVal_) {
+        x86Code address = (x86Code) address_;
+        x86Code affectedVal = (x86Code) affectedVal_;
+
         address.appendAsm("mov [" + address.resultRegisterName() + "] " + affectedVal.resultRegisterName());
         return address;
     }
 
-    public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
+    public Code genBinary(Code leftOperand_, Code rightOperand_, String operator) {
+        x86Code leftOperand = (x86Code) leftOperand_;
+        x86Code rightOperand = (x86Code) rightOperand_;
+
         switch(operator) {
             case "+":
                 leftOperand.appendAsm("add " + leftOperand.resultRegisterName() + " " + rightOperand.resultRegisterName());
@@ -87,17 +96,21 @@ public class Mx86 extends AbstractMachine {
             default:
                 throw new RuntimeException("Unknown operator.");
         }
+
         return leftOperand;
     }
 
-    public Code genUnary(Code operand, String operator) {
+    public Code genUnary(Code operand_, String operator) {
+        x86Code operand = (x86Code) operand_;
+
         switch(operator) {
             case "-":
-                operand.append("neg " + operand.resultRegisterName());
+                operand.appendAsm("neg " + operand.resultRegisterName());
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
         }
+
         return operand;
     }
 
@@ -105,7 +118,9 @@ public class Mx86 extends AbstractMachine {
         return null;
     }
 
-    public Code genCall(String ident, Code arguments) {
+    public Code genCall(String ident, Code arguments_) {
+        x86Code arguments = (x86Code) arguments_;
+
         arguments.appendAsm("call " + ident);
         arguments.setResultRegister(0);
         return arguments;
