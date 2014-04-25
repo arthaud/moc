@@ -43,6 +43,10 @@ public class TFUNCTION implements TTYPE {
         return false;
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return false;
+    }
+
     public boolean testable() {
         return false;
     }

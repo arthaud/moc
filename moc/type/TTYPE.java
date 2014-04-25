@@ -27,6 +27,11 @@ public interface TTYPE {
     public boolean unaryUsable(String op);
 
     /**
+     * Returns true if we can cast to the type other
+     */
+    public boolean isCastableTo(TTYPE other);
+
+    /**
      * Returns true if we can test the type, with if(..)
      */
     public boolean testable();

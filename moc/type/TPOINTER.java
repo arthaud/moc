@@ -48,6 +48,11 @@ public class TPOINTER implements TTYPE {
         return false;
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return other instanceof TINTEGER
+            || other instanceof TPOINTER;
+    }
+
     public boolean testable() {
         return false;
     }

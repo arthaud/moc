@@ -23,6 +23,10 @@ public class TNULL implements TTYPE {
         return false;
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return false; // we never need to cast null
+    }
+
     public boolean testable() {
         return false;
     }

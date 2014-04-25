@@ -562,7 +562,13 @@ F -> opar E cpar #gen ;
 
 F -> opar TYPE cpar F #gen ;
 #gen {
-    -- TODO: check type for cast
+    if (F1^type.equals(TYPE^type)) {
+        warning(TYPE_cast_useless, TYPE^type.toString(), TYPE^type.toString());
+    }
+    elseif (!F1^type.isCastableTo(TYPE^type)) {
+        error(TYPE_uncastable, F1^type, TYPE^type);
+    }
+
     F^type = TYPE^type;
 }
 

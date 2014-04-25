@@ -27,6 +27,12 @@ public class TBOOL implements TTYPE {
         return op.equals("!");
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return other instanceof TBOOL
+            || other instanceof TINTEGER
+            || other instanceof TCHAR;
+    }
+
     public boolean testable() {
         return true;
     }

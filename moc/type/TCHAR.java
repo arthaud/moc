@@ -27,6 +27,12 @@ public class TCHAR implements TTYPE {
         return false;
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return other instanceof TCHAR
+            || other instanceof TBOOL
+            || other instanceof TINTEGER;
+    }
+
     public boolean testable() {
         return false;
     }

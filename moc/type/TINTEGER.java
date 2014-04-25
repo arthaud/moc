@@ -27,6 +27,12 @@ public class TINTEGER implements TTYPE {
         return op.equals("+") || op.equals("-");
     }
 
+    public boolean isCastableTo(TTYPE other) {
+        return other instanceof TINTEGER
+            || other instanceof TBOOL
+            || other instanceof TCHAR;
+    }
+
     public boolean testable() {
         return false;
     }
