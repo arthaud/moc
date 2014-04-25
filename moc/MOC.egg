@@ -39,10 +39,6 @@ inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
 
--- these attributes allow to get inline assembly
-syn asm_code : STRING for ASM;
-inh asm_st : ST for ASM;
-
 space separator  is  "[\r\n\t ]+" ;
 space comm       is  "\/\/[^\n]*\n" ;
 sugar opar       is  "\(" ;
@@ -100,9 +96,6 @@ term ident       is  "[a-z][_0-9A-Za-z]*" ;
 --term class_ident is  "[A-Z][_0-9A-Za-z]*" ; -- class name
 --term stringo     is  "@\"[^\"]*\"" ; -- MOC string
 
--- for inline assembly
-compil ASM;
-
 
 PROGRAM -> #init ENTITIES #gen ;
 global
@@ -136,15 +129,7 @@ global
 }
 
 ENTITIES -> ;
-ENTITIES -> asm #st ASM ENTITIES #gen ;
-#st {
-    ASM^asm_st = ENTITIES^st;
-}
-
-#gen {
-    -- ASM^asm_code contains the inline assembly
-}
-
+ENTITIES -> asm opar string cpar ENTITIES ;
 ENTITIES -> FUNCTION ENTITIES ;
 
 -- functions
@@ -339,15 +324,7 @@ INST -> return E semicolon #gen ;
 }
 
 -- inline asm
-INST -> asm #st ASM #gen ;
-#st {
-    ASM^asm_st = INST^st;
-}
-
-#gen {
-    -- ASM^code_asm contains the inline assembly in which variable
-    -- names have been replaced by their addresses
-}
+INST -> asm opar string cpar ;
 
 -- expressions
 -----------------------------------------------------------------------

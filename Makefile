@@ -1,7 +1,6 @@
 #--------------------------------------------------------
 # the grammar
 XMOC=MOC
-XASM=ASM
 #--------------------------------------------------------
 # directories containing egg
 EJAR=eggc-6.0.0.jar
@@ -14,7 +13,6 @@ all: src att class
 
 src:
 	(cd moc ; $(JDIR)/java -jar ../$(EJAR) $(XMOC).egg)
-	(cd moc ; $(JDIR)/java -jar ../$(EJAR) $(XASM).egg)
 
 att:
 	$(JDIR)/javac -classpath $(GJAR) moc/type/*.java
