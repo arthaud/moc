@@ -39,6 +39,11 @@ public interface IMachine {
     String genComment(String comm);
 
     ParametersLocator getParametersLocator();
+    
+    /**
+     * Terminal cases, to load variable, constants...
+    */
+    Code genVariable(INFOVAR i);
 
     /**
      * Size of basic types

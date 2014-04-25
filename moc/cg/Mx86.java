@@ -85,6 +85,11 @@ public class Mx86 extends AbstractMachine {
     public Code genBinary(Code leftOperand_, Code rightOperand_, String operator) {
         x86Code leftOperand = (x86Code) leftOperand_;
         x86Code rightOperand = (x86Code) rightOperand_;
+        if(rightOperand.getResultRegister() == leftOperand.getResultRegister()) {
+            rightOperand.setResultRegister(leftOperand.getResultRegister() + 1);
+            rightOperand.appendAsm("mov " + rightOperand.resultRegisterName() + " " + leftOperand.resultRegisterName());
+        }
+        leftOperand.prependAsm(rightOperand);
 
         switch(operator) {
             case "+":
@@ -96,7 +101,7 @@ public class Mx86 extends AbstractMachine {
             default:
                 throw new RuntimeException("Unknown operator.");
         }
-
+        
         return leftOperand;
     }
 
@@ -124,5 +129,12 @@ public class Mx86 extends AbstractMachine {
         arguments.appendAsm("call " + ident);
         arguments.setResultRegister(0);
         return arguments;
+    }
+    
+    Code genVariable(INFOVAR i) {
+        assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
+        x86Code c = new x86Code("mov eax [ebx - " + i.getLocation().getOffset() + "]");
+        c.setResultRegister(0);
+        return c;
     }
 }
