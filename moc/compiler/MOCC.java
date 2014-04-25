@@ -14,27 +14,69 @@ import moc.egg.MOC;
 public class MOCC implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static void checkFile(String[] args) throws MOCException {
-        // check .moc extension
-        if (args.length == 0 || !args[0].endsWith(".moc")) {
-            throw new MOCException(Messages.getString("MOC.extError"));
+    private static void help() throws MOCException {
+        throw new MOCException(Messages.getString("MOC.help"));
+    }
+
+    private static void error(String a) throws MOCException {
+        throw new MOCException(Messages.getString("MOC.error", a));
+    }
+
+    private static void checkFile(String fileName) throws MOCException {
+        if (!fileName.endsWith(".moc")) {
+            error(Messages.getString("MOC.ext_error"));
         }
+    }
+
+    private static MOCSourceFile parseArguments(String[] args) throws MOCException {
+        String fileName = null;
+        String machine = null;
+        int verbosity = 0;
+
+        for (int i = 0; i < args.length; i++) {
+            String opt = args[i];
+            if(opt.equals("-h") || opt.equals("--help")) { /* -h, --help */
+                help();
+            }
+            else if(opt.equals("-m") || opt.equals("--machine")) { /* -m, --machine */
+                if(i + 1 < args.length) {
+                    i++;
+                    machine = args[i];
+                }
+                else {
+                    error(Messages.getString("MOC.machine_error", opt));
+                }
+            }
+            else if(opt.startsWith("-v")) { /* -v */
+                verbosity = opt.length() - 1;
+            }
+            else if(fileName == null) { /* FILE.moc */
+                checkFile(opt);
+                fileName = opt;
+            }
+            else {
+                error(Messages.getString("MOC.unknown_option", opt));
+            }
+        }
+
+        if(fileName == null) {
+            error(Messages.getString("MOC.file_error"));
+        }
+
+        return new MOCSourceFile(fileName, machine, verbosity);
     }
 
     public static void main(String[] args) {
         try {
-            // At least the name of the source file is needed
-            checkFile(args);
-
             // Create the source
-            ISourceUnit cu = new MOCSourceFile(args);
+            MOCSourceFile cu = parseArguments(args);
 
             // Error management
             ProblemReporter prp = new ProblemReporter(cu);
             ProblemRequestor prq = new ProblemRequestor();
 
             // Start compilation
-            System.err.println("Compiling " + cu.getFileName());
+            System.out.println(Messages.getString("MOC.compiling", cu.getFileName(), cu.getMachine().getName()));
             MOC compilo = new MOC(prp);
             prq.beginReporting();
 
@@ -47,7 +89,6 @@ public class MOCC implements Serializable {
                 prq.acceptProblem(problem);
 
             prq.endReporting();
-            System.err.println(Messages.getString("MOC.ok"));
             System.exit(prq.getFatal());
         } catch (MOCException e) {
             // Internal errors

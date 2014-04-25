@@ -10,6 +10,11 @@ import moc.st.INFOVAR;
  */
 public interface IMachine {
     /**
+     * Machine name
+     */
+    String getName();
+
+    /**
      * Target file suffix (.tam for example)
      */
     String getSuffix();

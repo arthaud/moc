@@ -104,13 +104,7 @@ global
 
 #init {
     machine = PROGRAM^source.getMachine();
-
-    if (machine == null) {
-        error(NO_MACH, PROGRAM^source.getMachName());
-    }
-    else {
-        ENTITIES^machine = machine;
-    }
+    ENTITIES^machine = machine;
 
     st = new ST();
     ENTITIES^st = st;

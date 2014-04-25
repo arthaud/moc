@@ -8,8 +8,10 @@ import moc.st.INFOVAR;
  * The TAM machine and its generation functions
  */
 public class MTAM extends AbstractMachine {
+    public String getName() {
+        return "tam";
+    }
 
-    @Override
     public String getSuffix() {
         return "tam";
     }

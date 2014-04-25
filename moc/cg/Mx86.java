@@ -13,7 +13,10 @@ public class Mx86 extends AbstractMachine {
         "eax", "ebx", "ecx", "edx", "esi", "edi"
     };
 
-    @Override
+    public String getName() {
+        return "x86_32";
+    }
+
     public String getSuffix() {
         return "x86";
     }
