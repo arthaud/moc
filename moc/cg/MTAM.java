@@ -2,6 +2,7 @@ package moc.cg;
 
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
+import moc.st.INFOVAR;
 
 /**
  * The TAM machine and its generation functions
@@ -80,6 +81,10 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genCall(String ident, Code arguments) {
+        return null;
+    }
+    
+    public Code genVariable(INFOVAR i) {
         return null;
     }
 }

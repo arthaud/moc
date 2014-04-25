@@ -3,6 +3,7 @@ package moc.cg;
 import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
+import moc.st.INFOVAR;
 
 /**
  * This interface describes a target machine

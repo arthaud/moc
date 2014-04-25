@@ -2,6 +2,7 @@ package moc.cg;
 
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
+import moc.st.INFOVAR;
 
 /**
  * The TAM machine and its generation functions
@@ -89,7 +90,7 @@ public class Mx86 extends AbstractMachine {
             rightOperand.setResultRegister(leftOperand.getResultRegister() + 1);
             rightOperand.appendAsm("mov " + rightOperand.resultRegisterName() + " " + leftOperand.resultRegisterName());
         }
-        leftOperand.prependAsm(rightOperand);
+        leftOperand.prependAsm(rightOperand.getAsm());
 
         switch(operator) {
             case "+":
@@ -131,10 +132,9 @@ public class Mx86 extends AbstractMachine {
         return arguments;
     }
     
-    Code genVariable(INFOVAR i) {
+    public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
-        x86Code c = new x86Code("mov eax [ebx - " + i.getLocation().getOffset() + "]");
-        c.setResultRegister(0);
+        x86Code c = new x86Code("mov eax [ebx - " + i.getLocation().getOffset() + "]", 0);
         return c;
     }
 }
