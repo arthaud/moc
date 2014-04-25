@@ -36,6 +36,9 @@ inh htype : TTYPE for REFS, EX, AX, RX, TX;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 
+-- to check subprogram call
+inh function : TFUNCTION for ARGS, ARGSX;
+
 -- these attributes allow to get inline assembly
 syn asm_code : STRING for ASM;
 inh asm_st : ST for ASM;
@@ -570,9 +573,8 @@ global LTYPES args_types;
 #hgen {
     args_types = new LTYPES();
     ARGS^types = args_types;
-}
 
-#gen {
+    -- search for the function in the symbols table
     INFO i = F^st.globalSearch(ident^txt);
 
     if (i == null) {
@@ -582,7 +584,7 @@ global LTYPES args_types;
         match (i) {
             case INFOFUN {
                 INFOFUN info = i;
-                -- TODO: check arguments types
+                ARGS^function = info.getType();
                 F^type = info.getType().getReturnType();
             }
             default {
@@ -590,6 +592,9 @@ global LTYPES args_types;
             }
         }
     }
+}
+
+#gen {
 }
 
 F -> ident #gen ;
@@ -627,18 +632,50 @@ F -> mult F #gen ;
 }
 
 -- subprogram call arguments
-ARGS -> ;
+ARGS -> #gen ;
+#gen {
+    if(ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
+        error(ARGS_too_few_arguments, ARGS^function.getName());
+    }
+}
+
 ARGS -> E #trans ARGSX ;
 #trans {
     ARGS^types.add(E^type);
     ARGSX^types = ARGS^types;
+
+    if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
+        error(ARGS_too_many_arguments, ARGS^function.getName());
+    }
+    else {
+        TTYPE needed_type = ARGS^function.getParameterTypes().get(ARGS^types.size() - 1);
+        if (!needed_type.constructFrom(E^type)) {
+            error(TYPES_incompatible, needed_type, E^type);
+        }
+    }
 }
 
-ARGSX -> ;
+ARGSX -> #gen ;
+#gen {
+    if(ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
+        error(ARGS_too_few_arguments, ARGSX^function.getName());
+    }
+}
+
 ARGSX -> comma E #trans ARGSX ;
 #trans {
     ARGSX^types.add(E^type);
     ARGSX1^types = ARGSX^types;
+
+    if(ARGSX^types.size() > ARGSX^function.getParameterTypes().size()) {
+        error(ARGS_too_many_arguments, ARGSX^function.getName());
+    }
+    else {
+        TTYPE needed_type = ARGSX^function.getParameterTypes().get(ARGSX^types.size() - 1);
+        if (!needed_type.constructFrom(E^type)) {
+            error(TYPES_incompatible, needed_type, E^type);
+        }
+    }
 }
 
 ----============ MOC extension =================
