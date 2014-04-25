@@ -3,6 +3,7 @@ package moc.cg;
 import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
+import moc.st.INFOVAR;
 
 /**
  * This interface describes a target machine
@@ -39,6 +40,11 @@ public interface IMachine {
     String genComment(String comm);
 
     ParametersLocator getParametersLocator();
+    
+    /**
+     * Terminal cases, to load variable, constants...
+    */
+    Code genVariable(INFOVAR i);
 
     /**
      * Size of basic types
