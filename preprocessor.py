@@ -1,29 +1,65 @@
+#!/usr/bin/env python3
 import sys
+import os
 
-def main():
-    try:
-        source_file = sys.argv[1]
-        destination_file = sys.argv[2]
-    except IndexError:
-        print("Usage: %s source_file destination_file" % sys.argv[0], file=sys.stderr)
-        return
+class Preprocessor:
+    def __init__(self, src, dest, include_dirs, debug=False):
+        self.src = src
+        self.dest = dest
+        self.include_dirs = include_dirs
+        self.debug = debug
 
-    destination = open(destination_file, 'w')
+    def run(self):
+        with open(self.dest, 'w') as self.destination:
+            self.included = []
+            self.include(self.src)
 
-    for line in open(source_file, 'r'):
-        if line.strip().startswith('#'):
-            line = line.strip()
-            if line.startswith('#include'):
-                filename = ' '.join(line.split(' ')[1:])
-                destination.write('// FILE INCLUDED: %s\n' % filename)
-                destination.write(open(filename).read())
-                destination.write('// END FILE INCLUDED: %s\n' % filename)
-            else:
-                print("Unknown preprocessor directive : " % line, file=sys.stderr)
-        else:
-            destination.write(line)
+    def include(self, path):
+        try:
+            with open(path, 'r') as f:
+                self.included.append(os.path.abspath(path))
+                line_number = 0
 
-    destination.close()
+                for line in f.readlines():
+                    if line.strip().startswith('#'):
+                        line = line.strip()
+                        if line.startswith('#include'):
+                            filename = ' '.join(line.split(' ')[1:])
+                            include_paths = list(filter(os.path.isfile, map(lambda s: os.path.join(s, filename), self.include_dirs)))
+
+                            if not include_paths:
+                                print('error: Cannot find included file "%s"' % filename, file=sys.stderr)
+                                exit(1)
+
+                            include_path = include_paths[0]
+                            if os.path.abspath(include_path) in self.included:
+                                print('warning: File %s already included, ignoring' % filename)
+                            else:
+                                self.destination.write('// FILE INCLUDED: %s\n' % filename)
+                                self.include(include_path)
+                                self.destination.write('// END FILE INCLUDED: %s\n' % filename)
+                        else:
+                            print('error: Unknown preprocessor directive "%s"' % line, file=sys.stderr)
+                            exit(1)
+                    elif self.debug:
+                        self.destination.write(line.rstrip('\r\n') + '// %s:%s\n' % (path, line_number))
+                    else:
+                        self.destination.write(line)
+
+                    line_number += 1
+        except FileNotFoundError as e:
+            print(e, file=sys.stderr)
+            exit(1)
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Prepocessor for the Micro Objective-C language')
+    parser.add_argument('-d', '--debug', action='store_const', const=True, default=False, help='Add comments on each line with original file and line')
+    parser.add_argument('-I', default='.', help='The list of directories to be searched for include files, separated by colon')
+    parser.add_argument('src', metavar='SRC', type=str, help='The source file')
+    parser.add_argument('dest', metavar='DEST', type=str, help='The destination file')
+    args = parser.parse_args()
+
+    include_dirs = list(filter(None, args.I.split(':')))
+    Preprocessor(args.src, args.dest, include_dirs, args.debug).run()
