@@ -42,7 +42,12 @@ public interface IMachine {
 
     Code genCall(String ident, Code arguments);
 
+    //initialise une variable non affectée 
+    Code genDecl(TTYPE type);
+
     String genComment(String comm);
+
+    Code genAcces(TTYPE pointed_type);
 
     ParametersLocator getParametersLocator();
     
@@ -50,6 +55,16 @@ public interface IMachine {
      * Terminal cases, to load variable, constants...
     */
     Code genVariable(INFOVAR i);
+
+    Code genInt(String cst);
+
+    Code genString(String txt);
+
+    Code genNull();
+
+    Code genBool(int b);
+
+    Code genChar(String c);
 
     /**
      * Size of basic types

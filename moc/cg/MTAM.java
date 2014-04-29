@@ -55,7 +55,26 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
-        return null;
+        int num = getLabelNum();
+        String st;
+        boolean hasElse= falseBloc.getAsm().equals("");
+
+        Code retCode = new Code(condition.getAsm());
+        if(hasElse)
+            st = "JUMPIF 0 ELSEBLOC_" + num;
+        else
+            st = "JUMPIF 0 END_COND_" + num;
+
+        retCode.appendAsm(st);
+        retCode.appendAsm( trueBloc.getAsm() );
+        if(hasElse){
+            retCode.appendAsm("JUMP END_COND_" + num + ":"); 
+            retCode.appendAsm("ELSEBLOC_" + num + ":");
+            retCode.appendAsm(falseBloc.getAsm());
+        }
+        retCode.appendAsm("END_COND_" + num + ":"); 
+        
+        return retCode;
     }
 
     public Code genReturn(Code returnVal) {
@@ -63,7 +82,7 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code includeAsm(String asmCode) {
-        return null;
+        return new Code(asmCode);
     }
 
     public Code genAffectation(Code address, Code affectedVal) {
@@ -85,8 +104,44 @@ public class MTAM extends AbstractMachine {
     public Code genCall(String ident, Code arguments) {
         return null;
     }
-    
+
+    public Code genDecl(TTYPE type) {
+        return null;
+    }
+
+    public Code genAcces(TTYPE pointed_type){
+        return null;
+    }
+
     public Code genVariable(INFOVAR i) {
         return null;
     }
+    public Code genInt(String cst){
+        return null;
+    }
+
+    public Code genString(String txt){
+        return null;
+    }
+
+    public Code genNull(){
+        return null;
+    }
+
+    public Code genBool(int b){
+        return null;
+    }
+
+    public Code genChar(String c){
+        return null;
+    }
+
+
+    private int labelNum = 0 ;
+
+    private int getLabelNum(){
+        labelNum ++ ;
+        return labelNum -1 ;
+    }
+
 }

@@ -134,10 +134,37 @@ public class Mx86 extends AbstractMachine {
         arguments.setResultRegister(0);
         return arguments;
     }
+
+    public Code genDecl(TTYPE type) {
+        return null;
+    }
+
+    public Code genAcces(TTYPE pointed_type){
+        return null;
+    }
     
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         x86Code c = new x86Code("mov eax [ebx - " + i.getLocation().getOffset() + "]", 0);
         return c;
+    }
+    public Code genInt(String cst){
+        return null;
+    }
+
+    public Code genString(String txt){
+        return null;
+    }
+
+    public Code genNull(){
+        return null;
+    }
+
+    public Code genBool(int b){
+        return null;
+    }
+
+    public Code genChar(String c){
+        return null;
     }
 }

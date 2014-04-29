@@ -8,7 +8,7 @@ option k = 2;
 
 inh source : MOCSourceFile for
          PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
-         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F
 --       -- TODO: MOC
 --       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
@@ -16,14 +16,14 @@ inh source : MOCSourceFile for
 inh machine : IMachine for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
-         TYPE, STYPE, REFS,
+         TYPE, STYPE, REFS, AFF,
          E, EX, A, AX, R, RX, T, TX, F
 --       -- TODO: MOC
 --       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
          ;
 inh st : ST for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
-         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F
 --       -- TODO: MOC
 --       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
@@ -32,9 +32,20 @@ inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
          TYPE, FUNC_PARAMETER, STYPE, REFS,
          E, EX, A, AX, R, RX, T, TX, F;
-inh htype : TTYPE for REFS, EX, AX, RX, TX;
+inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
+
+syn code : Code for 
+         PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+          ARGS, ARGSX, AFF,
+         E, EX, A, AX, R, RX, T, TX, F
+         -- TODO: MOC
+        ;
+inh hcode : Code for 
+        EX, AX, RX, TX , ARGSX
+         -- TODO: MOC
+        ;
 
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
@@ -118,16 +129,32 @@ global
         write("###########################\n");
     }
 
+    PROGRAM^code = ENTITIES^code;
     -- write in a file
     machine.writeCode(PROGRAM^source.getFileName(), "; no code\n");
 }
 
-ENTITIES -> ;
-ENTITIES -> asm opar string cpar ENTITIES ;
-ENTITIES -> FUNCTION ENTITIES ;
+ENTITIES ->#gen ;
+#gen { 
+    ENTITIES^code = new Code("");
+}
+ENTITIES -> asm opar string cpar ENTITIES #gen ;
+#gen { 
+    Code entCode = new Code(string^txt);
+    entCode.appendAsm(ENTITIES1^code.getAsm());
+    ENTITIES^code = entCode;
+}
+
+ENTITIES -> FUNCTION ENTITIES #gen;
+#gen { 
+    Code entCode = new Code( FUNCTION^code.getAsm());
+    entCode.appendAsm(ENTITIES1^code.getAsm());
+    ENTITIES^code = entCode;
+}
+
 
 -- functions
-FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC ;
+FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC #gen;
 global LTYPES param_types;
 
 #trans {
@@ -155,6 +182,9 @@ global LTYPES param_types;
     }
 }
 
+#gen {
+    FUNCTION^code = FUNCTION^machine.genFunction(FUNCTION^st.getCurrentFunction(), BLOC^code);
+}
 -- functions parameters
 FUNC_PARAMETERS -> ;
 
@@ -261,6 +291,8 @@ global ST st;
 }
 
 #gen {
+
+    BLOC^code = INSTS^code;
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {
         write("### symbols table ###\n");
@@ -270,13 +302,25 @@ global ST st;
 }
 
 -- instructions
-INSTS -> ;
-INSTS -> INST INSTS ;
+INSTS ->#gen ;
+#gen { 
+    INSTS^code = new Code("");
+}
+    
+
+INSTS -> INST INSTS #gen ;
+#gen { 
+    Code c =INST^code ;
+    c.appendAsm(INSTS1^code.getAsm());
+    INSTS^code = c;
+}
+
 
 -- local variable declaration with or without initialization
-INST -> TYPE ident #trans EX semicolon #gen ;
+INST -> TYPE ident #trans AFF semicolon #gen ;
 #trans {
-    EX^htype = TYPE^type;
+    AFF^htype = TYPE^type;
+    
 }
 
 #gen {
@@ -288,25 +332,59 @@ INST -> TYPE ident #trans EX semicolon #gen ;
     else {
         INFOVAR info = new INFOVAR(TYPE^type, null);
         INST^st.insert(ident^txt, info);
+        INST^code = AFF^code;
     }
 }
 
+AFF -> affect A #gen ;
+#gen {
+    if (!AFF^htype.constructFrom(A^type)) {
+        error(TYPES_incompatible, AFF^htype, A^type);
+    }
+
+    AFF^code =A^code;
+}
+
+AFF -> #gen ;
+#gen {
+    AFF^code = AFF^machine.genDecl(AFF^htype);
+}
+
+
+
 -- expression instruction (affectation and procedure call)
-INST -> E semicolon ;
+INST -> E semicolon #gen ;
+#gen{
+    INST^code = E^code;
+}
 
 -- instruction block
-INST -> BLOC ;
+INST -> BLOC #gen ;
+#gen{
+    INST^code = BLOC^code;
+}
 
 -- conditional
-INST -> if opar E cpar #type BLOC ELSE ;
+INST -> if opar E cpar #type BLOC ELSE #gen;
 #type {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
     }
 }
+#gen{
+    INST^code =INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
+}
 
-ELSE -> else BLOC ;
-ELSE -> ;
+ELSE -> else BLOC #gen;
+#gen{
+    ELSE^code = BLOC^code;
+}
+
+ELSE ->  #gen;
+#gen{
+    ELSE^code =new Code("");
+}
+
 
 -- function return
 INST -> return E semicolon #gen ;
@@ -315,11 +393,15 @@ INST -> return E semicolon #gen ;
     if (!return_type.constructFrom(E^type)) {
         error(TYPES_incompatible, return_type, E^type);
     }
+
+    INST^code = INST^machine.genReturn(E^code);
 }
 
 -- inline asm
-INST -> asm opar string cpar ;
-
+INST -> asm opar string cpar  #gen ;
+#gen {
+    INST^code = new Code(string^txt);
+}
 -- expressions
 -----------------------------------------------------------------------
 -- E = expression (including affectation)
@@ -333,10 +415,12 @@ INST -> asm opar string cpar ;
 E -> A #trans EX #gen ;
 #trans {
     EX^htype = A^type;
+    EX^hcode = A^code;
 }
 
 #gen {
     E^type = EX^type;
+    E^code = EX^code;
 }
 
 EX -> affect A #gen ;
@@ -346,21 +430,28 @@ EX -> affect A #gen ;
     }
 
     EX^type = A^type;
+    EX^code = EX^machine.genAffectation(EX^hcode,A^code);
+
 }
 
 EX -> #gen ;
 #gen {
     EX^type = EX^htype;
+    EX^code = EX^hcode;
 }
 
 -- relation
 A -> R #trans AX #gen ;
 #trans {
     AX^htype = R^type;
+    AX^hcode = R^code;
+
 }
 
 #gen {
     A^type = AX^type;
+    A^code = AX^code;
+
 }
 
 AX -> OPREL R #gen ;
@@ -370,11 +461,13 @@ AX -> OPREL R #gen ;
     }
 
     AX^type = new TBOOL(AX^machine.getBoolSize());
+    AX^code = AX^machine.genBinary( AX^hcode,R^code,OPREL^name);
 }
 
 AX -> #gen ;
 #gen {
     AX^type = AX^htype;
+    AX^code = AX^hcode;
 }
 
 -- relation operators
@@ -400,10 +493,12 @@ OPREL -> neq #name ;
 R -> T #trans RX #gen ;
 #trans {
     RX^htype = T^type;
+    RX^hcode = T^code;
 }
 
 #gen {
     R^type = RX^type;
+    R^code = RX^code;
 }
 
 RX -> OPADD T #trans RX #gen ;
@@ -413,15 +508,20 @@ RX -> OPADD T #trans RX #gen ;
     }
 
     RX1^htype = RX^htype;
+    RX1^hcode = RX^machine.genBinary( RX^hcode,T^code,OPADD^name);
+
 }
 
 #gen {
     RX^type = RX1^type;
+    RX^code = RX1^code;
+
 }
 
 RX -> #gen ;
 #gen {
     RX^type = RX^htype;
+    RX^code = RX^hcode;
 }
 
 -- addition operators
@@ -438,10 +538,12 @@ OPADD -> or #name ;
 T -> F #trans TX #gen ;
 #trans {
     TX^htype = F^type;
+    TX^hcode = F^code;
 }
 
 #gen {
     T^type = TX^type;
+    T^code = TX^code;
 }
 
 TX -> OPMUL F #trans TX #gen ;
@@ -451,15 +553,19 @@ TX -> OPMUL F #trans TX #gen ;
     }
 
     TX1^htype = TX^htype;
+    TX1^hcode = TX^machine.genBinary( TX^hcode,F^code,OPMUL^name);
+
 }
 
 #gen {
     TX^type = TX1^type;
+    TX^code = TX1^code;
 }
 
 TX -> #gen ;
 #gen {
     TX^type = TX^htype;
+    TX^code = TX^hcode;
 }
 
 -- multiplication operators
@@ -479,31 +585,37 @@ OPMUL -> and #name ;
 F -> integer #gen ;
 #gen {
     F^type = new TINTEGER(F^machine.getIntSize());
+    F^code = F^machine.genInt(integer^txt);
 }
 
 F -> string #gen ;
 #gen {
     F^type = new TPOINTER(new TCHAR(F^machine.getCharSize()), F^machine.getPointerSize());
+    F^code = F^machine.genString(string^txt);
 }
 
 F -> character #gen ;
 #gen {
     F^type = new TCHAR(F^machine.getCharSize());
+    F^code = F^machine.genChar(character^txt);
 }
 
 F -> null #gen ;
 #gen {
     F^type = new TNULL();
+    F^code = F^machine.genNull();
 }
 
 F -> true #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
+    F^code = F^machine.genBool(1);
 }
 
 F -> false #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
+    F^code = F^machine.genBool(0);
 }
 
 F -> OPUN F #gen ;
@@ -513,6 +625,7 @@ F -> OPUN F #gen ;
     }
 
     F^type = F1^type;
+    F^code = F^machine.genUnary(F1^code,OPUN^name);
 }
 
 -- unary expressions
@@ -529,6 +642,7 @@ OPUN -> not #name ;
 F -> opar E cpar #gen ;
 #gen {
     F^type = E^type;
+    F^code = E^code;
 }
 
 F -> opar TYPE cpar F #gen ;
@@ -541,6 +655,7 @@ F -> opar TYPE cpar F #gen ;
     }
 
     F^type = TYPE^type;
+    F^code = F^machine.genCast(TYPE^type, F1^code);
 }
 
 -- subprogram call
@@ -572,6 +687,7 @@ global LTYPES args_types;
 }
 
 #gen {
+    F^code = F^machine.genCall(ident^txt, ARGS^code);
 }
 
 F -> ident #gen ;
@@ -586,6 +702,8 @@ F -> ident #gen ;
             case INFOVAR {
                 INFOVAR info = i;
                 F^type = info.getType();
+
+                F^code = F^machine.genVariable(info);
             }
             default {
                 error(INFO_not_var, ident^txt);
@@ -601,6 +719,7 @@ F -> mult F #gen ;
         case TPOINTER {
             TPOINTER p = F1^type;
             F^type = p.getType();
+            F^code = F^machine.genAcces(p.getType());
         }
         default {
             error(TYPE_not_pointer, F1^type);
@@ -614,12 +733,14 @@ ARGS -> #gen ;
     if(ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGS^function.getName());
     }
+    ARGS^code = new Code("");
 }
 
-ARGS -> E #trans ARGSX ;
+ARGS -> E #trans ARGSX #gen;
 #trans {
     ARGS^types.add(E^type);
     ARGSX^types = ARGS^types;
+    ARGSX^hcode = E^code;
 
     if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGS^function.getName());
@@ -630,6 +751,11 @@ ARGS -> E #trans ARGSX ;
             error(TYPES_incompatible, needed_type, E^type);
         }
     }
+
+}
+
+#gen{
+    ARGS^code =ARGSX^code;
 }
 
 ARGSX -> #gen ;
@@ -637,9 +763,10 @@ ARGSX -> #gen ;
     if(ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGSX^function.getName());
     }
+    ARGSX^code= ARGSX^hcode;
 }
 
-ARGSX -> comma E #trans ARGSX ;
+ARGSX -> comma E #trans ARGSX #gen ;
 #trans {
     ARGSX^types.add(E^type);
     ARGSX1^types = ARGSX^types;
@@ -653,6 +780,14 @@ ARGSX -> comma E #trans ARGSX ;
             error(TYPES_incompatible, needed_type, E^type);
         }
     }
+
+    Code c = ARGSX^hcode;
+    c.appendAsm(E^code.getAsm());
+    ARGSX1^hcode = c;    
+}
+
+#gen{
+    ARGSX^code =ARGSX1^code;
 }
 
 ----============ MOC extension =================
