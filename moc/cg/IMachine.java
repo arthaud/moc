@@ -28,7 +28,7 @@ public interface IMachine {
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
-    Code genReturn(Code returnVal);
+    Code genReturn(Code returnVal, TFUNCTION fun);
 
     Code includeAsm(String asmCode);
 
@@ -42,14 +42,19 @@ public interface IMachine {
 
     Code genCall(String ident, Code arguments);
 
-    //initialise une variable non affectée 
+    //declare a null variable  
     Code genDecl(TTYPE type);
 
     String genComment(String comm);
 
     Code genAcces(TTYPE pointed_type);
 
+    //removes local variables after instCode 
+    Code genBloc(Code instsCode , VariableLocator vloc);
+
     ParametersLocator getParametersLocator();
+
+    VariableLocator getVariableLocator();
     
     /**
      * Terminal cases, to load variable, constants...

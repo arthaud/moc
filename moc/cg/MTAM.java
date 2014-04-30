@@ -50,8 +50,40 @@ public class MTAM extends AbstractMachine {
         return new TamParametersLocator();
     }
 
+    public class TamVariableLocator implements VariableLocator {
+        private int offset;
+        private int localOffset;
+
+        public TamVariableLocator(int offset) {
+            this.offset = offset;
+            localOffset = 0;
+        }
+
+        public Location generate(TTYPE param) {
+            int res = offset;
+            offset += param.getSize();
+            localOffset += param.getSize();
+            
+            return new Location(Location.LocationType.STACKFRAME, res);
+        }
+
+        public int getLocalOffset(){
+            return localOffset;
+        }
+
+        public VariableLocator getSon(){
+            return new TamVariableLocator(offset);
+        }
+
+    }
+
+    public VariableLocator getVariableLocator() {
+        return new TamVariableLocator(3);
+    }
+
     public Code genFunction(TFUNCTION function, Code code) {
-        return null;
+        code.prependAsm("_" + function.getName() + ":");
+        return code;
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
@@ -77,8 +109,12 @@ public class MTAM extends AbstractMachine {
         return retCode;
     }
 
-    public Code genReturn(Code returnVal) {
-        return null;
+    public Code genReturn(Code returnVal, TFUNCTION fun) {
+        int retsize = fun.getReturnType().getSize();
+        int paramsize = fun.getParameterTypes().getSize();
+        Code retCode = new Code("RETURN (" + paramsize + ") " + paramsize );
+        retCode.prependAsm(returnVal.getAsm());
+        return retCode;
     }
 
     public Code includeAsm(String asmCode) {
@@ -102,6 +138,8 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genCall(String ident, Code arguments) {
+        Code c = arguments;
+        c.appendAsm("CALL _" + ident);
         return null;
     }
 
@@ -113,9 +151,18 @@ public class MTAM extends AbstractMachine {
         return null;
     }
 
+    public Code genBloc(Code c, VariableLocator vloc){
+        TamVariableLocator vl = (TamVariableLocator) vloc;
+        String st= "POP (0) " +vl.getLocalOffset();
+        Code ret = c;
+        ret.appendAsm(st);
+        return ret;
+    }
+
     public Code genVariable(INFOVAR i) {
         return null;
     }
+
     public Code genInt(String cst){
         return null;
     }

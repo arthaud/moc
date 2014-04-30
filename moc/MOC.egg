@@ -35,6 +35,7 @@ syn type : TTYPE for
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
+inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for 
          PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
@@ -162,6 +163,9 @@ global LTYPES param_types;
     ST st = new ST(FUNCTION^st);
     FUNC_PARAMETERS^st = st;
     BLOC^st = st;
+
+    -- variable locator
+    BLOC^vlocator = FUNCTION^machine.getVariableLocator();
 
     -- management of parameters
     param_types = new LTYPES();
@@ -292,7 +296,7 @@ global ST st;
 
 #gen {
 
-    BLOC^code = INSTS^code;
+    BLOC^code = BLOC^machine.genBloc(INSTS^code,BLOC^vlocator);
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {
         write("### symbols table ###\n");
@@ -330,7 +334,7 @@ INST -> TYPE ident #trans AFF semicolon #gen ;
         error(VAR_exists, ident^txt);
     }
     else {
-        INFOVAR info = new INFOVAR(TYPE^type, null);
+        INFOVAR info = new INFOVAR(TYPE^type, INST^vlocator.generate(TYPE^type));
         INST^st.insert(ident^txt, info);
         INST^code = AFF^code;
     }
@@ -359,18 +363,28 @@ INST -> E semicolon #gen ;
 }
 
 -- instruction block
-INST -> BLOC #gen ;
+INST -> #trans BLOC #gen ;
+#trans{
+    BLOC^vlocator = INST^vlocator.getSon();
+}
+
 #gen{
     INST^code = BLOC^code;
 }
 
 -- conditional
-INST -> if opar E cpar #type BLOC ELSE #gen;
+INST -> if opar E cpar #type #trans BLOC ELSE #gen;
 #type {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
     }
 }
+
+#trans {
+    BLOC^vlocator = INST^vlocator.getSon();
+    ELSE^vlocator = INST^vlocator.getSon();
+}
+
 #gen{
     INST^code =INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
 }
@@ -394,7 +408,7 @@ INST -> return E semicolon #gen ;
         error(TYPES_incompatible, return_type, E^type);
     }
 
-    INST^code = INST^machine.genReturn(E^code);
+    INST^code = INST^machine.genReturn(E^code,INST^st.getCurrentFunction());
 }
 
 -- inline asm
