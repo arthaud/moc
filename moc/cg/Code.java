@@ -4,6 +4,14 @@ public class Code {
     protected String asm;
     protected int address;
     protected boolean isAddress;
+    protected int typeSize;
+
+     public void setTypeSize(int s){
+        typeSize= s;
+    }
+    public int getTypeSize(){
+        return typeSize;
+    }
 
     public void setAddress(int add){
         address= add;

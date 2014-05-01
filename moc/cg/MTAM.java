@@ -124,7 +124,7 @@ public class MTAM extends AbstractMachine {
     public Code genAffectation(Code address, Code affectedVal,TTYPE type) {
         if ( ! address.getIsAddress() && address.getAddress()==0)
             return new Code(";Affectation error: left operand has no address");
-        Code retCode= affectedVal;
+        Code retCode= genVal(affectedVal);
         if(address.getAddress()!=0){
             retCode.appendAsm("STORE ("+ type.getSize()+ ") "+ address.getAddress() +"[LB]");
         }else{
@@ -135,11 +135,70 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
-        return null;
+        Code res=genVal(leftOperand);
+        res.appendAsm(genVal(rightOperand).getAsm());
+        String op;
+        switch(operator){
+        case "+":
+            op="SUBR IAdd";
+            break;
+        case "-":
+            op="SUBR ISub";
+            break;
+        case "<":
+            op="SUBR ILss";
+            break;
+        case ">":
+            op="SUBR IGtr";
+            break;
+        case "<=":
+            op="SUBR ILeq";
+            break;
+        case ">=":
+            op="SUBR IGeq";
+            break;
+        case "==":
+            op="SUBR IEq";
+            break;
+        case "!=":
+            op="SUBR INeq";
+            break;
+        case "||":
+            op="SUBR BOr";
+            break;
+        case "&&":
+            op="SUBR BAnd";
+            break;
+        case "*":
+            op="SUBR IMul";
+            break;
+        case "/":
+            op="SUBR IDiv";
+            break;
+        case "%":
+            op="SUBR IMod";
+            break;
+        default:
+            throw new RuntimeException("Unknown operator.");
+        }
+        res.appendAsm(op);
+        return res;
     }
 
     public Code genUnary(Code operand, String operator) {
-        return null;
+        switch(operator){
+        case "+":
+            break;
+        case "-":
+            operand.appendAsm("SUBR INeg");
+            break;
+        case "!":
+            operand.appendAsm("SUBR BNeg");
+            break;
+        default:
+            throw new RuntimeException("Unknown operator.");
+        }
+        return operand;
     }
 
     public Code genCast(TTYPE type, Code castedCode) {
@@ -153,11 +212,17 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genDecl(TTYPE type) {
-        return new Code("PUSH (0) " + type.getSize() );
+        return new Code("PUSH " + type.getSize() );
     }
-
+    /** the generated code puts the address of the pointed var on the top of the stack */
     public Code genAcces(Code pointerCode, TTYPE pointed_type){
-        return null;
+        if (pointerCode.getIsAddress()){
+            pointerCode.appendAsm("LOADI "+pointed_type.getSize());
+        }
+        pointerCode.setIsAddress(true);
+        pointerCode.setAddress(0);
+        pointerCode.setTypeSize(pointed_type.getSize());
+        return pointerCode;
     }
 
     public Code genBloc(Code c, VariableLocator vloc){
@@ -174,9 +239,10 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genVariable(INFOVAR i) {
-        Code retCode=new Code("LOAD "+i.getSize() +" " + i.getLocation().getOffset());
+        Code retCode=new Code("LOAD ("+i.getSize() +") " + i.getLocation().getOffset()+ "[LB]");
         retCode.setIsAddress(false);
         retCode.setAddress(i.getLocation().getOffset());
+        retCode.setTypeSize(i.getSize());
         return retCode;
     }
 
@@ -192,7 +258,7 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genNull(){
-        return null;
+        return new Code("LOADL 0");
     }
 
     public Code genBool(int b){
@@ -213,5 +279,17 @@ public class MTAM extends AbstractMachine {
         labelNum ++ ;
         return labelNum -1 ;
     }
-
+    /**
+        ensures the Code gives a value
+    */
+    private Code genVal(Code operand){
+        if(! operand.getIsAddress())
+            return operand;
+        if(operand.getAddress()==0){
+            operand.appendAsm("LOADI ("+ operand.getTypeSize() + ")");
+        }else{
+            operand.appendAsm("LOAD ("+ operand.getTypeSize() + ") " +operand.getAddress()+"[LB]");
+        }
+        return operand;
+    }
 }
