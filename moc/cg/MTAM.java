@@ -1,6 +1,7 @@
 package moc.cg;
 
 import moc.type.TTYPE;
+import moc.type.TVOID;
 import moc.type.TFUNCTION;
 import moc.st.INFOVAR;
 
@@ -83,24 +84,27 @@ public class MTAM extends AbstractMachine {
 
     public Code genFunction(TFUNCTION function, Code code) {
         code.prependAsm("_" + function.getName() + ":");
+        if (function.getReturnType() instanceof TVOID){
+            code.appendAsm("RETURN ("+function.getParameterTypes().getSize()+") 0");
+        }
         return code;
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
         int num = getLabelNum();
         String st;
-        boolean hasElse= falseBloc.getAsm().equals("");
+        boolean hasElse= !falseBloc.getAsm().equals("");
 
         Code retCode = new Code(condition.getAsm());
         if(hasElse)
-            st = "JUMPIF 0 ELSEBLOC_" + num;
+            st = "JUMPIF (0) ELSEBLOC_" + num;
         else
-            st = "JUMPIF 0 END_COND_" + num;
+            st = "JUMPIF (0) END_COND_" + num;
 
         retCode.appendAsm(st);
         retCode.appendAsm( trueBloc.getAsm() );
         if(hasElse){
-            retCode.appendAsm("JUMP END_COND_" + num + ":"); 
+            retCode.appendAsm("JUMP END_COND_" + num ); 
             retCode.appendAsm("ELSEBLOC_" + num + ":");
             retCode.appendAsm(falseBloc.getAsm());
         }
@@ -112,13 +116,9 @@ public class MTAM extends AbstractMachine {
     public Code genReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
-        Code retCode = new Code("RETURN (" + paramsize + ") " + paramsize );
+        Code retCode = new Code("RETURN (" + paramsize + ") " + retsize );
         retCode.prependAsm(returnVal.getAsm());
         return retCode;
-    }
-
-    public Code includeAsm(String asmCode) {
-        return new Code(asmCode);
     }
 
     public Code genAffectation(Code address, Code affectedVal,TTYPE type) {
@@ -162,7 +162,12 @@ public class MTAM extends AbstractMachine {
 
     public Code genBloc(Code c, VariableLocator vloc){
         TamVariableLocator vl = (TamVariableLocator) vloc;
-        String st= "POP (0) " +vl.getLocalOffset();
+        String st;
+        if (vl.getLocalOffset()==0){
+            st = ";no locals to POP";
+        }else{
+            st= "POP (0) " +vl.getLocalOffset() + ";removing local variables";
+        }
         Code ret = c;
         ret.appendAsm(st);
         return ret;

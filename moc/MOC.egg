@@ -140,7 +140,7 @@ ENTITIES ->#gen ;
 }
 ENTITIES -> asm opar string cpar ENTITIES #gen ;
 #gen { 
-    Code entCode = new Code(string^txt);
+    Code entCode = ENTITIES^machine.includeAsm(string^txt);
     entCode.appendAsm(ENTITIES1^code.getAsm());
     ENTITIES^code = entCode;
 }

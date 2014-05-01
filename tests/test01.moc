@@ -1,0 +1,24 @@
+asm ("
+    CALL (LB) _main
+    HALT
+")
+
+int set100(int i){
+    return 100;
+}
+
+void main(){
+    int a= 42;
+    if (true) {
+        a=43;
+        int b= 111;
+    }
+
+    if (false){
+        int b = 112;
+        a=54;
+    }else{
+        a=72;
+    }
+    a=set100(1);
+}

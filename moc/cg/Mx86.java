@@ -102,10 +102,6 @@ public class Mx86 extends AbstractMachine {
         return returnVal;
     }
 
-    public Code includeAsm(String asmCode) {
-        return new Code(asmCode);
-    }
-
     public Code genAffectation(Code address_, Code affectedVal_, TTYPE type) {
         x86Code address = (x86Code) address_;
         x86Code affectedVal = (x86Code) affectedVal_;
