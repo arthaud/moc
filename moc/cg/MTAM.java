@@ -121,8 +121,17 @@ public class MTAM extends AbstractMachine {
         return new Code(asmCode);
     }
 
-    public Code genAffectation(Code address, Code affectedVal) {
-        return null;
+    public Code genAffectation(Code address, Code affectedVal,TTYPE type) {
+        if ( ! address.getIsAddress() && address.getAddress()==0)
+            return new Code(";Affectation error: left operand has no address");
+        Code retCode= affectedVal;
+        if(address.getAddress()!=0){
+            retCode.appendAsm("STORE ("+ type.getSize()+ ") "+ address.getAddress() +"[LB]");
+        }else{
+            retCode.appendAsm(address.getAsm());
+            retCode.appendAsm("STOREI (" +type.getSize() + ")" );
+        }
+        return retCode;
     }
 
     public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
@@ -139,15 +148,15 @@ public class MTAM extends AbstractMachine {
 
     public Code genCall(String ident, Code arguments) {
         Code c = arguments;
-        c.appendAsm("CALL _" + ident);
-        return null;
+        c.appendAsm("CALL (LB) _" + ident);
+        return c;
     }
 
     public Code genDecl(TTYPE type) {
-        return null;
+        return new Code("PUSH (0) " + type.getSize() );
     }
 
-    public Code genAcces(TTYPE pointed_type){
+    public Code genAcces(Code pointerCode, TTYPE pointed_type){
         return null;
     }
 
@@ -160,11 +169,17 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genVariable(INFOVAR i) {
-        return null;
+        Code retCode=new Code("LOAD "+i.getSize() +" " + i.getLocation().getOffset());
+        retCode.setIsAddress(false);
+        retCode.setAddress(i.getLocation().getOffset());
+        return retCode;
     }
 
     public Code genInt(String cst){
-        return null;
+        Code retCode= new Code("LOADL "+ cst );
+        retCode.setIsAddress(false);
+        retCode.setAddress(0);
+        return retCode;
     }
 
     public Code genString(String txt){
@@ -176,7 +191,10 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genBool(int b){
-        return null;
+        Code retCode= new Code("LOADL "+ b );
+        retCode.setIsAddress(false);
+        retCode.setAddress(0);
+        return retCode;
     }
 
     public Code genChar(String c){

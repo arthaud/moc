@@ -32,7 +32,7 @@ public interface IMachine {
 
     Code includeAsm(String asmCode);
 
-    Code genAffectation(Code address, Code affectedVal);
+    Code genAffectation(Code address, Code affectedVal, TTYPE type);
 
     Code genBinary(Code leftOperand, Code rightOperand, String operator);
 
@@ -47,7 +47,7 @@ public interface IMachine {
 
     String genComment(String comm);
 
-    Code genAcces(TTYPE pointed_type);
+    Code genAcces(Code pointerCode,TTYPE pointedType);
 
     //removes local variables after instCode 
     Code genBloc(Code instsCode , VariableLocator vloc);

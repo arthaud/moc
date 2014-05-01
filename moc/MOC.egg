@@ -38,7 +38,7 @@ inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for 
-         PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
           ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F
          -- TODO: MOC
@@ -130,9 +130,8 @@ global
         write("###########################\n");
     }
 
-    PROGRAM^code = ENTITIES^code;
     -- write in a file
-    machine.writeCode(PROGRAM^source.getFileName(), "; no code\n");
+    machine.writeCode(PROGRAM^source.getFileName(), ENTITIES^code.getAsm());
 }
 
 ENTITIES ->#gen ;
@@ -444,7 +443,7 @@ EX -> affect A #gen ;
     }
 
     EX^type = A^type;
-    EX^code = EX^machine.genAffectation(EX^hcode,A^code);
+    EX^code = EX^machine.genAffectation(EX^hcode,A^code,A^type);
 
 }
 
@@ -733,7 +732,7 @@ F -> mult F #gen ;
         case TPOINTER {
             TPOINTER p = F1^type;
             F^type = p.getType();
-            F^code = F^machine.genAcces(p.getType());
+            F^code = F^machine.genAcces(F1^code,p.getType());
         }
         default {
             error(TYPE_not_pointer, F1^type);
