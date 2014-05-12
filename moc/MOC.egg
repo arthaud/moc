@@ -413,7 +413,7 @@ INST -> return E semicolon #gen ;
 -- inline asm
 INST -> asm opar string cpar  #gen ;
 #gen {
-    INST^code = new Code(string^txt);
+    INST^code = INST^machine.includeAsm(string^txt);
 }
 -- expressions
 -----------------------------------------------------------------------
