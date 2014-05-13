@@ -41,7 +41,7 @@ public class TPOINTER implements TTYPE {
     }
 
     public boolean binaryUsable(TTYPE other, String op) {
-        return false;
+        return !op.equals("&&") && !op.equals("||") && other instanceof TINTEGER;
     }
 
     public boolean unaryUsable(String op) {
