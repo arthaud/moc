@@ -20,7 +20,8 @@ public class TINTEGER implements TTYPE {
     }
 
     public boolean binaryUsable(TTYPE other, String op) {
-        return !op.equals("&&") && !op.equals("||") && other instanceof TINTEGER;
+        return !op.equals("&&") && !op.equals("||")
+            && (other instanceof TINTEGER || other instanceof TPOINTER);
     }
 
     public boolean unaryUsable(String op) {
@@ -30,7 +31,8 @@ public class TINTEGER implements TTYPE {
     public boolean isCastableTo(TTYPE other) {
         return other instanceof TINTEGER
             || other instanceof TBOOL
-            || other instanceof TCHAR;
+            || other instanceof TCHAR
+            || other instanceof TPOINTER;
     }
 
     public boolean testable() {

@@ -12,7 +12,7 @@ void * malloc(int i) {
     asm("
     SUBR MAlloc 1
     RETURN (1) 1
-    ")
+    ");
 }
 
 void main() {

@@ -408,7 +408,7 @@ INST -> return E semicolon #gen ;
 }
 
 -- inline asm
-INST -> asm opar string cpar #gen ;
+INST -> asm opar string cpar semicolon #gen ;
 #gen {
     INST^code = INST^machine.includeAsm(string^txt);
 }

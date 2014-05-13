@@ -10,7 +10,7 @@ int * malloc(int size) {
         LOAD %size      ; access parameter size
         SUBR Malloc     ; allocation
         RETURN (1) 1
-    ")
+    ");
 }
 
 // inline assembly inside a function
@@ -25,7 +25,7 @@ void log(char *message, int value) {
         SUBR IOUT
         SUBR LN
         RETURN (2) 0
-    ")
+    ");
 }
 
 // one class to rule them all
