@@ -32,10 +32,10 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     public String genComment(String comm) {
-        return "; " + comm +"\n";
+        return "; " + comm + "\n";
     }
 
     public Code includeAsm(String asmCode) {
-        return new Code(asmCode.substring(1,asmCode.length()-1));//remove the ""
+        return new Code(asmCode.substring(1, asmCode.length() - 1)); // remove the ""
     }
 }

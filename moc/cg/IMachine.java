@@ -47,10 +47,10 @@ public interface IMachine {
 
     String genComment(String comm);
 
-    Code genAcces(Code pointerCode,TTYPE pointedType);
+    Code genAcces(Code pointerCode, TTYPE pointedType);
 
     //removes local variables after instCode 
-    Code genBloc(Code instsCode , VariableLocator vloc);
+    Code genBloc(Code instsCode, VariableLocator vloc);
 
     ParametersLocator getParametersLocator();
 

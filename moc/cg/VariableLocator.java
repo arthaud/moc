@@ -5,5 +5,5 @@ import moc.type.TTYPE;
 public interface VariableLocator {
     Location generate(TTYPE param);
 
-    VariableLocator getSon();
+    VariableLocator getChild();
 }

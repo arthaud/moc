@@ -6,35 +6,14 @@ public class Code {
     protected boolean isAddress;
     protected int typeSize;
 
-     public void setTypeSize(int s){
-        typeSize= s;
-    }
-    public int getTypeSize(){
-        return typeSize;
-    }
-
-    public void setAddress(int add){
-        address= add;
-    }
-    public int getAddress(){
-        return address;
-    }
-
-    public void setIsAddress(boolean isa){
-        isAddress=isa;
-    }
-
-    public boolean getIsAddress(){
-        return isAddress;
-    }
     public Code() {
         this(null);
     }
 
     public Code(String asm) {
         this.asm = asm;
-        address= 0;
-        isAddress=false;
+        address = 0;
+        isAddress = false;
     }
 
     public String getAsm() {
@@ -54,8 +33,27 @@ public class Code {
         this.asm = asm;
     }
 
-    public void writeC(){
-        System.out.println("debut");
-        System.out.println(asm);
+    public void setTypeSize(int s) {
+        typeSize = s;
+    }
+
+    public int getTypeSize() {
+        return typeSize;
+    }
+
+    public void setAddress(int add) {
+        address = add;
+    }
+
+    public int getAddress() {
+        return address;
+    }
+
+    public void setIsAddress(boolean isa) {
+        isAddress = isa;
+    }
+
+    public boolean getIsAddress() {
+        return isAddress;
     }
 }

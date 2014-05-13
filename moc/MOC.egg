@@ -39,7 +39,7 @@ inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for 
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
-          ARGS, ARGSX, AFF,
+         ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F
          -- TODO: MOC
         ;
@@ -135,26 +135,27 @@ global
 }
 
 ENTITIES ->#gen ;
-#gen { 
+#gen {
     ENTITIES^code = new Code("");
 }
+
 ENTITIES -> asm opar string cpar ENTITIES #gen ;
-#gen { 
+#gen {
     Code entCode = ENTITIES^machine.includeAsm(string^txt);
     entCode.appendAsm(ENTITIES1^code.getAsm());
     ENTITIES^code = entCode;
 }
 
-ENTITIES -> FUNCTION ENTITIES #gen;
-#gen { 
-    Code entCode = new Code( FUNCTION^code.getAsm());
+ENTITIES -> FUNCTION ENTITIES #gen ;
+#gen {
+    Code entCode = new Code(FUNCTION^code.getAsm());
     entCode.appendAsm(ENTITIES1^code.getAsm());
     ENTITIES^code = entCode;
 }
 
 
 -- functions
-FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC #gen;
+FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC #gen ;
 global LTYPES param_types;
 
 #trans {
@@ -188,6 +189,7 @@ global LTYPES param_types;
 #gen {
     FUNCTION^code = FUNCTION^machine.genFunction(FUNCTION^st.getCurrentFunction(), BLOC^code);
 }
+
 -- functions parameters
 FUNC_PARAMETERS -> ;
 
@@ -294,8 +296,8 @@ global ST st;
 }
 
 #gen {
+    BLOC^code = BLOC^machine.genBloc(INSTS^code, BLOC^vlocator);
 
-    BLOC^code = BLOC^machine.genBloc(INSTS^code,BLOC^vlocator);
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {
         write("### symbols table ###\n");
@@ -306,24 +308,21 @@ global ST st;
 
 -- instructions
 INSTS ->#gen ;
-#gen { 
+#gen {
     INSTS^code = new Code("");
 }
-    
 
 INSTS -> INST INSTS #gen ;
-#gen { 
-    Code c =INST^code ;
+#gen {
+    Code c = INST^code;
     c.appendAsm(INSTS1^code.getAsm());
     INSTS^code = c;
 }
-
 
 -- local variable declaration with or without initialization
 INST -> TYPE ident #trans AFF semicolon #gen ;
 #trans {
     AFF^htype = TYPE^type;
-    
 }
 
 #gen {
@@ -353,26 +352,24 @@ AFF -> #gen ;
     AFF^code = AFF^machine.genDecl(AFF^htype);
 }
 
-
-
 -- expression instruction (affectation and procedure call)
 INST -> E semicolon #gen ;
-#gen{
+#gen {
     INST^code = E^code;
 }
 
 -- instruction block
 INST -> #trans BLOC #gen ;
-#trans{
-    BLOC^vlocator = INST^vlocator.getSon();
+#trans {
+    BLOC^vlocator = INST^vlocator.getChild();
 }
 
-#gen{
+#gen {
     INST^code = BLOC^code;
 }
 
 -- conditional
-INST -> if opar E cpar #type #trans BLOC ELSE #gen;
+INST -> if opar E cpar #type #trans BLOC ELSE #gen ;
 #type {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
@@ -380,22 +377,22 @@ INST -> if opar E cpar #type #trans BLOC ELSE #gen;
 }
 
 #trans {
-    BLOC^vlocator = INST^vlocator.getSon();
-    ELSE^vlocator = INST^vlocator.getSon();
+    BLOC^vlocator = INST^vlocator.getChild();
+    ELSE^vlocator = INST^vlocator.getChild();
 }
 
-#gen{
+#gen {
     INST^code =INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
 }
 
-ELSE -> else BLOC #gen;
-#gen{
+ELSE -> else BLOC #gen ;
+#gen {
     ELSE^code = BLOC^code;
 }
 
-ELSE ->  #gen;
-#gen{
-    ELSE^code =new Code("");
+ELSE -> #gen ;
+#gen {
+    ELSE^code = new Code("");
 }
 
 
@@ -407,14 +404,15 @@ INST -> return E semicolon #gen ;
         error(TYPES_incompatible, return_type, E^type);
     }
 
-    INST^code = INST^machine.genReturn(E^code,INST^st.getCurrentFunction());
+    INST^code = INST^machine.genReturn(E^code, INST^st.getCurrentFunction());
 }
 
 -- inline asm
-INST -> asm opar string cpar  #gen ;
+INST -> asm opar string cpar #gen ;
 #gen {
     INST^code = new Code(string^txt);
 }
+
 -- expressions
 -----------------------------------------------------------------------
 -- E = expression (including affectation)
@@ -444,7 +442,6 @@ EX -> affect A #gen ;
 
     EX^type = A^type;
     EX^code = EX^machine.genAffectation(EX^hcode,A^code,A^type);
-
 }
 
 EX -> #gen ;
@@ -464,7 +461,6 @@ A -> R #trans AX #gen ;
 #gen {
     A^type = AX^type;
     A^code = AX^code;
-
 }
 
 AX -> OPREL R #gen ;
@@ -474,7 +470,7 @@ AX -> OPREL R #gen ;
     }
 
     AX^type = new TBOOL(AX^machine.getBoolSize());
-    AX^code = AX^machine.genBinary( AX^hcode,R^code,OPREL^name);
+    AX^code = AX^machine.genBinary(AX^hcode, R^code, OPREL^name);
 }
 
 AX -> #gen ;
@@ -521,14 +517,12 @@ RX -> OPADD T #trans RX #gen ;
     }
 
     RX1^htype = RX^htype;
-    RX1^hcode = RX^machine.genBinary( RX^hcode,T^code,OPADD^name);
-
+    RX1^hcode = RX^machine.genBinary(RX^hcode, T^code, OPADD^name);
 }
 
 #gen {
     RX^type = RX1^type;
     RX^code = RX1^code;
-
 }
 
 RX -> #gen ;
@@ -566,8 +560,7 @@ TX -> OPMUL F #trans TX #gen ;
     }
 
     TX1^htype = TX^htype;
-    TX1^hcode = TX^machine.genBinary( TX^hcode,F^code,OPMUL^name);
-
+    TX1^hcode = TX^machine.genBinary(TX^hcode, F^code, OPMUL^name);
 }
 
 #gen {
@@ -638,7 +631,7 @@ F -> OPUN F #gen ;
     }
 
     F^type = F1^type;
-    F^code = F^machine.genUnary(F1^code,OPUN^name);
+    F^code = F^machine.genUnary(F1^code, OPUN^name);
 }
 
 -- unary expressions
@@ -732,7 +725,7 @@ F -> mult F #gen ;
         case TPOINTER {
             TPOINTER p = F1^type;
             F^type = p.getType();
-            F^code = F^machine.genAcces(F1^code,p.getType());
+            F^code = F^machine.genAcces(F1^code, p.getType());
         }
         default {
             error(TYPE_not_pointer, F1^type);
@@ -746,6 +739,7 @@ ARGS -> #gen ;
     if(ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGS^function.getName());
     }
+
     ARGS^code = new Code("");
 }
 
@@ -764,11 +758,10 @@ ARGS -> E #trans ARGSX #gen;
             error(TYPES_incompatible, needed_type, E^type);
         }
     }
-
 }
 
-#gen{
-    ARGS^code =ARGSX^code;
+#gen {
+    ARGS^code = ARGSX^code;
 }
 
 ARGSX -> #gen ;
@@ -776,7 +769,7 @@ ARGSX -> #gen ;
     if(ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGSX^function.getName());
     }
-    ARGSX^code= ARGSX^hcode;
+    ARGSX^code = ARGSX^hcode;
 }
 
 ARGSX -> comma E #trans ARGSX #gen ;
@@ -799,8 +792,8 @@ ARGSX -> comma E #trans ARGSX #gen ;
     ARGSX1^hcode = c;    
 }
 
-#gen{
-    ARGSX^code =ARGSX1^code;
+#gen {
+    ARGSX^code = ARGSX1^code;
 }
 
 ----============ MOC extension =================
