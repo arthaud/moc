@@ -1,0 +1,34 @@
+asm ("
+    CALL (LB) _main
+    HALT
+")
+
+
+int set100i(int i){
+    return 100 + i;
+}
+void * malloc (int i){
+    asm("
+SUBR MAlloc 1
+RETURN (1) 1")
+}
+void main(){
+    int a= 42;
+    int *p =(int*) malloc(1);
+    *p = a;
+    *p = *p;
+    int **q;
+    *q =p;
+    if (true) {
+        a=43;
+        int b= 111;
+    }
+
+    if ( ! false){
+        int b = 112;
+        a=54;
+    }else{
+        a=72;
+    }
+    a=set100i(1);
+}

@@ -206,7 +206,7 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genCast(TTYPE type, Code castedCode) {
-        return null;
+        return castedCode;
     }
 
     public Code genCall(String ident, Code arguments) {
