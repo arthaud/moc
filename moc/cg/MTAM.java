@@ -280,13 +280,6 @@ public class MTAM extends AbstractMachine {
     }
 
 
-    private int labelNum = 0;
-
-    private int getLabelNum() {
-        labelNum++;
-        return labelNum -1;
-    }
-
     /**
      * Ensures the Code gives a value
      */
