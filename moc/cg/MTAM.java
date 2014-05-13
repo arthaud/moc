@@ -122,9 +122,9 @@ public class MTAM extends AbstractMachine {
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
         if (!address.getIsAddress() && address.getAddress() == 0)
-            return new Code(";Affectation error: left operand has no address");
+            return new Code(genComment("Affectation error: left operand has no address"));
 
-        Code retCode= genVal(affectedVal);
+        Code retCode = genVal(affectedVal);
         if (address.getAddress() != 0) {
             retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getAddress() + "[LB]");
         } else {
@@ -235,9 +235,9 @@ public class MTAM extends AbstractMachine {
         String st;
 
         if (vl.getLocalOffset() == 0) {
-            st = ";no locals to POP";
+            st = genComment("no locals to POP");
         } else {
-            st= "POP (0) " + vl.getLocalOffset() + ";removing local variables";
+            st = "POP (0) " + vl.getLocalOffset() + genComment("removing local variables");
         }
 
         Code ret = c;

@@ -134,7 +134,7 @@ global
     machine.writeCode(PROGRAM^source.getFileName(), ENTITIES^code.getAsm());
 }
 
-ENTITIES ->#gen ;
+ENTITIES -> #gen ;
 #gen {
     ENTITIES^code = new Code("");
 }
@@ -382,7 +382,7 @@ INST -> if opar E cpar #type #trans BLOC ELSE #gen ;
 }
 
 #gen {
-    INST^code =INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
+    INST^code = INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
 }
 
 ELSE -> else BLOC #gen ;
