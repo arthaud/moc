@@ -1,0 +1,16 @@
+int max(int a, int b) {
+    if(a > b) {
+        return a;
+    }
+    else {
+        return b;
+    }
+}
+
+void main() {
+    int x = max(1, 2);
+
+    if(x <= 3) {
+        x = x + 1;
+    }
+}

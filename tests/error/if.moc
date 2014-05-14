@@ -1,0 +1,5 @@
+void main() {
+    if('a') {
+        int x = 42;
+    }
+}

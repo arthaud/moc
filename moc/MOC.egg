@@ -307,7 +307,7 @@ global ST st;
 }
 
 -- instructions
-INSTS ->#gen ;
+INSTS -> #gen ;
 #gen {
     INSTS^code = new Code("");
 }
@@ -344,7 +344,7 @@ AFF -> affect A #gen ;
         error(TYPES_incompatible, AFF^htype, A^type);
     }
 
-    AFF^code =A^code;
+    AFF^code = A^code;
 }
 
 AFF -> #gen ;
@@ -441,7 +441,7 @@ EX -> affect A #gen ;
     }
 
     EX^type = A^type;
-    EX^code = EX^machine.genAffectation(EX^hcode,A^code,A^type);
+    EX^code = EX^machine.genAffectation(EX^hcode, A^code, A^type);
 }
 
 EX -> #gen ;

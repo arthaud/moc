@@ -1,0 +1,11 @@
+void f1(int p) {
+}
+
+int f2(int x, int y) {
+    return x * x + y * y;
+}
+
+void main() {
+    f1(1);
+    f2(1, 2);
+}

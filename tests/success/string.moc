@@ -1,0 +1,12 @@
+void print(char* str) {
+    asm("
+        LOAD %str
+        SUBR Sout
+    ");
+}
+
+void main() {
+    char* message = "Hello world";
+    *message = 'A';
+    print(message);
+}

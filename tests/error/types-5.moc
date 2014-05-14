@@ -1,0 +1,4 @@
+void main() {
+    int print = 42;
+    print("salut");
+}

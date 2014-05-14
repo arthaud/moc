@@ -1,0 +1,4 @@
+void main() {
+    int * p = NULL;
+    *p = true;
+}

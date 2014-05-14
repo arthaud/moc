@@ -1,0 +1,6 @@
+void main() {
+}
+
+int main() {
+    return 42;
+}
