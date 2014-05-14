@@ -1,7 +1,7 @@
 // inline assembly outside functions
 asm("
-    CALL (LB) _main   ; call to the entry point of the program
-    HALT              ; stop the machine
+    CALL (LB) f_main   ; call to the entry point of the program
+    HALT               ; stop the machine
 ")
 
 // inline assembly in a function

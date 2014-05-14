@@ -90,7 +90,7 @@ public class Mx86 extends AbstractMachine {
     public Code genFunction(TFUNCTION function, Code code) {
         code.prependAsm("mov ebp, esp");
         code.prependAsm("push ebp");
-        code.prependAsm(function.getName() + ":");
+        code.prependAsm("f_" + function.getName() + ":");
         code.appendAsm("mov esp, ebp");
         code.appendAsm("pop ebp");
         code.appendAsm("ret");
@@ -100,13 +100,13 @@ public class Mx86 extends AbstractMachine {
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
         int num_cond = getLabelNum();
         String st;
-        falseBloc.appendAsm("jmp _cond_end_" + num_cond);
-        trueBloc.prependAsm("_cond_then_" + num_cond + ":");
-        trueBloc.appendAsm("_cond_end_" + num_cond + ":");
+        falseBloc.appendAsm("jmp cond_end_" + num_cond);
+        trueBloc.prependAsm("cond_then_" + num_cond + ":");
+        trueBloc.appendAsm("cond_end_" + num_cond + ":");
 
         x86Code c = (x86Code) condition;
         c.appendAsm("test " + c.resultRegisterName() + ", " + c.resultRegisterName());
-        c.appendAsm("jeq _cond_then_" + num_cond);
+        c.appendAsm("jeq cond_then_" + num_cond);
         c.appendAsm(falseBloc.getAsm());
         c.appendAsm(trueBloc.getAsm());
         return c;
@@ -116,7 +116,7 @@ public class Mx86 extends AbstractMachine {
         x86Code returnVal = (x86Code) returnVal_;
 
         if(!returnVal.resultRegisterName().equals("eax")) {
-            returnVal.appendAsm("mov eax " + returnVal.resultRegisterName());
+            returnVal.appendAsm("mov eax, " + returnVal.resultRegisterName());
         }
 
         return returnVal;
@@ -141,16 +141,16 @@ public class Mx86 extends AbstractMachine {
         x86Code rightOperand = (x86Code) rightOperand_;
         if(rightOperand.getResultRegister() == leftOperand.getResultRegister()) {
             rightOperand.setResultRegister(leftOperand.getResultRegister() + 1);
-            rightOperand.appendAsm("mov " + rightOperand.resultRegisterName() + " " + leftOperand.resultRegisterName());
+            rightOperand.appendAsm("mov " + rightOperand.resultRegisterName() + ", " + leftOperand.resultRegisterName());
         }
         leftOperand.prependAsm(rightOperand.getAsm());
 
         switch(operator) {
             case "+":
-                leftOperand.appendAsm("add " + leftOperand.resultRegisterName() + " " + rightOperand.resultRegisterName());
+                leftOperand.appendAsm("add " + leftOperand.resultRegisterName() + ", " + rightOperand.resultRegisterName());
                 break;
             case "-":
-                leftOperand.appendAsm("sub " + leftOperand.resultRegisterName() + " " + rightOperand.resultRegisterName());
+                leftOperand.appendAsm("sub " + leftOperand.resultRegisterName() + ", " + rightOperand.resultRegisterName());
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
@@ -180,7 +180,7 @@ public class Mx86 extends AbstractMachine {
     public Code genCall(String ident, Code arguments_) {
         x86Code arguments = (x86Code) arguments_;
 
-        arguments.appendAsm("call " + ident);
+        arguments.appendAsm("call f_" + ident);
         arguments.setResultRegister(0);
         return arguments;
     }
@@ -206,7 +206,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
-        x86Code c = new x86Code("lea eax [ebp - " + i.getLocation().getOffset() + "]", 0);
+        x86Code c = new x86Code("lea eax, [ebp - " + i.getLocation().getOffset() + "]", 0);
         return c;
     }
 

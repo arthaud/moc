@@ -85,7 +85,7 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genFunction(TFUNCTION function, Code code) {
-        code.prependAsm("_" + function.getName() + ":");
+        code.prependAsm("f_" + function.getName() + ":");
         if (function.getReturnType() instanceof TVOID) {
             code.appendAsm("RETURN (" + function.getParameterTypes().getSize() + ") 0");
         }
@@ -99,18 +99,18 @@ public class MTAM extends AbstractMachine {
 
         Code retCode = new Code(condition.getAsm());
         if(hasElse)
-            st = "JUMPIF (0) ELSEBLOC_" + num;
+            st = "JUMPIF (0) else_" + num;
         else
-            st = "JUMPIF (0) END_COND_" + num;
+            st = "JUMPIF (0) end_" + num;
 
         retCode.appendAsm(st);
         retCode.appendAsm(trueBloc.getAsm());
         if(hasElse) {
-            retCode.appendAsm("JUMP END_COND_" + num ); 
-            retCode.appendAsm("ELSEBLOC_" + num + ":");
+            retCode.appendAsm("JUMP end_" + num );
+            retCode.appendAsm("else_" + num + ":");
             retCode.appendAsm(falseBloc.getAsm());
         }
-        retCode.appendAsm("END_COND_" + num + ":"); 
+        retCode.appendAsm("end_" + num + ":");
         
         return retCode;
     }
@@ -214,7 +214,7 @@ public class MTAM extends AbstractMachine {
 
     public Code genCall(String ident, Code arguments) {
         Code c = arguments;
-        c.appendAsm("CALL (LB) _" + ident);
+        c.appendAsm("CALL (LB) f_" + ident);
         return c;
     }
 

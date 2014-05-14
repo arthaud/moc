@@ -1,5 +1,5 @@
 asm("
-    CALL (LB) _main
+    CALL (LB) f_main
     HALT
 ")
 
@@ -7,7 +7,7 @@ asm("
 void print(char* str) {
     asm("
         LOAD (1) -1[LB] ; load str
-        _loop:
+        print_loop:
         LOAD (1) 3[LB]
         LOADI (1)
         SUBR Cout
@@ -19,7 +19,7 @@ void print(char* str) {
         LOADI (1)
         LOADL 0
         SUBR IEq
-        JUMPIF (0) _loop
+        JUMPIF (0) print_loop
     ");
 }
 
