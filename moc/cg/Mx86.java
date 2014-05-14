@@ -72,7 +72,7 @@ public class Mx86 extends AbstractMachine {
 
             return new Location(Location.LocationType.STACKFRAME, res);
         }
-        
+
         public int getLocalOffset() {
             return localOffset;
         }
@@ -103,7 +103,7 @@ public class Mx86 extends AbstractMachine {
         falseBloc.appendAsm("jmp _cond_end_" + num_cond);
         trueBloc.prependAsm("_cond_then_" + num_cond + ":");
         trueBloc.appendAsm("_cond_end_" + num_cond + ":");
-        
+
         x86Code c = (x86Code) condition;
         c.appendAsm("test " + c.resultRegisterName() + ", " + c.resultRegisterName());
         c.appendAsm("jeq _cond_then_" + num_cond);
@@ -125,7 +125,7 @@ public class Mx86 extends AbstractMachine {
     public Code genAffectation(Code address_, Code affectedVal_, TTYPE type) {
         x86Code address = (x86Code) address_;
         x86Code affectedVal = (x86Code) affectedVal_;
-        
+
         if(address.getResultRegister() == affectedVal.getResultRegister()) {
             address.setResultRegister(affectedVal.getResultRegister() + 1);
             address.appendAsm("mov " + address.resultRegisterName() + ", " + affectedVal.resultRegisterName());
@@ -155,7 +155,7 @@ public class Mx86 extends AbstractMachine {
             default:
                 throw new RuntimeException("Unknown operator.");
         }
-        
+
         return leftOperand;
     }
 
@@ -189,13 +189,13 @@ public class Mx86 extends AbstractMachine {
         return new x86Code("sub esp, " + type.getSize());
     }
 
-    public Code genAcces(Code pointerCode, TTYPE pointedType){
+    public Code genAcces(Code pointerCode, TTYPE pointedType) {
         x86Code c = (x86Code) pointerCode;
         pointerCode.appendAsm("mov " + c.resultRegisterName() + ", [" + c.resultRegisterName() + "]");
         return c;
     }
 
-    public Code genBloc(Code instsCode , VariableLocator vloc){
+    public Code genBloc(Code instsCode , VariableLocator vloc) {
         X86VariableLocator vl = (X86VariableLocator) vloc;
         if(vl.getLocalOffset() != 0)
         {
@@ -203,12 +203,13 @@ public class Mx86 extends AbstractMachine {
         }
         return instsCode;
     }
-    
+
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         x86Code c = new x86Code("lea eax [ebp - " + i.getLocation().getOffset() + "]", 0);
         return c;
     }
+
     public Code genInt(String cst) {
         return new x86Code("mov eax, " + cst, 0);
     }
