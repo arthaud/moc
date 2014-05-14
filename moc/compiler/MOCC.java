@@ -73,7 +73,7 @@ public class MOCC implements Serializable {
 
             // Error management
             ProblemReporter prp = new ProblemReporter(cu);
-            ProblemRequestor prq = new ProblemRequestor(true);
+            ProblemRequestor prq = new ProblemRequestor(cu.getVerbosity() >= 1);
 
             // Start compilation
             System.out.println(Messages.getString("MOC.compiling", cu.getFileName(), cu.getMachine().getName()));
