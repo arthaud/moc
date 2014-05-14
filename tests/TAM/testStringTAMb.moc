@@ -1,3 +1,10 @@
+// FILE INCLUDED: lib_tam.moc
+asm("
+    CALL (LB) _main
+    HALT
+")
+
+
 void print(char* str) {
     asm("
         LOAD (1) -1[LB]
@@ -17,8 +24,23 @@ void print(char* str) {
     ");
 }
 
+void* malloc(int i){
+    asm("
+        LOAD (1) -1[LB]
+        SUBR MAlloc
+    ");
+}
+// END FILE INCLUDED: lib_tam.moc
+
+asm("
+    CALL (LB) _main
+    HALT
+")
+
 void main() {
-    char* message = "Hello world";
+    char* message = "Hello";
+    char* m2 = " world";
     *message = 'A';
     print(message);
+    print(m2);
 }

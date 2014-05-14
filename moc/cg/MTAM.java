@@ -9,6 +9,9 @@ import moc.st.INFOVAR;
  * The TAM machine and its generation functions
  */
 public class MTAM extends AbstractMachine {
+
+    private int initOffset=0;
+
     public String getName() {
         return "tam";
     }
@@ -261,7 +264,18 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genString(String txt) {
-        return null;
+        Code retCode = new Code("LOADL " + initOffset);
+        retCode.setIsAddress(false);//not sure
+        retCode.setAddress(0);
+
+        txt =txt.substring(1, txt.length() - 1);//remove the ""
+        for (int i = 0 ; i<txt.length(); i++){
+            initCode =initCode +"LOADL '" + txt.charAt(i) + "'\n";
+        }
+        initOffset+=txt.length() +1;
+        initCode =initCode + "LOADL 0 \n";
+        
+        return retCode;
     }
 
     public Code genNull() {
@@ -276,7 +290,11 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genChar(String c) {
-        return null;
+        Code retCode = new Code("LOADL " + c);
+        retCode.setIsAddress(false);
+        retCode.setAddress(0);
+
+        return retCode;
     }
 
 
@@ -285,12 +303,12 @@ public class MTAM extends AbstractMachine {
      */
     private Code genVal(Code operand) {
         if(!operand.getIsAddress())
-            return operand;
+            return operand;// the code is already a value: nothing to do
 
         if(operand.getAddress() == 0) {
             operand.appendAsm("LOADI (" + operand.getTypeSize() + ")");
-        } else {
-            operand.appendAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
+        } else {// the code of operand is not nedded to load the value
+            operand.setAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
         }
 
         return operand;

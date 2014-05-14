@@ -1,0 +1,14 @@
+#include lib_tam.moc
+
+asm("
+    CALL (LB) _main
+    HALT
+")
+
+void main() {
+    char* message = "Hello";
+    char* m2 = " world";
+    *message = 'A';
+    print(message);
+    print(m2);
+}
