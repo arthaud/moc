@@ -7,6 +7,11 @@ public class x86Code extends Code {
         this.asm = asm;
         this.resultRegister = resultRegister;
     }
+    
+    public x86Code(String asm) {
+        this.asm = asm;
+        this.resultRegister = -1;
+    }
 
     public int getResultRegister()
     {

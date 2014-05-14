@@ -11,6 +11,13 @@ import moc.compiler.MOCException;
  */
 public abstract class AbstractMachine implements IMachine {
 
+    protected int labelNum = 0;
+
+    protected int getLabelNum() {
+        labelNum++;
+        return labelNum -1;
+    }
+
     /**
      * Writes the code in a file from the name of the source file and the suffix
      */
