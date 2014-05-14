@@ -6,7 +6,7 @@ asm("
 //parcours la chaine passée en paramètre et affiche chaque caractère jusqu'au 0
 void print(char* str) {
     asm("
-        LOAD (1) -1[LB] ;load str
+        LOAD (1) -1[LB] ; load str
         _loop:
         LOAD (1) 3[LB]
         LOADI (1)
@@ -23,10 +23,10 @@ void print(char* str) {
     ");
 }
 
-void* malloc(int i){
+void* malloc(int i) {
     asm("
-        LOAD (1) -1[LB] ;load i
+        LOAD (1) -1[LB] ; load i
         SUBR MAlloc
-        RETURN (1) 1        
+        RETURN (1) 1
     ");
 }

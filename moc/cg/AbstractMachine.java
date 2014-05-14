@@ -15,10 +15,10 @@ public abstract class AbstractMachine implements IMachine {
 
     protected int getLabelNum() {
         labelNum++;
-        return labelNum -1;
+        return labelNum - 1;
     }
 
-    protected String initCode="";
+    protected String initCode = "";
 
     /**
      * Writes the code in a file from the name of the source file and the suffix
@@ -33,7 +33,9 @@ public abstract class AbstractMachine implements IMachine {
             System.err.println("Writing code in " + asmName);
             PrintWriter pw = new PrintWriter(new FileOutputStream(asmName));
             pw.print("; Generated code for " + fname
-                    + ".\n; Do not modify by hand\n" + initCode + code);
+                    + ".\n; Do not modify by hand\n"
+                    + initCode
+                    + code);
             pw.close();
         } catch (FileNotFoundException e) {
             throw new MOCException(e.getMessage());

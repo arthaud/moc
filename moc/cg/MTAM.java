@@ -10,7 +10,7 @@ import moc.st.INFOVAR;
  */
 public class MTAM extends AbstractMachine {
 
-    private int initOffset=0;
+    private int initOffset = 0;
 
     public String getName() {
         return "tam";
@@ -265,16 +265,17 @@ public class MTAM extends AbstractMachine {
 
     public Code genString(String txt) {
         Code retCode = new Code("LOADL " + initOffset);
-        retCode.setIsAddress(false);//not sure
+        retCode.setIsAddress(false); // not sure
         retCode.setAddress(0);
 
-        txt =txt.substring(1, txt.length() - 1);//remove the ""
-        for (int i = 0 ; i<txt.length(); i++){
-            initCode =initCode +"LOADL '" + txt.charAt(i) + "'\n";
+        txt = txt.substring(1, txt.length() - 1); // remove the ""
+        initCode += genComment(txt);
+        for (int i = 0; i < txt.length(); i++) {
+            initCode += "LOADL '" + txt.charAt(i) + "'\n";
         }
-        initOffset+=txt.length() +1;
-        initCode =initCode + "LOADL 0 \n";
-        
+        initOffset += txt.length() + 1;
+        initCode += "LOADL 0\n";
+
         return retCode;
     }
 
@@ -307,7 +308,8 @@ public class MTAM extends AbstractMachine {
 
         if(operand.getAddress() == 0) {
             operand.appendAsm("LOADI (" + operand.getTypeSize() + ")");
-        } else {// the code of operand is not nedded to load the value
+        } else {
+            // the code of operand is not needed to load the value
             operand.setAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
         }
 
