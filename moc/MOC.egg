@@ -400,6 +400,23 @@ ELSE -> #gen ;
     ELSE^code = new Code("");
 }
 
+-- loop
+INST -> while opar E cpar #type #trans BLOC  #gen ;
+
+#type {
+    if (!E^type.testable()) {
+        error(TYPE_not_bool, E^type);
+    }
+}
+
+#trans {
+    BLOC^vlocator = INST^vlocator.getChild();
+}
+
+#gen {
+    INST^code = INST^machine.genLoop(E^code, BLOC^code);
+}
+
 
 -- function return
 INST -> return E semicolon #gen ;

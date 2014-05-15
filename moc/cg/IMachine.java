@@ -29,7 +29,7 @@ public interface IMachine {
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
-    Code genConditional(Code condition, Code Bloc);
+    Code genLoop(Code condition, Code Bloc);
 
     Code genReturn(Code returnVal, TFUNCTION fun);
 
