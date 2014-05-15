@@ -8,9 +8,9 @@ int set100i(int i) {
     return 100 + i;
 }
 
-void * malloc(int i) {
+void * malloc(int size) {
     asm("
-    LOADL 1
+    LOADL %size
     SUBR MAlloc
     RETURN (1) 1
     ");

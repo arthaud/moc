@@ -84,6 +84,15 @@ public class MTAM extends AbstractMachine {
         return new TamVariableLocator(3);
     }
 
+    // converts a location to its representation in asm
+    public String genLocation(Location loc) {
+        if(loc.getType() == Location.LocationType.STACKFRAME) {
+            return loc.getOffset() + "[LB]";
+        }
+
+        return "" + loc.getOffset();
+    }
+
     public Code genFunction(TFUNCTION function, Code code) {
         code.prependAsm("f_" + function.getName() + ":");
         if (function.getReturnType() instanceof TVOID) {

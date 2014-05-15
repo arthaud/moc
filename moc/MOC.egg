@@ -141,7 +141,7 @@ ENTITIES -> #gen ;
 
 ENTITIES -> asm opar string cpar ENTITIES #gen ;
 #gen {
-    Code entCode = ENTITIES^machine.includeAsm(string^txt);
+    Code entCode = ENTITIES^machine.includeAsm(string^txt, ENTITIES^st);
     entCode.appendAsm(ENTITIES1^code.getAsm());
     ENTITIES^code = entCode;
 }
@@ -410,7 +410,7 @@ INST -> return E semicolon #gen ;
 -- inline asm
 INST -> asm opar string cpar semicolon #gen ;
 #gen {
-    INST^code = INST^machine.includeAsm(string^txt);
+    INST^code = INST^machine.includeAsm(string^txt, INST^st);
 }
 
 -- expressions

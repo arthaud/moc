@@ -87,6 +87,15 @@ public class Mx86 extends AbstractMachine {
         return new X86VariableLocator(0);
     }
 
+    // converts a location to its representation in asm
+    public String genLocation(Location loc) {
+        if(loc.getType() == Location.LocationType.REGISTER) {
+            return registerNames[loc.getOffset()];
+        }
+
+        return "" + loc.getOffset();
+    }
+
     public Code genFunction(TFUNCTION function, Code code) {
         code.prependAsm("mov ebp, esp");
         code.prependAsm("push ebp");

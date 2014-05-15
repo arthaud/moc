@@ -1,6 +1,6 @@
 void print(char* str) {
     asm("
-        LOAD (1) -1[LB]
+        LOAD (1) %str
         print_loop:
         LOAD (1) 3[LB]
         LOADI (1)
