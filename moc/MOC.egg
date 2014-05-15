@@ -63,6 +63,7 @@ sugar semicolon  is  "\;" ;
 sugar affect     is  "=" ;
 sugar if         is  "if" ;
 sugar else       is  "else" ;
+sugar while      is  "while" ;
 sugar void       is  "void" ;
 sugar asm        is  "asm" ;
 sugar int        is  "int" ;

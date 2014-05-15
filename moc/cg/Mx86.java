@@ -120,6 +120,9 @@ public class Mx86 extends AbstractMachine {
         c.appendAsm(trueBloc.getAsm());
         return c;
     }
+    public Code genLoop(Code condition, Code Bloc) {
+        return new Code("");
+    }
 
     public Code genReturn(Code returnVal_, TFUNCTION fun) {
         x86Code returnVal = (x86Code) returnVal_;

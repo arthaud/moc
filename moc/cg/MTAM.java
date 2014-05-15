@@ -110,20 +110,31 @@ public class MTAM extends AbstractMachine {
         if(hasElse)
             st = "JUMPIF (0) else_" + num;
         else
-            st = "JUMPIF (0) end_" + num;
+            st = "JUMPIF (0) end_if_" + num;
 
         retCode.appendAsm(st);
         retCode.appendAsm(trueBloc.getAsm());
         if(hasElse) {
-            retCode.appendAsm("JUMP end_" + num );
+            retCode.appendAsm("JUMP end_if_" + num );
             retCode.appendAsm("else_" + num + ":");
             retCode.appendAsm(falseBloc.getAsm());
         }
-        retCode.appendAsm("end_" + num + ":");
+        retCode.appendAsm("end_if" + num + ":");
         
         return retCode;
     }
 
+    public Code genLoop(Code condition, Code Bloc) {
+        int num = getLabelNum();
+        Code retCode = new Code(condition.getAsm());
+        retCode.prependAsm("loop_"+num+":");
+        retCode.appendAsm("JUMPIF (0) end_loop" + num);
+        retCode.appendAsm(Bloc.getAsm());
+        retCode.appendAsm("JUMP loop_"+num);
+        retCode.appendAsm("end_loop_"+num+":");
+        return retCode;
+
+    }
     public Code genReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
