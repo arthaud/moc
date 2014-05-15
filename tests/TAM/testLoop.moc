@@ -1,0 +1,10 @@
+#include lib_tam.moc
+
+
+void main(){
+    int i=1;
+    while(i<10){
+    print("toto");
+    i=i+1;
+    }
+}

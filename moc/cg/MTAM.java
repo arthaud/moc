@@ -119,7 +119,7 @@ public class MTAM extends AbstractMachine {
             retCode.appendAsm("else_" + num + ":");
             retCode.appendAsm(falseBloc.getAsm());
         }
-        retCode.appendAsm("end_if" + num + ":");
+        retCode.appendAsm("end_if_" + num + ":");
         
         return retCode;
     }
@@ -128,7 +128,7 @@ public class MTAM extends AbstractMachine {
         int num = getLabelNum();
         Code retCode = new Code(condition.getAsm());
         retCode.prependAsm("loop_"+num+":");
-        retCode.appendAsm("JUMPIF (0) end_loop" + num);
+        retCode.appendAsm("JUMPIF (0) end_loop_" + num);
         retCode.appendAsm(Bloc.getAsm());
         retCode.appendAsm("JUMP loop_"+num);
         retCode.appendAsm("end_loop_"+num+":");
