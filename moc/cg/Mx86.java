@@ -67,8 +67,8 @@ public class Mx86 extends AbstractMachine {
 
         public Location generate(TTYPE param) {
             int res = offset;
-            offset += param.getSize();
-            localOffset += param.getSize();
+            offset -= param.getSize();
+            localOffset -= param.getSize();
 
             return new Location(Location.LocationType.STACKFRAME, res);
         }
@@ -124,7 +124,7 @@ public class Mx86 extends AbstractMachine {
     public Code genReturn(Code returnVal_, TFUNCTION fun) {
         x86Code returnVal = (x86Code) returnVal_;
 
-        if(!returnVal.resultRegisterName().equals("eax")) {
+        if(! returnVal.resultRegisterName().equals("eax")) {
             returnVal.appendAsm("mov eax, " + returnVal.resultRegisterName());
         }
 
@@ -160,6 +160,12 @@ public class Mx86 extends AbstractMachine {
                 break;
             case "-":
                 leftOperand.appendAsm("sub " + leftOperand.resultRegisterName() + ", " + rightOperand.resultRegisterName());
+                break;
+            case "*":
+                leftOperand.appendAsm("mul " + leftOperand.resultRegisterName() + ", " + rightOperand.resultRegisterName());
+                break;
+            case "/":
+                leftOperand.appendAsm("div " + leftOperand.resultRegisterName() + ", " + rightOperand.resultRegisterName());
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
@@ -215,7 +221,11 @@ public class Mx86 extends AbstractMachine {
 
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
-        x86Code c = new x86Code("lea eax, [ebp - " + i.getLocation().getOffset() + "]", 0);
+        x86Code c;
+        if(i.getLocation().getOffset() < 0)
+            c = new x86Code("lea eax, [ebp - " + i.getLocation().getOffset() + "]", 0);
+        else
+            c = new x86Code("lea eax, [ebp + " + i.getLocation().getOffset() + "]", 0);
         return c;
     }
 
