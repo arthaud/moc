@@ -1,0 +1,11 @@
+int * malloc(int size) {
+    asm("
+        LOAD %size
+        SUBR Malloc
+        RETURN (1) 1
+    ");
+}
+
+void main() {
+    int* p = (int*) malloc(1);
+}

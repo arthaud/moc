@@ -7,4 +7,5 @@ EJAR=eggc-6.0.0.jar
 # java, javac, jar
 JDIR=/usr/bin
 
+cd `dirname "$0"`
 $JDIR/java -classpath .:$EJAR moc.compiler.MOCC $*

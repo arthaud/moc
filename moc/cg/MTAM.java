@@ -9,6 +9,9 @@ import moc.st.INFOVAR;
  * The TAM machine and its generation functions
  */
 public class MTAM extends AbstractMachine {
+
+    private int initOffset = 0;
+
     public String getName() {
         return "tam";
     }
@@ -81,8 +84,17 @@ public class MTAM extends AbstractMachine {
         return new TamVariableLocator(3);
     }
 
+    // converts a location to its representation in asm
+    public String genLocation(Location loc) {
+        if(loc.getType() == Location.LocationType.STACKFRAME) {
+            return loc.getOffset() + "[LB]";
+        }
+
+        return "" + loc.getOffset();
+    }
+
     public Code genFunction(TFUNCTION function, Code code) {
-        code.prependAsm("_" + function.getName() + ":");
+        code.prependAsm("f_" + function.getName() + ":");
         if (function.getReturnType() instanceof TVOID) {
             code.appendAsm("RETURN (" + function.getParameterTypes().getSize() + ") 0");
         }
@@ -96,18 +108,18 @@ public class MTAM extends AbstractMachine {
 
         Code retCode = new Code(condition.getAsm());
         if(hasElse)
-            st = "JUMPIF (0) ELSEBLOC_" + num;
+            st = "JUMPIF (0) else_" + num;
         else
-            st = "JUMPIF (0) END_COND_" + num;
+            st = "JUMPIF (0) end_" + num;
 
         retCode.appendAsm(st);
         retCode.appendAsm(trueBloc.getAsm());
         if(hasElse) {
-            retCode.appendAsm("JUMP END_COND_" + num ); 
-            retCode.appendAsm("ELSEBLOC_" + num + ":");
+            retCode.appendAsm("JUMP end_" + num );
+            retCode.appendAsm("else_" + num + ":");
             retCode.appendAsm(falseBloc.getAsm());
         }
-        retCode.appendAsm("END_COND_" + num + ":"); 
+        retCode.appendAsm("end_" + num + ":");
         
         return retCode;
     }
@@ -211,7 +223,7 @@ public class MTAM extends AbstractMachine {
 
     public Code genCall(String ident, Code arguments) {
         Code c = arguments;
-        c.appendAsm("CALL (LB) _" + ident);
+        c.appendAsm("CALL (LB) f_" + ident);
         return c;
     }
 
@@ -261,7 +273,19 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genString(String txt) {
-        return null;
+        Code retCode = new Code("LOADL " + initOffset);
+        retCode.setIsAddress(false); // not sure
+        retCode.setAddress(0);
+
+        txt = txt.substring(1, txt.length() - 1); // remove the ""
+        initCode += genComment(txt);
+        for (int i = 0; i < txt.length(); i++) {
+            initCode += "LOADL '" + txt.charAt(i) + "'\n";
+        }
+        initOffset += txt.length() + 1;
+        initCode += "LOADL 0\n";
+
+        return retCode;
     }
 
     public Code genNull() {
@@ -276,7 +300,11 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genChar(String c) {
-        return null;
+        Code retCode = new Code("LOADL " + c);
+        retCode.setIsAddress(false);
+        retCode.setAddress(0);
+
+        return retCode;
     }
 
 
@@ -285,12 +313,13 @@ public class MTAM extends AbstractMachine {
      */
     private Code genVal(Code operand) {
         if(!operand.getIsAddress())
-            return operand;
+            return operand;// the code is already a value: nothing to do
 
         if(operand.getAddress() == 0) {
             operand.appendAsm("LOADI (" + operand.getTypeSize() + ")");
         } else {
-            operand.appendAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
+            // the code of operand is not needed to load the value
+            operand.setAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
         }
 
         return operand;

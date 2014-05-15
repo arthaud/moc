@@ -1,5 +1,5 @@
 asm ("
-    CALL (LB) _main
+    CALL (LB) f_main
     HALT
 ")
 

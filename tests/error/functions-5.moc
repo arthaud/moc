@@ -1,0 +1,6 @@
+void print(char* s) {
+}
+
+void main() {
+    print("salut ", 7);
+}

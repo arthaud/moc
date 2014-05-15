@@ -1,5 +1,5 @@
 asm ("
-    CALL (LB) _main
+    CALL (LB) f_main
     HALT
 ")
 
@@ -8,9 +8,10 @@ int set100i(int i) {
     return 100 + i;
 }
 
-void * malloc(int i) {
+void * malloc(int size) {
     asm("
-    SUBR MAlloc 1
+    LOADL %size
+    SUBR MAlloc
     RETURN (1) 1
     ");
 }

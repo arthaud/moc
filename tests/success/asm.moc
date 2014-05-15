@@ -1,0 +1,7 @@
+void main() {
+    asm("
+        LOADL 1
+        LOADL 2
+        SUBR Iadd
+    ");
+}

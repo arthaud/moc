@@ -1,0 +1,16 @@
+int * malloc(int size) {
+    asm("
+        LOAD %size
+        SUBR Malloc
+        RETURN (1) 1
+    ");
+}
+
+void main() {
+    int** p = (int**) malloc(1);
+    *p = malloc(4);
+    **p = 42;
+
+    *p = *p + 1;
+    **p = 7;
+}

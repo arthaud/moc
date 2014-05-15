@@ -1,0 +1,8 @@
+int* malloc(int size) {
+}
+
+void main() {
+    int** p = (int**) malloc(1);
+    *p = malloc(4);
+    **p = 'a';
+}

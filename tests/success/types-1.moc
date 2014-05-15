@@ -1,0 +1,9 @@
+bool main() {
+    int i = 42 + 7;
+    int j = 42 / 7;
+
+    int* p = NULL;
+    p == NULL;
+    'a' == 'b';
+    return i < j;
+}

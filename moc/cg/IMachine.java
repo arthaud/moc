@@ -4,6 +4,7 @@ import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
 import moc.st.INFOVAR;
+import moc.st.ST;
 
 /**
  * This interface describes a target machine
@@ -30,7 +31,7 @@ public interface IMachine {
 
     Code genReturn(Code returnVal, TFUNCTION fun);
 
-    Code includeAsm(String asmCode);
+    Code includeAsm(String asmCode, ST symbolsTable);
 
     Code genAffectation(Code address, Code affectedVal, TTYPE type);
 
@@ -42,20 +43,23 @@ public interface IMachine {
 
     Code genCall(String ident, Code arguments);
 
-    //declare a null variable  
+    // declare a null variable
     Code genDecl(TTYPE type);
 
     String genComment(String comm);
 
     Code genAcces(Code pointerCode, TTYPE pointedType);
 
-    //removes local variables after instCode 
+    // removes local variables after instCode
     Code genBloc(Code instsCode, VariableLocator vloc);
 
     ParametersLocator getParametersLocator();
 
     VariableLocator getVariableLocator();
-    
+
+    // converts a location to its representation in asm
+    String genLocation(Location loc);
+
     /**
      * Terminal cases, to load variable, constants...
     */

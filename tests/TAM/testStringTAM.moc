@@ -1,0 +1,9 @@
+#include lib_tam.moc
+
+void main() {
+    char* message = "Hello";
+    char* m2 = " world";
+    *message = 'A';
+    print(message);
+    print(m2);
+}
