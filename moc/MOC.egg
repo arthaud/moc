@@ -33,6 +33,7 @@ syn type : TTYPE for
          TYPE, FUNC_PARAMETER, STYPE, REFS,
          E, EX, A, AX, R, RX, T, TX, F;
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
+inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
@@ -323,9 +324,7 @@ INSTS -> INST INSTS #gen ;
 INST -> TYPE ident #trans AFF semicolon #gen ;
 #trans {
     AFF^htype = TYPE^type;
-}
-
-#gen {
+    
     INFO i = INST^st.localSearch(ident^txt);
 
     if (i != null) {
@@ -334,8 +333,12 @@ INST -> TYPE ident #trans AFF semicolon #gen ;
     else {
         INFOVAR info = new INFOVAR(TYPE^type, INST^vlocator.generate(TYPE^type));
         INST^st.insert(ident^txt, info);
-        INST^code = AFF^code;
+        AFF^hinfo = info;
     }
+}
+
+#gen {
+    INST^code = AFF^code;
 }
 
 AFF -> affect A #gen ;
@@ -344,7 +347,8 @@ AFF -> affect A #gen ;
         error(TYPES_incompatible, AFF^htype, A^type);
     }
 
-    AFF^code =A^code;
+    AFF^code = AFF^machine.genDecl(AFF^htype);
+    AFF^code.appendAsm(AFF^machine.genAffectation(AFF^machine.genVariable(AFF^hinfo),A^code,A^type).getAsm());
 }
 
 AFF -> #gen ;
