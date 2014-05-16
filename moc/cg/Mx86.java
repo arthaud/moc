@@ -237,6 +237,8 @@ public class Mx86 extends AbstractMachine {
             c = new x86Code("lea eax, [ebp - " + (-i.getLocation().getOffset()) + "]", 0);
         else
             c = new x86Code("lea eax, [ebp + " + i.getLocation().getOffset() + "]", 0);
+        c.setIsAddress(false);
+        c.setAddress(i.getLocation().getOffset());
         return c;
     }
 

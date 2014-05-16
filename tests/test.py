@@ -60,6 +60,8 @@ def run():
         'error/locals-1.moc', True, 'The variable a already exists')
     check('error when using an undefined variable',
         'error/locals-2.moc', True, 'Variable x undefined')
+    check('affectation',
+        'error/affectation.moc', True, 'Left operand cannot be affected')
     check('simple test with functions', 'success/functions.moc')
     check('error with functions with the same name',
         'error/functions-1.moc', True, 'The variable main already exists')

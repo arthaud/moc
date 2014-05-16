@@ -144,9 +144,6 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        if (!address.getIsAddress() && address.getAddress() == 0)
-            return new Code(genComment("Affectation error: left operand has no address"));
-
         Code retCode = genVal(affectedVal);
         if (address.getAddress() != 0) {
             retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getAddress() + "[LB]");
@@ -323,7 +320,6 @@ public class MTAM extends AbstractMachine {
         return retCode;
     }
 
-
     /**
      * Ensures the Code gives a value
      */
@@ -338,6 +334,7 @@ public class MTAM extends AbstractMachine {
             operand.setAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
         }
 
+        operand.setIsAddress(false);
         return operand;
     }
 }

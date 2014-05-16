@@ -455,6 +455,9 @@ EX -> affect A #gen ;
     if (!EX^htype.constructFrom(A^type)) {
         error(TYPES_incompatible, EX^htype, A^type);
     }
+    elseif (!EX^hcode.getIsAddress() && EX^hcode.getAddress() == 0) {
+        error(AFF_impossible);
+    }
 
     EX^type = A^type;
     EX^code = EX^machine.genAffectation(EX^hcode, A^code, A^type);
