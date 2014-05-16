@@ -1,0 +1,7 @@
+void main() {
+    int x = 0;
+
+    while('a') {
+        x = x + 1;
+    }
+}

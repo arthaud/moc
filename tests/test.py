@@ -82,6 +82,9 @@ def run():
     check('if statement 1', 'success/if.moc')
     check('if statement 2',
         'error/if.moc', True, 'Type char cannot be casted to boolean')
+    check('while statement 1', 'success/while.moc')
+    check('while statement 2',
+        'error/while.moc', True, 'Type char cannot be casted to boolean')
     check('inline asm', 'success/asm.moc')
     check('pointers', 'success/pointer.moc')
     check('strings', 'success/string.moc')
