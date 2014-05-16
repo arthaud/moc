@@ -45,8 +45,11 @@ public interface IMachine {
 
     Code genCall(String ident, Code arguments);
 
-    // declare a null variable
-    Code genDecl(TTYPE type);
+    // declare a variable
+    Code genDecl(INFOVAR info);
+
+    // declare a variable with an initial value
+    Code genDecl(INFOVAR info, Code value);
 
     String genComment(String comm);
 

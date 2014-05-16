@@ -238,8 +238,14 @@ public class MTAM extends AbstractMachine {
         return c;
     }
 
-    public Code genDecl(TTYPE type) {
-        return new Code("PUSH " + type.getSize());
+    // declare a variable
+    public Code genDecl(INFOVAR info) {
+        return new Code("PUSH " + info.getType().getSize());
+    }
+
+    // declare a variable with an initial value
+    public Code genDecl(INFOVAR info, Code value) {
+        return value;
     }
 
     /** the generated code puts the address of the pointed var on the top of the stack */

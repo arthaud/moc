@@ -348,13 +348,12 @@ AFF -> affect A #gen ;
         error(TYPES_incompatible, AFF^htype, A^type);
     }
 
-    AFF^code = AFF^machine.genDecl(AFF^htype);
-    AFF^code.appendAsm(AFF^machine.genAffectation(AFF^machine.genVariable(AFF^hinfo), A^code, A^type).getAsm());
+    AFF^code = AFF^machine.genDecl(AFF^hinfo, A^code);
 }
 
 AFF -> #gen ;
 #gen {
-    AFF^code = AFF^machine.genDecl(AFF^htype);
+    AFF^code = AFF^machine.genDecl(AFF^hinfo);
 }
 
 -- expression instruction (affectation and procedure call)
@@ -374,14 +373,12 @@ INST -> #trans BLOC #gen ;
 }
 
 -- conditional
-INST -> if opar E cpar #type #trans BLOC ELSE #gen ;
-#type {
+INST -> if opar E cpar #trans BLOC ELSE #gen ;
+#trans {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
     }
-}
 
-#trans {
     BLOC^vlocator = INST^vlocator.getChild();
     ELSE^vlocator = INST^vlocator.getChild();
 }
@@ -401,15 +398,12 @@ ELSE -> #gen ;
 }
 
 -- loop
-INST -> while opar E cpar #type #trans BLOC  #gen ;
-
-#type {
+INST -> while opar E cpar #trans BLOC #gen ;
+#trans {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
     }
-}
 
-#trans {
     BLOC^vlocator = INST^vlocator.getChild();
 }
 
