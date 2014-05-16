@@ -35,7 +35,7 @@ syn type : TTYPE for
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
-inh locator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
+inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for 
@@ -172,7 +172,7 @@ global LTYPES param_types;
     -- management of parameters
     param_types = new LTYPES();
     FUNC_PARAMETERS^types = param_types;
-    FUNC_PARAMETERS^locator = FUNCTION^machine.getParametersLocator();
+    FUNC_PARAMETERS^plocator = FUNCTION^machine.getParametersLocator();
 }
 
 #st {
@@ -210,7 +210,7 @@ FUNC_PARAMETERS -> FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
         error(PARAM_exists, param_name);
     }
     else {
-        Location loc = FUNC_PARAMETERS^locator.generate(param_type);
+        Location loc = FUNC_PARAMETERS^plocator.generate(param_type);
         INFOVAR info = new INFOVAR(param_type, loc);
         FUNC_PARAMETERS^st.insert(param_name, info);
     }
@@ -231,7 +231,7 @@ FUNC_PARAMETERSX -> comma FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
         error(PARAM_exists, param_name);
     }
     else {
-        Location loc = FUNC_PARAMETERSX^locator.generate(param_type);
+        Location loc = FUNC_PARAMETERSX^plocator.generate(param_type);
         INFOVAR info = new INFOVAR(param_type, loc);
         FUNC_PARAMETERSX^st.insert(param_name, info);
     }
@@ -349,7 +349,7 @@ AFF -> affect A #gen ;
     }
 
     AFF^code = AFF^machine.genDecl(AFF^htype);
-    AFF^code.appendAsm(AFF^machine.genAffectation(AFF^machine.genVariable(AFF^hinfo),A^code,A^type).getAsm());
+    AFF^code.appendAsm(AFF^machine.genAffectation(AFF^machine.genVariable(AFF^hinfo), A^code, A^type).getAsm());
 }
 
 AFF -> #gen ;
