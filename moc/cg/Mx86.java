@@ -106,7 +106,6 @@ public class Mx86 extends AbstractMachine {
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
         int num_cond = getLabelNum();
-        String st;
         falseBloc.appendAsm("jmp cond_end_" + num_cond);
         trueBloc.prependAsm("cond_then_" + num_cond + ":");
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
