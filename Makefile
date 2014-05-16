@@ -26,3 +26,7 @@ class:
 clean:
 	find . -name '*.class' -delete
 	rm -rf moc/egg
+
+clean_compiled:
+	find . -name '*.tam' -delete
+	find . -name '*.x86' -delete
