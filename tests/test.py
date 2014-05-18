@@ -26,7 +26,7 @@ def yellow(s):
     return YELLOW + s + ALL_OFF
 
 def compile_command(path):
-    return ['../mocc', '-m', 'tam', 'tests/' + path]
+    return ['../mocc', '-m', 'tam', path]
 
 def check(title, path, error=False, stderr_match=None, stdout_match=None):
     global tests, errors
