@@ -225,11 +225,9 @@ public class Mx86 extends AbstractMachine {
         return castedCode;
     }
 
-    public Code genCall(String ident, Code arguments_) {
-        x86Code arguments = (x86Code) arguments_;
-
+    public Code genCall(String ident, Code arguments) {
         arguments.appendAsm("call f_" + ident);
-        arguments.setResultRegister(0);
+        allocator.push(new Location(Location.LocationType.REGISTER, 0));
         return arguments;
     }
 
@@ -248,12 +246,12 @@ public class Mx86 extends AbstractMachine {
 
     // expression instruction
     public Code genInst(TTYPE type, Code value) {
+        allocator.clear();
         return value;
     }
     
     public Code genArg(Code e)
     {
-        System.out.println("prout");
         Location l = allocator.pop();
         e.appendAsm("push " + x86Location(l));
         return e;
