@@ -259,8 +259,8 @@ public class MTAM extends AbstractMachine {
         return genVal(value, info.getType());
     }
     
-    public Code genArg(Code argument) {
-        return argument;
+    public Code genArg(Code argument, TTYPE type) {
+        return genVal(argument, type);
     }
 
     // expression instruction

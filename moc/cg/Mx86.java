@@ -250,7 +250,7 @@ public class Mx86 extends AbstractMachine {
         return value;
     }
     
-    public Code genArg(Code e)
+    public Code genArg(Code e, TTYPE type)
     {
         Location l = allocator.pop();
         e.appendAsm("push " + x86Location(l));

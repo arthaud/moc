@@ -45,7 +45,7 @@ public interface IMachine {
 
     Code genCall(String ident, Code arguments);
     
-    Code genArg(Code argument);
+    Code genArg(Code argument, TTYPE type);
 
     // declare a variable
     Code genDecl(INFOVAR info);
