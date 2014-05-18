@@ -142,14 +142,15 @@ public class Mx86 extends AbstractMachine {
         return code;
     }
 
-    public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
+    public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         int num_cond = getLabelNum();
         falseBloc.appendAsm("jmp cond_end_" + num_cond);
         trueBloc.prependAsm("cond_then_" + num_cond + ":");
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
+        
+        Location l = allocator.pop();
 
-        x86Code c = (x86Code) condition;
-        c.appendAsm("test " + c.resultRegisterName() + ", " + c.resultRegisterName());
+        c.appendAsm("test " + x86Location(l) + ", " + x86Location(l));
         c.appendAsm("jeq cond_then_" + num_cond);
         c.appendAsm(falseBloc.getAsm());
         c.appendAsm(trueBloc.getAsm());
@@ -197,6 +198,13 @@ public class Mx86 extends AbstractMachine {
                 break;
             case "/":
                 leftOperand.appendAsm("div " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                break;
+            case "%":
+                leftOperand.appendAsm("TODO:modulo " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                break;
+            case ">":
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("");
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
