@@ -10,7 +10,7 @@ int set100i(int i) {
 
 void * malloc(int size) {
     asm("
-    LOADL %size
+    LOAD (1) %size
     SUBR MAlloc
     RETURN (1) 1
     ");

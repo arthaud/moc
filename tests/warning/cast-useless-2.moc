@@ -1,6 +1,6 @@
 int * malloc(int size) {
     asm("
-        LOAD %size
+        LOAD (1) %size
         SUBR Malloc
         RETURN (1) 1
     ");
