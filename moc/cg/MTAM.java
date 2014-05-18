@@ -252,6 +252,14 @@ public class MTAM extends AbstractMachine {
         return value;
     }
 
+    // expression instruction
+    public Code genInst(TTYPE type, Code value) {
+        if(!(type instanceof TVOID))
+            value.appendAsm("POP (0) " + type.getSize());
+
+        return value;
+    }
+
     /** the generated code puts the address of the pointed var on the top of the stack */
     public Code genAcces(Code pointerCode, TTYPE pointed_type) {
         if (pointerCode.getIsAddress()) {

@@ -359,7 +359,7 @@ AFF -> #gen ;
 -- expression instruction (affectation and procedure call)
 INST -> E semicolon #gen ;
 #gen {
-    INST^code = E^code;
+    INST^code = INST^machine.genInst(E^type, E^code);
 }
 
 -- instruction block

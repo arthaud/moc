@@ -214,6 +214,11 @@ public class Mx86 extends AbstractMachine {
         return value;
     }
 
+    // expression instruction
+    public Code genInst(TTYPE type, Code value) {
+        return value;
+    }
+
     public Code genAcces(Code pointerCode, TTYPE pointedType) {
         x86Code c = (x86Code) pointerCode;
         pointerCode.appendAsm("mov " + c.resultRegisterName() + ", [" + c.resultRegisterName() + "]");

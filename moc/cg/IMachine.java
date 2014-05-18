@@ -51,6 +51,9 @@ public interface IMachine {
     // declare a variable with an initial value
     Code genDecl(INFOVAR info, Code value);
 
+    // expression instruction
+    Code genInst(TTYPE type, Code value);
+
     String genComment(String comm);
 
     Code genAcces(Code pointerCode, TTYPE pointedType);
