@@ -459,7 +459,7 @@ EX -> affect A #gen ;
         error(AFF_impossible);
     }
 
-    EX^type = A^type;
+    EX^type = new TVOID();
     EX^code = EX^machine.genAffectation(EX^hcode, A^code, A^type);
 }
 
