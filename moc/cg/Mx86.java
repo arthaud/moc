@@ -175,7 +175,7 @@ public class Mx86 extends AbstractMachine {
         return leftOperand;
     }
 
-    public Code genUnary(Code operand_, String operator) {
+    public Code genUnary(Code operand_, TTYPE type, String operator) {
         x86Code operand = (x86Code) operand_;
 
         switch(operator) {

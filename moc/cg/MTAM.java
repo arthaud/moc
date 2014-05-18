@@ -2,6 +2,7 @@ package moc.cg;
 
 import moc.type.TTYPE;
 import moc.type.TVOID;
+import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.st.INFOVAR;
 
@@ -109,7 +110,7 @@ public class MTAM extends AbstractMachine {
         String st;
         boolean hasElse = !falseBloc.getAsm().equals("");
 
-        Code retCode = new Code(condition.getAsm());
+        Code retCode = genVal(condition, new TBOOL(1));
         retCode.prependAsm(genComment("if condition :"));
 
         if(hasElse)
@@ -131,7 +132,7 @@ public class MTAM extends AbstractMachine {
 
     public Code genLoop(Code condition, Code bloc) {
         int num = getLabelNum();
-        Code retCode = new Code(condition.getAsm());
+        Code retCode = genVal(condition, new TBOOL(1));
         retCode.prependAsm(genComment("loop condition :"));
         retCode.prependAsm("loop_" + num + ":");
         retCode.appendAsm("JUMPIF (0) end_loop_" + num);
@@ -144,8 +145,9 @@ public class MTAM extends AbstractMachine {
     public Code genReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
-        returnVal.appendAsm("RETURN (" + retsize + ") " + paramsize);
-        return returnVal;
+        Code c = genVal(returnVal, fun.getReturnType());
+        c.appendAsm("RETURN (" + retsize + ") " + paramsize);
+        return c;
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
@@ -219,21 +221,23 @@ public class MTAM extends AbstractMachine {
         return res;
     }
 
-    public Code genUnary(Code operand, String operator) {
+    public Code genUnary(Code operand, TTYPE type, String operator) {
+        Code c = genVal(operand, type);
+
         switch(operator) {
         case "+":
             break;
         case "-":
-            operand.appendAsm("SUBR INeg");
+            c.appendAsm("SUBR INeg");
             break;
         case "!":
-            operand.appendAsm("SUBR BNeg");
+            c.appendAsm("SUBR BNeg");
             break;
         default:
             throw new RuntimeException("Unknown operator.");
         }
 
-        return operand;
+        return c;
     }
 
     public Code genCast(TTYPE type, Code castedCode) {
@@ -252,7 +256,7 @@ public class MTAM extends AbstractMachine {
 
     // declare a variable with an initial value
     public Code genDecl(INFOVAR info, Code value) {
-        return value;
+        return genVal(value, info.getType());
     }
 
     // expression instruction

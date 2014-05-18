@@ -39,7 +39,7 @@ public interface IMachine {
 
     Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator);
 
-    Code genUnary(Code operand, String operator);
+    Code genUnary(Code operand, TTYPE type, String operator);
 
     Code genCast(TTYPE type, Code castedCode);
 

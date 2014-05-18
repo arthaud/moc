@@ -649,7 +649,7 @@ F -> OPUN F #gen ;
     }
 
     F^type = F1^type;
-    F^code = F^machine.genUnary(F1^code, OPUN^name);
+    F^code = F^machine.genUnary(F1^code, F1^type, OPUN^name);
 }
 
 -- unary expressions
