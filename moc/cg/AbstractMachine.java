@@ -48,7 +48,7 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     public String genComment(String comm) {
-        return "; " + comm + "\n";
+        return "; " + comm;
     }
 
     public Code includeAsm(String asmCode, ST symbolsTable) {
