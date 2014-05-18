@@ -103,7 +103,7 @@ sugar not        is  "\!" ;
 --sugar no         is "NO" ;
 
 term integer     is  "[0-9]+" ;
-term character   is  "\'[^\']\'" ;
+term character   is  "\'([^\']|\\[0nrt])\'" ;
 term string      is  "\"[^\"]*\"" ;
 term ident       is  "[a-z][_0-9A-Za-z]*" ;
 ---- TODO: MOC
@@ -765,7 +765,7 @@ ARGS -> E #trans ARGSX #gen;
 #trans {
     ARGS^types.add(E^type);
     ARGSX^types = ARGS^types;
-    ARGSX^hcode = ARGS^machine.genArg(E^code);
+    ARGSX^hcode = ARGS^machine.genArg(E^code, E^type);
 
     if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGS^function.getName());
@@ -805,7 +805,7 @@ ARGSX -> comma E #trans ARGSX #gen ;
         }
     }
 
-    Code c = ARGSX^machine.genArg(E^code);
+    Code c = ARGSX^machine.genArg(E^code, E^type);
     c.appendAsm(ARGSX^hcode.getAsm());
     ARGSX1^hcode = c;    
 }
