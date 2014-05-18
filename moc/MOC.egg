@@ -806,8 +806,8 @@ ARGSX -> comma E #trans ARGSX #gen ;
         }
     }
 
-    Code c = ARGSX^hcode;
-    c.appendAsm(E^code.getAsm());
+    Code c = E^code;
+    c.appendAsm(ARGSX^hcode.getAsm());
     ARGSX1^hcode = c;    
 }
 
