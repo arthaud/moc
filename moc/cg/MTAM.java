@@ -130,7 +130,7 @@ public class MTAM extends AbstractMachine {
     public Code genLoop(Code condition, Code bloc) {
         int num = getLabelNum();
         Code retCode = new Code(condition.getAsm());
-        retCode.prependAsm("loop condition :");
+        retCode.prependAsm(genComment("loop condition :"));
         retCode.prependAsm("loop_" + num + ":");
         retCode.appendAsm("JUMPIF (0) end_loop_" + num);
         retCode.appendAsm(bloc.getAsm());
