@@ -179,7 +179,7 @@ public class Mx86 extends AbstractMachine {
         return address;
     }
 
-    public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
+    public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
         Location leftLocation = allocator.pop();
         Location rightLocation = allocator.pop();
         
