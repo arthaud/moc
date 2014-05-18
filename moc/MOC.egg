@@ -765,7 +765,7 @@ ARGS -> E #trans ARGSX #gen;
 #trans {
     ARGS^types.add(E^type);
     ARGSX^types = ARGS^types;
-    ARGSX^hcode = E^code;
+    ARGSX^hcode = ARGS^machine.genArg(E^code);
 
     if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGS^function.getName());
@@ -805,7 +805,7 @@ ARGSX -> comma E #trans ARGSX #gen ;
         }
     }
 
-    Code c = E^code;
+    Code c = ARGSX^machine.genArg(E^code);
     c.appendAsm(ARGSX^hcode.getAsm());
     ARGSX1^hcode = c;    
 }
