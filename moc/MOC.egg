@@ -103,7 +103,7 @@ sugar not        is  "\!" ;
 --sugar no         is "NO" ;
 
 term integer     is  "[0-9]+" ;
-term character   is  "\'[^\']\'" ;
+term character   is  "\'([^\']|\\[0nrt])\'" ;
 term string      is  "\"[^\"]*\"" ;
 term ident       is  "[a-z][_0-9A-Za-z]*" ;
 ---- TODO: MOC

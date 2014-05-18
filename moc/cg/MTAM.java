@@ -310,10 +310,21 @@ public class MTAM extends AbstractMachine {
         txt = txt.substring(1, txt.length() - 1); // remove the ""
         initCode += genComment(txt) + "\n";
         for (int i = 0; i < txt.length(); i++) {
-            initCode += "LOADL '" + txt.charAt(i) + "'\n";
+            if(txt.charAt(i) == '\\' && i + 1 < txt.length()) { // special characters
+                i++;
+                if(txt.charAt(i) == '0')
+                    initCode += "LOADL 0\n";
+                else
+                    initCode += "LOADL '\\" + txt.charAt(i) + "'\n";
+            }
+            else
+                initCode += "LOADL '" + txt.charAt(i) + "'\n";
+
+            initOffset++;
         }
-        initOffset += txt.length() + 1;
+
         initCode += "LOADL 0\n";
+        initOffset++;
 
         return retCode;
     }
@@ -327,7 +338,10 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genChar(String c) {
-        return new Code("LOADL " + c);
+        if(c.equals("'\\0'"))
+            return new Code("LOADL 0");
+        else
+            return new Code("LOADL " + c);
     }
 
     /**
