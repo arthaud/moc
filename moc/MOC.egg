@@ -359,7 +359,7 @@ AFF -> #gen ;
 -- expression instruction (affectation and procedure call)
 INST -> E semicolon #gen ;
 #gen {
-    INST^code = E^code;
+    INST^code = INST^machine.genInst(E^type, E^code);
 }
 
 -- instruction block
@@ -411,7 +411,6 @@ INST -> while opar E cpar #trans BLOC #gen ;
     INST^code = INST^machine.genLoop(E^code, BLOC^code);
 }
 
-
 -- function return
 INST -> return E semicolon #gen ;
 #gen {
@@ -455,8 +454,11 @@ EX -> affect A #gen ;
     if (!EX^htype.constructFrom(A^type)) {
         error(TYPES_incompatible, EX^htype, A^type);
     }
+    elseif (!EX^hcode.getIsAddress() && EX^hcode.getAddress() == null) {
+        error(AFF_impossible);
+    }
 
-    EX^type = A^type;
+    EX^type = new TVOID();
     EX^code = EX^machine.genAffectation(EX^hcode, A^code, A^type);
 }
 
@@ -486,7 +488,7 @@ AX -> OPREL R #gen ;
     }
 
     AX^type = new TBOOL(AX^machine.getBoolSize());
-    AX^code = AX^machine.genBinary(AX^hcode, R^code, OPREL^name);
+    AX^code = AX^machine.genBinary(AX^hcode, AX^htype, R^code, R^type, OPREL^name);
 }
 
 AX -> #gen ;
@@ -533,7 +535,7 @@ RX -> OPADD T #trans RX #gen ;
     }
 
     RX1^htype = RX^htype;
-    RX1^hcode = RX^machine.genBinary(RX^hcode, T^code, OPADD^name);
+    RX1^hcode = RX^machine.genBinary(RX^hcode, RX^htype, T^code, T^type, OPADD^name);
 }
 
 #gen {
@@ -576,7 +578,7 @@ TX -> OPMUL F #trans TX #gen ;
     }
 
     TX1^htype = TX^htype;
-    TX1^hcode = TX^machine.genBinary(TX^hcode, F^code, OPMUL^name);
+    TX1^hcode = TX^machine.genBinary(TX^hcode, TX^htype, F^code, F^type, OPMUL^name);
 }
 
 #gen {
@@ -803,8 +805,8 @@ ARGSX -> comma E #trans ARGSX #gen ;
         }
     }
 
-    Code c = ARGSX^hcode;
-    c.appendAsm(E^code.getAsm());
+    Code c = E^code;
+    c.appendAsm(ARGSX^hcode.getAsm());
     ARGSX1^hcode = c;    
 }
 

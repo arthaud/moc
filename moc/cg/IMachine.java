@@ -37,7 +37,7 @@ public interface IMachine {
 
     Code genAffectation(Code address, Code affectedVal, TTYPE type);
 
-    Code genBinary(Code leftOperand, Code rightOperand, String operator);
+    Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator);
 
     Code genUnary(Code operand, String operator);
 
@@ -50,6 +50,9 @@ public interface IMachine {
 
     // declare a variable with an initial value
     Code genDecl(INFOVAR info, Code value);
+
+    // expression instruction
+    Code genInst(TTYPE type, Code value);
 
     String genComment(String comm);
 

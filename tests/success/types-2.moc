@@ -1,3 +1,8 @@
+asm("
+    CALL (LB) f_main
+    HALT
+")
+
 void main() {
     1 + 1 == 2;
     NULL == NULL;

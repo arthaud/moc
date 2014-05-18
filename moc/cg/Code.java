@@ -1,10 +1,21 @@
 package moc.cg;
 
 public class Code {
+    /**
+     * The assembler instructions
+     */
     protected String asm;
-    protected int address;
+
+    /**
+     * The address, when it is known at compilation time
+     * Otherwise, null
+     */
+    protected Integer address;
+
+    /**
+     * True if asm generates an address
+     */
     protected boolean isAddress;
-    protected int typeSize;
 
     public Code() {
         this(null);
@@ -12,7 +23,7 @@ public class Code {
 
     public Code(String asm) {
         this.asm = asm;
-        address = 0;
+        address = null;
         isAddress = false;
     }
 
@@ -21,8 +32,7 @@ public class Code {
     }
 
     public void appendAsm(String asm) {
-        this.asm += "\n";
-        this.asm += asm;
+        this.asm += "\n" + asm;
     }
 
     public void prependAsm(String asm) {
@@ -33,19 +43,11 @@ public class Code {
         this.asm = asm;
     }
 
-    public void setTypeSize(int s) {
-        typeSize = s;
-    }
-
-    public int getTypeSize() {
-        return typeSize;
-    }
-
-    public void setAddress(int add) {
+    public void setAddress(Integer add) {
         address = add;
     }
 
-    public int getAddress() {
+    public Integer getAddress() {
         return address;
     }
 

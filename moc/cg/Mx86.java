@@ -246,6 +246,11 @@ public class Mx86 extends AbstractMachine {
         return value;
     }
 
+    // expression instruction
+    public Code genInst(TTYPE type, Code value) {
+        return value;
+    }
+
     public Code genAcces(Code pointerCode, TTYPE pointedType) {
         Location l = allocator.pop();
         Location d = allocator.get();
@@ -268,6 +273,8 @@ public class Mx86 extends AbstractMachine {
         Location l = allocator.get();
         x86Code c = new x86Code("mov " + x86Location(l) + ", " + x86Location(i.getLocation()));
         allocator.push(l);
+        c.setIsAddress(false);
+        c.setAddress(i.getLocation().getOffset());
         return c;
     }
 

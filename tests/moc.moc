@@ -7,7 +7,7 @@ asm("
 // inline assembly inside a function
 int * malloc(int size) {
     asm("
-        LOAD %size      ; access parameter size
+        LOAD (1) %size  ; access parameter size
         SUBR Malloc     ; allocation
         RETURN (1) 1
     ");
@@ -17,10 +17,10 @@ int * malloc(int size) {
 void log(char *message, int value) {
     int x = 12;
     asm("
-        LOAD %message        ; access the first parameter
+        LOAD (1) %message    ; access the first parameter
         SUBR Sout
-        LOAD %value          ; access the second parameter
-        LOAD %x              ; access variable x
+        LOAD (1) %value      ; access the second parameter
+        LOAD (1) %x          ; access variable x
         SUBR IAdd
         SUBR IOUT
         SUBR LN
