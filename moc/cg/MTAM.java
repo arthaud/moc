@@ -96,9 +96,11 @@ public class MTAM extends AbstractMachine {
     public Code genFunction(TFUNCTION function, Code code) {
         code.prependAsm("f_" + function.getName() + ":");
         code.prependAsm("\n" + genComment("### " + function + " #############"));
+
         if (function.getReturnType() instanceof TVOID) {
             code.appendAsm("RETURN (0) " + function.getParameterTypes().getSize());
         }
+
         return code;
     }
 
@@ -142,30 +144,31 @@ public class MTAM extends AbstractMachine {
     public Code genReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
-        Code retCode = new Code("RETURN (" + retsize + ") " + paramsize);
-        retCode.prependAsm(returnVal.getAsm());
-        return retCode;
+        returnVal.appendAsm("RETURN (" + retsize + ") " + paramsize);
+        return returnVal;
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        Code retCode = genVal(affectedVal);
+        Code retCode = genVal(affectedVal, type);
         retCode.prependAsm(genComment("affected value :"));
-        if (address.getAddress() != 0) {
+
+        if (address.getAddress() != null) {
             retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getAddress() + "[LB] " + genComment("affectation"));
         } else {
+            assert(address.getIsAddress());
             retCode.appendAsm(genComment("affected address :"));
             retCode.appendAsm(address.getAsm());
-            retCode.appendAsm("STOREI (" +type.getSize() + ") " + genComment("affectation"));
+            retCode.appendAsm("STOREI (" + type.getSize() + ") " + genComment("affectation"));
         }
 
         return retCode;
     }
 
-    public Code genBinary(Code leftOperand, Code rightOperand, String operator) {
-        Code res = genVal(leftOperand);
+    public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
+        Code res = genVal(leftOperand, leftType);
         res.prependAsm(genComment("left operand :"));
         res.appendAsm(genComment("right operand :"));
-        res.appendAsm(genVal(rightOperand).getAsm());
+        res.appendAsm(genVal(rightOperand, rightType).getAsm());
         String op;
 
         switch(operator) {
@@ -261,27 +264,23 @@ public class MTAM extends AbstractMachine {
     }
 
     /** the generated code puts the address of the pointed var on the top of the stack */
-    public Code genAcces(Code pointerCode, TTYPE pointed_type) {
+    public Code genAcces(Code pointerCode, TTYPE pointedType) {
         if (pointerCode.getIsAddress()) {
-            pointerCode.appendAsm("LOADI " + pointed_type.getSize());
+            pointerCode.appendAsm("LOADI (" + pointedType.getSize() + ")");
         }
+
         pointerCode.setIsAddress(true);
-        pointerCode.setAddress(0);
-        pointerCode.setTypeSize(pointed_type.getSize());
+        pointerCode.setAddress(null);
         return pointerCode;
     }
 
     public Code genBloc(Code c, VariableLocator vloc) {
         TamVariableLocator vl = (TamVariableLocator) vloc;
-        String st;
 
-        if (vl.getLocalOffset() == 0) {
-            st = genComment("no locals to POP");
-        } else {
-            st = "POP (0) " + vl.getLocalOffset() + " " + genComment("removing local variables");
+        if (vl.getLocalOffset() > 0) {
+            c.appendAsm("POP (0) " + vl.getLocalOffset() + " " + genComment("removing local variables"));
         }
 
-        c.appendAsm(st);
         return c;
     }
 
@@ -289,21 +288,16 @@ public class MTAM extends AbstractMachine {
         Code retCode = new Code("LOAD (" + i.getSize() + ") " + i.getLocation().getOffset() + "[LB]");
         retCode.setIsAddress(false);
         retCode.setAddress(i.getLocation().getOffset());
-        retCode.setTypeSize(i.getSize());
         return retCode;
     }
 
     public Code genInt(String cst) {
-        Code retCode = new Code("LOADL " + cst);
-        retCode.setIsAddress(false);
-        retCode.setAddress(0);
-        return retCode;
+        return new Code("LOADL " + cst);
     }
 
     public Code genString(String txt) {
         Code retCode = new Code("LOADL " + initOffset + " " + genComment("string " + txt));
-        retCode.setIsAddress(false); // not sure
-        retCode.setAddress(0);
+        retCode.setIsAddress(false);
 
         txt = txt.substring(1, txt.length() - 1); // remove the ""
         initCode += genComment(txt) + "\n";
@@ -321,35 +315,25 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genBool(int b) {
-        Code retCode = new Code("LOADL " + b);
-        retCode.setIsAddress(false);
-        retCode.setAddress(0);
-        return retCode;
+        return new Code("LOADL " + b);
     }
 
     public Code genChar(String c) {
-        Code retCode = new Code("LOADL " + c);
-        retCode.setIsAddress(false);
-        retCode.setAddress(0);
-
-        return retCode;
+        return new Code("LOADL " + c);
     }
 
     /**
      * Ensures the Code gives a value
      */
-    private Code genVal(Code operand) {
-        if(!operand.getIsAddress())
-            return operand;// the code is already a value: nothing to do
-
-        if(operand.getAddress() == 0) {
-            operand.appendAsm("LOADI (" + operand.getTypeSize() + ")");
-        } else {
-            // the code of operand is not needed to load the value
-            operand.setAsm("LOAD (" + operand.getTypeSize() + ") " + operand.getAddress() + "[LB]");
+    private Code genVal(Code operand, TTYPE type) {
+        if(operand.getAddress() != null) {
+            return new Code("LOAD (" + type.getSize() + ") " + operand.getAddress() + "[LB]");
+        }
+        else if(operand.getIsAddress()) {
+            operand.appendAsm("LOADI (" + type.getSize() + ")");
+            operand.setIsAddress(false);
         }
 
-        operand.setIsAddress(false);
         return operand;
     }
 }

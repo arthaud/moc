@@ -411,7 +411,6 @@ INST -> while opar E cpar #trans BLOC #gen ;
     INST^code = INST^machine.genLoop(E^code, BLOC^code);
 }
 
-
 -- function return
 INST -> return E semicolon #gen ;
 #gen {
@@ -455,7 +454,7 @@ EX -> affect A #gen ;
     if (!EX^htype.constructFrom(A^type)) {
         error(TYPES_incompatible, EX^htype, A^type);
     }
-    elseif (!EX^hcode.getIsAddress() && EX^hcode.getAddress() == 0) {
+    elseif (!EX^hcode.getIsAddress() && EX^hcode.getAddress() == null) {
         error(AFF_impossible);
     }
 
@@ -489,7 +488,7 @@ AX -> OPREL R #gen ;
     }
 
     AX^type = new TBOOL(AX^machine.getBoolSize());
-    AX^code = AX^machine.genBinary(AX^hcode, R^code, OPREL^name);
+    AX^code = AX^machine.genBinary(AX^hcode, AX^htype, R^code, R^type, OPREL^name);
 }
 
 AX -> #gen ;
@@ -536,7 +535,7 @@ RX -> OPADD T #trans RX #gen ;
     }
 
     RX1^htype = RX^htype;
-    RX1^hcode = RX^machine.genBinary(RX^hcode, T^code, OPADD^name);
+    RX1^hcode = RX^machine.genBinary(RX^hcode, RX^htype, T^code, T^type, OPADD^name);
 }
 
 #gen {
@@ -579,7 +578,7 @@ TX -> OPMUL F #trans TX #gen ;
     }
 
     TX1^htype = TX^htype;
-    TX1^hcode = TX^machine.genBinary(TX^hcode, F^code, OPMUL^name);
+    TX1^hcode = TX^machine.genBinary(TX^hcode, TX^htype, F^code, F^type, OPMUL^name);
 }
 
 #gen {

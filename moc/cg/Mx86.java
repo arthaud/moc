@@ -146,7 +146,7 @@ public class Mx86 extends AbstractMachine {
         return address;
     }
 
-    public Code genBinary(Code leftOperand_, Code rightOperand_, String operator) {
+    public Code genBinary(Code leftOperand_, TTYPE leftType, Code rightOperand_, TTYPE rightType, String operator) {
         x86Code leftOperand = (x86Code) leftOperand_;
         x86Code rightOperand = (x86Code) rightOperand_;
         if(rightOperand.getResultRegister() == leftOperand.getResultRegister()) {
