@@ -1,0 +1,27 @@
+#include lib_tam.moc
+
+void main() {
+    char* s = "hello";
+
+    println(s);
+    println("how are you ?");
+    print_char('\n');
+
+    print_int(42);
+    print_char('\n');
+
+    print_int(strlen("toto"));
+    print_char('\n');
+
+    print_int(atoi("97") + 1);
+    print_char('\n');
+
+    strcpy(s + 2, "abc");
+    println(s);
+
+    char* p = (char*) malloc(10);
+    char* q = (char*) malloc(2);
+    memcpy(p, s, 4);
+    println(p);
+    free((void*) p);
+}
