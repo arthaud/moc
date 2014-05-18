@@ -1,3 +1,8 @@
+asm("
+    CALL (LB) f_main   ; call to the entry point of the program
+    HALT               ; stop the machine
+")
+
 void f1(int p) {
 }
 

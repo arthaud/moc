@@ -97,7 +97,7 @@ public class MTAM extends AbstractMachine {
         code.prependAsm("f_" + function.getName() + ":");
         code.prependAsm("\n" + genComment("### " + function + " #############"));
         if (function.getReturnType() instanceof TVOID) {
-            code.appendAsm("RETURN (" + function.getParameterTypes().getSize() + ") 0");
+            code.appendAsm("RETURN (0) " + function.getParameterTypes().getSize());
         }
         return code;
     }
@@ -142,7 +142,7 @@ public class MTAM extends AbstractMachine {
     public Code genReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
-        Code retCode = new Code("RETURN (" + paramsize + ") " + retsize );
+        Code retCode = new Code("RETURN (" + retsize + ") " + paramsize);
         retCode.prependAsm(returnVal.getAsm());
         return retCode;
     }
