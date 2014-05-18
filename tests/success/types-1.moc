@@ -1,3 +1,8 @@
+asm("
+    CALL (LB) f_main
+    HALT
+")
+
 bool main() {
     int i = 42 + 7;
     int j = 42 / 7;

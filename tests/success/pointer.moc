@@ -1,3 +1,8 @@
+asm("
+    CALL (LB) f_main
+    HALT
+")
+
 int * malloc(int size) {
     asm("
         LOAD %size
