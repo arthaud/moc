@@ -254,6 +254,10 @@ public class MTAM extends AbstractMachine {
     public Code genDecl(INFOVAR info, Code value) {
         return value;
     }
+    
+    public Code genArg(Code argument) {
+        return argument;
+    }
 
     // expression instruction
     public Code genInst(TTYPE type, Code value) {

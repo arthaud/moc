@@ -250,6 +250,14 @@ public class Mx86 extends AbstractMachine {
     public Code genInst(TTYPE type, Code value) {
         return value;
     }
+    
+    public Code genArg(Code e)
+    {
+        System.out.println("prout");
+        Location l = allocator.pop();
+        e.appendAsm("push " + x86Location(l));
+        return e;
+    }
 
     public Code genAcces(Code pointerCode, TTYPE pointedType) {
         Location l = allocator.pop();
