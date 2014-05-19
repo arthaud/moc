@@ -26,7 +26,7 @@ public class Mx86 extends AbstractMachine {
             if(l.getOffset() >= 0)
                 return "[ebp + " + l.getOffset() + "]";
             else
-                return "[ebp - " + l.getOffset() + "]";
+                return "[ebp - " + (-l.getOffset()) + "]";
         }
         else
         {
@@ -199,12 +199,43 @@ public class Mx86 extends AbstractMachine {
             case "/":
                 leftOperand.appendAsm("div " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
                 break;
+            case "&&":
+                leftOperand.appendAsm("and " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                break;
+            case "||":
+                leftOperand.appendAsm("or " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                break;
             case "%":
+                // TODO
                 leftOperand.appendAsm("TODO:modulo " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                break;
+            case "==":
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", zf");
+                break;
+            case "!=":
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", zf");
+                leftOperand.appendAsm("neg " + x86Location(leftLocation));
                 break;
             case ">":
                 leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
-                leftOperand.appendAsm("");
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", sf");
+                break;
+            case "<=":
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", sf");
+                leftOperand.appendAsm("neg " + x86Location(leftLocation));
+                break;
+            case ">=":
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", sf");
+                leftOperand.appendAsm("or " + x86Location(leftLocation) + ", zf");
+                break;
+            case "<":
+                // TODO
+                leftOperand.appendAsm("cmp " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                leftOperand.appendAsm("mv " + x86Location(leftLocation) + ", sf");
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
@@ -253,7 +284,7 @@ public class Mx86 extends AbstractMachine {
 
     // expression instruction
     public Code genInst(TTYPE type, Code value) {
-        allocator.clear();
+        value.prependAsm("");
         return value;
     }
     
