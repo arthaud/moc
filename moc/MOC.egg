@@ -684,7 +684,7 @@ F -> opar TYPE cpar F #gen ;
 
 -- subprogram call
 F -> ident opar #hgen ARGS cpar #gen ;
-global LTYPES args_types;
+global LTYPES args_types; TFUNCTION fun;
 
 #hgen {
     args_types = new LTYPES();
@@ -700,7 +700,8 @@ global LTYPES args_types;
         match (i) {
             case INFOFUN {
                 INFOFUN info = i;
-                ARGS^function = info.getType();
+                fun = info.getType();
+                ARGS^function = fun;
                 F^type = info.getType().getReturnType();
             }
             default {
@@ -711,7 +712,7 @@ global LTYPES args_types;
 }
 
 #gen {
-    F^code = F^machine.genCall(ident^txt, ARGS^code);
+    F^code = F^machine.genCall(fun, ARGS^code);
 }
 
 F -> ident #gen ;

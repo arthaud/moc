@@ -136,6 +136,7 @@ public class Mx86 extends AbstractMachine {
         code.prependAsm("mov ebp, esp");
         code.prependAsm("push ebp");
         code.prependAsm("f_" + function.getName() + ":");
+        code.appendAsm("f_" + function.getName() + "_end:");
         code.appendAsm("mov esp, ebp");
         code.appendAsm("pop ebp");
         code.appendAsm("ret");
@@ -161,12 +162,14 @@ public class Mx86 extends AbstractMachine {
         return new Code("");
     }
 
-    public Code genReturn(Code returnVal, TFUNCTION fun) {
+    public Code genReturn(Code returnVal, TFUNCTION function) {
         Location l = allocator.pop();
 
         if(! x86Location(l).equals("eax")) {
             returnVal.appendAsm("mov eax, " + x86Location(l));
         }
+        
+        returnVal.appendAsm("jmp f_" + function.getName() + "_end");
 
         return returnVal;
     }
@@ -264,8 +267,8 @@ public class Mx86 extends AbstractMachine {
         return castedCode;
     }
 
-    public Code genCall(String ident, Code arguments) {
-        arguments.appendAsm("call f_" + ident);
+    public Code genCall(TFUNCTION f, Code arguments) {
+        arguments.appendAsm("call f_" + f.getName());
         allocator.push(new Location(Location.LocationType.REGISTER, 0));
         return arguments;
     }
@@ -307,7 +310,7 @@ public class Mx86 extends AbstractMachine {
         X86VariableLocator vl = (X86VariableLocator) vloc;
         if(vl.getLocalOffset() != 0)
         {
-            instsCode.appendAsm("sub esp, " + vl.getLocalOffset());
+            instsCode.appendAsm("sub esp, " + (-vl.getLocalOffset()));
         }
         return instsCode;
     }

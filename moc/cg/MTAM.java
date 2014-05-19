@@ -244,8 +244,8 @@ public class MTAM extends AbstractMachine {
         return castedCode;
     }
 
-    public Code genCall(String ident, Code arguments) {
-        arguments.appendAsm("CALL (LB) f_" + ident);
+    public Code genCall(TFUNCTION f, Code arguments) {
+        arguments.appendAsm("CALL (LB) f_" + f.getName());
         return arguments;
     }
 
