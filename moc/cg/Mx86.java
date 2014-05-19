@@ -258,7 +258,7 @@ public class Mx86 extends AbstractMachine {
             default:
                 throw new RuntimeException("Unknown operator.");
         }
-        
+
         allocator.push(l);
         return operand;
     }
@@ -269,6 +269,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genCall(TFUNCTION f, Code arguments) {
         arguments.appendAsm("call f_" + f.getName());
+        arguments.appendAsm("add esp, " + f.getParameterTypes().getSize());
         allocator.push(new Location(Location.LocationType.REGISTER, 0));
         return arguments;
     }
