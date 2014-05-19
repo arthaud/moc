@@ -241,14 +241,13 @@ public class Mx86 extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-        return new x86Code("sub esp, " + info.getType().getSize());
+        return new Code("sub esp, " + info.getType().getSize());
     }
 
     // declare a variable with an initial value
-    public Code genDecl(INFOVAR info, Code value_) {
-        x86Code value = (x86Code) value_;
-        value.appendAsm("push " + value.resultRegisterName());
-        value.setResultRegister(-1);
+    public Code genDecl(INFOVAR info, Code value) {
+        Location l = allocator.pop();
+        value.appendAsm("push " + x86Location(l));
         return value;
     }
 
@@ -285,7 +284,7 @@ public class Mx86 extends AbstractMachine {
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         Location l = allocator.get();
-        x86Code c = new x86Code("mov " + x86Location(l) + ", " + x86Location(i.getLocation()));
+        Code c = new Code("mov " + x86Location(l) + ", " + x86Location(i.getLocation()));
         allocator.push(l);
         c.setIsAddress(false);
         c.setAddress(i.getLocation().getOffset());
@@ -295,7 +294,7 @@ public class Mx86 extends AbstractMachine {
     public Code genInt(String cst) {
         Location l = allocator.get();
         allocator.push(l);
-        return new x86Code("mov " + x86Location(l) + ", " + cst, 0);
+        return new Code("mov " + x86Location(l) + ", " + cst);
     }
 
     public Code genString(String txt) {
@@ -305,18 +304,18 @@ public class Mx86 extends AbstractMachine {
     public Code genNull() {
         Location l = allocator.get();
         allocator.push(l);
-        return new x86Code("mov " + x86Location(l) + ", 0", 0);
+        return new Code("mov " + x86Location(l) + ", 0");
     }
 
     public Code genBool(int b) {
         Location l = allocator.get();
         allocator.push(l);
-        return new x86Code("mov " + x86Location(l) + ", " + b, 0);
+        return new Code("mov " + x86Location(l) + ", " + b);
     }
 
     public Code genChar(String c) {
         Location l = allocator.get();
         allocator.push(l);
-        return new x86Code("mov " + x86Location(l) + ", " + c, 0);
+        return new Code("mov " + x86Location(l) + ", " + c);
     }
 }
