@@ -9,45 +9,43 @@ option k = 2;
 inh source : MOCSourceFile for
          PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F
---       -- TODO: MOC
---       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
-         ;
+         E, EX, A, AX, R, RX, T, TX, F,
+         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
 inh machine : IMachine for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
-         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX,
-         TYPE, STYPE, REFS, AFF,
-         E, EX, A, AX, R, RX, T, TX, F
---       -- TODO: MOC
---       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
-         ;
+         FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
+         TYPE, STYPE, PTYPE, REFS,
+         E, EX, A, AX, R, RX, T, TX, F,
+         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
 inh st : ST for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F
---       -- TODO: MOC
---       ,IMPLEMENTATION, METHODS, METHOD, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS
-         ;
+         TYPE, STYPE, PTYPE, SUPER,
+         E, EX, A, AX, R, RX, T, TX, F,
+         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
 inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
-         TYPE, FUNC_PARAMETER, STYPE, REFS,
+         TYPE, STYPE, PTYPE, REFS, FUNC_PARAMETER,
          E, EX, A, AX, R, RX, T, TX, F;
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
+syn class : TCLASS for SUPER;
+syn static : BOOLEAN for QUAL;
+
+syn field : FIELD for MFUNC_PARAMETER, MARG;
+inh hfields : LFIELDS for ATTRIBUTES, MFUNC_PARAMETERS, MARGS;
+inh hmethods : LMETHODS for METHODS;
 
 syn code : Code for 
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F
-         -- TODO: MOC
-        ;
+         E, EX, A, AX, R, RX, T, TX, F,
+         IMPLEMENTATION, METHODS;
 inh hcode : Code for 
-        EX, AX, RX, TX , ARGSX
-         -- TODO: MOC
-        ;
+         EX, AX, RX, TX , ARGSX;
 
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
@@ -88,17 +86,15 @@ sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
 sugar not        is  "\!" ;
-
----- TODO: MOC
---sugar colon      is  "\:" ;
---sugar osbra      is  "\[" ;
---sugar csbra      is  "\]" ;
---sugar id         is  "id" ;
---sugar class      is  "@class" ;
---sugar end        is  "@end" ;
---sugar self       is "self" ;
+sugar colon      is  "\:" ;
+sugar osbra      is  "\[" ;
+sugar csbra      is  "\]" ;
+sugar id         is  "id" ;
+sugar class      is  "@class" ;
+sugar t_end      is  "@end" ;
+sugar self       is  "self" ;
+sugar super      is  "super" ;
 --sugar bool       is  "BOOL" ;
---sugar super      is "super" ;
 --sugar yes        is "YES" ;
 --sugar no         is "NO" ;
 
@@ -106,8 +102,7 @@ term integer     is  "[0-9]+" ;
 term character   is  "\'([^\']|\\[0nrt])\'" ;
 term string      is  "\"[^\"]*\"" ;
 term ident       is  "[a-z][_0-9A-Za-z]*" ;
----- TODO: MOC
---term class_ident is  "[A-Z][_0-9A-Za-z]*" ; -- class name
+term class_ident is  "[A-Z][_0-9A-Za-z]*" ; -- class name
 --term stringo     is  "@\"[^\"]*\"" ; -- MOC string
 
 
@@ -190,6 +185,7 @@ global LTYPES param_types;
 
 #gen {
     FUNCTION^code = FUNCTION^machine.genFunction(FUNCTION^st.getCurrentFunction(), BLOC^code);
+    FUNCTION^st.setCurrentFunction(null);
 }
 
 -- functions parameters
@@ -815,53 +811,263 @@ ARGSX -> comma E #trans ARGSX #gen ;
     ARGSX^code = ARGSX1^code;
 }
 
-----============ MOC extension =================
---ENTITIES -> IMPLEMENTATION ENTITIES ;
----- class definition
---IMPLEMENTATION -> class class_ident SUPER ocbra ATTRIBUTES ccbra METHODS end ;
----- superclass
---SUPER -> ;
---SUPER -> colon class_ident ;
----- attributes
---ATTRIBUTES -> ;
---ATTRIBUTES -> TYPE ident semicolon ATTRIBUTES ;
----- methods
---METHODS -> ;
---METHODS -> METHOD METHODS ;
---METHOD -> QUAL PTYPE MFUNC_PARAMETERS BLOC ;
----- method or attribute qualifier: + = class, - = instance
---QUAL -> plus ;
---QUAL -> minus ;
----- type class
---STYPE-> class_ident ;
----- type BOOL
---STYPE-> bool ;
----- type "any"
---TYPE -> id ;
----- method return type between parentheses
---PTYPE-> opar TYPE cpar ;
----- method parameters
---MFUNC_PARAMETERS -> ;
---MFUNC_PARAMETERS -> MFUNC_PARAMETER MFUNC_PARAMETERS ;
----- selector without parameters
---MFUNC_PARAMETER -> ident ;
----- selector  + parameter type + parameter name
---MFUNC_PARAMETER -> ident colon PTYPE ident ;
+--============ MOC extension =================
+
+ENTITIES -> IMPLEMENTATION ENTITIES #gen ;
+#gen {
+    Code c = new Code(IMPLEMENTATION^code.getAsm());
+    c.appendAsm(ENTITIES1^code.getAsm());
+    ENTITIES^code = c;
+}
+
+-- class definition
+IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS t_end #gen ;
+#trans {
+    if (IMPLEMENTATION^st.localSearch(class_ident^txt) != null) {
+        error(VAR_exists, class_ident^txt);
+    }
+
+    ST st = new ST(IMPLEMENTATION^st);
+    ATTRIBUTES^st = st;
+    METHODS^st = st;
+
+    LFIELDS fields = new LFIELDS();
+    ATTRIBUTES^hfields = fields;
+
+    LMETHODS methods = new LMETHODS();
+    METHODS^hmethods = methods;
+
+    -- insert class in the current symbols table
+    TCLASS class = new TCLASS(class_ident^txt, SUPER^class, new TSTRUCT(fields), methods);
+    IMPLEMENTATION^st.insert(class_ident^txt, new INFOCLASS(class));
+    IMPLEMENTATION^st.setCurrentClass(class);
+}
+
+#gen {
+    IMPLEMENTATION^code = new Code("");
+    IMPLEMENTATION^st.setCurrentClass(null);
+}
+
+-- superclass
+SUPER -> #class ;
+#class {
+    SUPER^class = null;
+}
+
+SUPER -> colon class_ident #class ;
+#class {
+    INFO i = SUPER^st.globalSearch(class_ident^txt);
+
+    if (i == null) {
+        error(CLASS_undefined, class_ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOCLASS {
+                INFOCLASS info = i;
+                SUPER^class = info.getType();
+            }
+            default {
+                error(INFO_not_class, class_ident^txt);
+            }
+        }
+    }
+}
+
+-- attributes
+ATTRIBUTES -> ;
+
+ATTRIBUTES -> TYPE ident semicolon #attr ATTRIBUTES ;
+#attr {
+    if (ATTRIBUTES^hfields.search(ident^txt) != null) {
+        error(ATTR_exists, ident^txt);
+    }
+
+    ATTRIBUTES^hfields.add(new FIELD(ident^txt, TYPE^type));
+
+    -- no need to check if it's already in the symbols table
+    Location loc = null; -- TODO
+    INFOVAR info = new INFOVAR(TYPE^type, loc);
+    ATTRIBUTES^st.insert(ident^txt, info);
+}
+
+-- methods
+METHODS -> #gen ;
+#gen {
+    METHODS^code = new Code("");
+}
+
+METHODS -> QUAL PTYPE #params MFUNC_PARAMETERS BLOC #method METHODS #gen ;
+global LFIELDS fields;
+
+#params {
+    -- symbols table for parameters
+    ST st = new ST(METHODS^st);
+    MFUNC_PARAMETERS^st = st;
+    BLOC^st = st;
+
+    -- variable locator
+    BLOC^vlocator = METHODS^machine.getVariableLocator();
+
+    fields = new LFIELDS();
+    MFUNC_PARAMETERS^hfields = fields;
+}
+
+#method {
+    -- TODO: check if the method already exists
+    METHODS^hmethods.add(new METHOD(PTYPE^type, fields, QUAL^static));
+}
+
+#gen {
+    METHODS^code = new Code("");
+}
+
+-- method or attribute qualifier: + = class, - = instance
+QUAL -> plus #gen ;
+#gen { QUAL^static = true; }
+
+QUAL -> minus #gen ;
+#gen { QUAL^static = false; }
+
+-- type class
+STYPE -> class_ident #type ;
+#type {
+    INFO i = STYPE^st.globalSearch(class_ident^txt);
+
+    if (i == null) {
+        error(CLASS_undefined, class_ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOCLASS {
+                INFOCLASS info = i;
+                STYPE^type = info.getType();
+            }
+            default {
+                error(INFO_not_class, class_ident^txt);
+            }
+        }
+    }
+}
+
+-- type BOOL
+--STYPE -> bool ;
+
+-- type "any"
+TYPE -> id #type ;
+#type {
+    TYPE^type = new TID();
+}
+
+-- method return type between parentheses
+PTYPE -> opar TYPE cpar #type ;
+#type {
+    PTYPE^type = TYPE^type;
+}
+
+-- method parameters
+MFUNC_PARAMETERS -> ;
+
+MFUNC_PARAMETERS -> MFUNC_PARAMETER #param MFUNC_PARAMETERS ;
+#param {
+    if (MFUNC_PARAMETERS^hfields.search(MFUNC_PARAMETER^field.getName()) != null) {
+        error(PARAM_exists, MFUNC_PARAMETER^field.getName());
+    }
+
+    MFUNC_PARAMETERS^hfields.add(MFUNC_PARAMETER^field);
+}
+
+-- selector without parameters
+MFUNC_PARAMETER -> ident #field ;
+#field {
+    MFUNC_PARAMETER^field = new FIELD(ident^txt, null);
+}
+
+-- selector + parameter type + parameter name
+MFUNC_PARAMETER -> ident colon PTYPE ident #field ;
+#field {
+    MFUNC_PARAMETER^field = new FIELD(ident^txt, PTYPE^type);
+
+    -- add ident1 in the symbols table
+    INFO i = MFUNC_PARAMETER^st.localSearch(ident1^txt);
+
+    if (i != null) {
+        error(VAR_exists, ident1^txt);
+    }
+    else {
+        Location loc = null; -- TODO
+        INFOVAR info = new INFOVAR(PTYPE^type, loc);
+        MFUNC_PARAMETER^st.insert(ident1^txt, info);
+    }
+}
+
 --F -> nil ;
 --F -> yes ;
 --F -> no ;
----- MOC string (starts with @)
+
+-- MOC string (starts with @)
 --F -> stringo ;
---F -> self ;
---F -> super ;
----- method call
---F -> osbra F MARGS csbra ;
----- for class method call
---F -> osbra class_ident MARGS csbra ;
----- method call arguments
---MARGS -> ;
---MARGS -> MARG MARGS ;
----- selector + arg
---MARG -> ident colon E ;
----- selector without arg
---MARG -> ident ;
+
+F -> self #gen ;
+#gen {
+    F^type = new TINSTANCE(F^st.getCurrentClass(), F^machine.getPointerSize());
+    F^code = new Code("");
+}
+
+F -> super #gen ;
+#gen {
+    if (F^st.getCurrentClass().getSuperType() == null) {
+        error(SUPER_undefined);
+    }
+
+    F^type = new TINSTANCE(F^st.getCurrentClass().getSuperType(), F^machine.getPointerSize());
+    F^code = new Code("");
+}
+
+-- method call
+F -> osbra F #args MARGS csbra #gen ;
+#args {
+    MARGS^hfields = new LFIELDS();
+}
+
+#gen {
+    --TODO: check method call
+    F^type = null;
+    F^code = new Code("");
+}
+
+-- for class method call
+F -> osbra class_ident #args MARGS csbra #gen ;
+#args {
+    MARGS^hfields = new LFIELDS();
+}
+
+#gen {
+    --TODO: check method call
+    F^type = null;
+    F^code = new Code("");
+}
+
+-- method call arguments
+MARGS -> ;
+
+MARGS -> MARG #args MARGS ;
+#args {
+    if (MARGS^hfields.search(MARG^field.getName()) != null) {
+        error(PARAM_exists, MARG^field.getName());
+    }
+
+    MARGS^hfields.add(MARG^field);
+}
+
+-- selector + arg
+MARG -> ident colon E #arg ;
+#arg {
+    MARG^field = new FIELD(ident^txt, E^type);
+}
+
+-- selector without arg
+MARG -> ident #arg ;
+#arg {
+    MARG^field = new FIELD(ident^txt, null);
+}

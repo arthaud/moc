@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import moc.type.TFUNCTION;
+import moc.type.TCLASS;
 
 /**
  * A hierarchical symbols table
@@ -21,6 +22,11 @@ public class ST extends HashMap<String, INFO> {
      * The current function
      */
     private TFUNCTION currentFunction;
+
+    /**
+     * The current class
+     */
+    private TCLASS currentClass;
 
     /**
      * Constructor for a symbols table without mother
@@ -79,6 +85,18 @@ public class ST extends HashMap<String, INFO> {
         }
 
         return currentFunction;
+    }
+
+    public void setCurrentClass(TCLASS cl) {
+        currentClass = cl;
+    }
+
+    public TCLASS getCurrentClass() {
+        if (currentClass == null && mother != null) {
+            return mother.getCurrentClass();
+        }
+
+        return currentClass;
     }
 
     public String toString() {
