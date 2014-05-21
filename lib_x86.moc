@@ -1,0 +1,46 @@
+asm("
+global _start
+section .text
+_start:
+")
+
+//
+// system calls
+//
+// See this page for doing system calls :
+// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
+
+int write(int fd, char* buf, int nbytes) {
+    asm("
+        // write syscall
+        mov eax, 4
+        mov ebx, %fd
+        mov ecx, %buf
+        mov edx, %nbytes
+        int 0x80 // the result is returned into eax : perfect
+    ");
+}
+
+int read(int fd, char* buf, int nbytes) {
+    asm("
+        // read syscall
+        mov eax, 3
+        mov ebx, %fd
+        mov ecx, %buf
+        mov edx, %nbytes
+        int 0x80 // the result is returned into eax : perfect
+    ");
+}
+
+int open(char* filename, int flags, int mode) {
+    asm("
+        // open syscall
+        mov eax, 5
+        mov ebx, %filename
+        mov ecx, %flags
+        mov edx, %mode
+        int 0x80 // the result is returned into eax : perfect
+    ");
+}
+
+
