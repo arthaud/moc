@@ -43,7 +43,7 @@ public interface IMachine {
 
     Code genCast(TTYPE type, Code castedCode);
 
-    Code genCall(String ident, Code arguments);
+    Code genCall(TFUNCTION func, Code arguments);
     
     Code genArg(Code argument, TTYPE type);
 

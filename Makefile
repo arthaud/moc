@@ -9,19 +9,13 @@ GJAR=$(EJAR):.
 # java, javac, jar
 JDIR=/usr/bin
 #--------------------------------------------------------
-all: src att class
+all: src att
 
 src:
 	(cd moc ; $(JDIR)/java -jar ../$(EJAR) $(XMOC).egg)
 
 att:
-	$(JDIR)/javac -classpath $(GJAR) moc/type/*.java
-	$(JDIR)/javac -classpath $(GJAR) moc/st/*.java
-	$(JDIR)/javac -classpath $(GJAR) moc/cg/*.java
-	$(JDIR)/javac -classpath $(GJAR) moc/compiler/*.java
-
-class:
-	$(JDIR)/javac -classpath $(GJAR) moc/egg/*.java
+	$(JDIR)/javac -classpath $(GJAR) moc/type/*.java moc/st/*.java moc/cg/*.java moc/compiler/*.java moc/egg/*.java
 
 clean:
 	find . -name '*.class' -delete

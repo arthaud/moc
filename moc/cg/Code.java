@@ -10,7 +10,7 @@ public class Code {
      * The address, when it is known at compilation time
      * Otherwise, null
      */
-    protected Integer address;
+    protected Location address;
 
     /**
      * True if asm generates an address
@@ -43,11 +43,11 @@ public class Code {
         this.asm = asm;
     }
 
-    public void setAddress(Integer add) {
+    public void setLocation(Location add) {
         address = add;
     }
 
-    public Integer getAddress() {
+    public Location getLocation() {
         return address;
     }
 
