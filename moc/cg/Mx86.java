@@ -264,6 +264,9 @@ public class Mx86 extends AbstractMachine {
             case "-":
                 operand.appendAsm("neg " + x86Location(l));
                 break;
+            case "!":
+                operand.appendAsm("not " + x86Location(l));
+                break;
             default:
                 throw new RuntimeException("Unknown operator.");
         }
