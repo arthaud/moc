@@ -100,7 +100,7 @@ public class Mx86 extends AbstractMachine {
 
         public X86VariableLocator(int offset) {
             this.offset = offset;
-            localOffset = 0;
+            localOffset = -4;
         }
 
         public Location generate(TTYPE param) {
@@ -121,7 +121,7 @@ public class Mx86 extends AbstractMachine {
     }
 
     public VariableLocator getVariableLocator() {
-        return new X86VariableLocator(0);
+        return new X86VariableLocator(-4);
     }
 
     // converts a location to its representation in asm
