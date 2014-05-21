@@ -213,7 +213,14 @@ public class Mx86 extends AbstractMachine {
                 leftOperand.appendAsm("sub " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
                 break;
             case "*":
-                leftOperand.appendAsm("mul " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
+                // mul work only with one parameter...
+                leftOperand.appendAsm("push eax");
+                leftOperand.appendAsm("push edx");
+                leftOperand.appendAsm("mov eax, " + x86Location(leftLocation));
+                leftOperand.appendAsm("mul " + x86Location(rightLocation));
+                leftOperand.appendAsm("mov " + x86Location(leftLocation) + ", eax");
+                leftOperand.appendAsm("pop edx");
+                leftOperand.appendAsm("pop eax");
                 break;
             case "/":
                 leftOperand.appendAsm("div " + x86Location(leftLocation) + ", " + x86Location(rightLocation));
