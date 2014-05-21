@@ -161,7 +161,15 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genLoop(Code condition, Code c) {
-        return new Code("");
+        int num = getLabelNum();
+        Location l = allocator.pop();
+        condition = genVal(condition, l);
+        condition.appendAsm("test " + x86Location(l) + ", " + x86Location(l));
+        condition.appendAsm("jne end_loop" + num);
+        c.prependAsm(condition.getAsm());
+        c.prependAsm("loop_" + num + ":");
+        c.appendAsm("end_loop_" + num + ":");
+        return c;
     }
 
     public Code genReturn(Code returnVal, TFUNCTION function) {
