@@ -1,6 +1,7 @@
 package moc.cg;
 
 import moc.type.TTYPE;
+import moc.type.TVOID;
 import moc.type.TFUNCTION;
 import moc.st.INFOVAR;
 import java.util.ArrayDeque;
@@ -144,12 +145,13 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
+        Location l = allocator.pop();
+        c = genVal(c, l);
+        
         int num_cond = getLabelNum();
         falseBloc.appendAsm("jmp cond_end_" + num_cond);
         trueBloc.prependAsm("cond_then_" + num_cond + ":");
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
-        
-        Location l = allocator.pop();
 
         c.appendAsm("test " + x86Location(l) + ", " + x86Location(l));
         c.appendAsm("jeq cond_then_" + num_cond);
@@ -158,34 +160,40 @@ public class Mx86 extends AbstractMachine {
         return c;
     }
 
-    public Code genLoop(Code condition, Code Bloc) {
+    public Code genLoop(Code condition, Code c) {
         return new Code("");
     }
 
     public Code genReturn(Code returnVal, TFUNCTION function) {
         Location l = allocator.pop();
+        returnVal = genVal(returnVal, l);
 
         if(! x86Location(l).equals("eax")) {
             returnVal.appendAsm("mov eax, " + x86Location(l));
         }
-        
+
         returnVal.appendAsm("jmp f_" + function.getName() + "_end");
 
         return returnVal;
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        Location a = allocator.pop();
         Location v = allocator.pop();
-        
+        Location a = allocator.pop();
+
+        affectedVal = genVal(affectedVal, v);
         address.appendAsm(affectedVal.getAsm());
         address.appendAsm("mov [" + x86Location(a) + "], " + x86Location(v));
         return address;
     }
 
     public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
-        Location leftLocation = allocator.pop();
+        // Warning : Don't forget the order is important here...
         Location rightLocation = allocator.pop();
+        Location leftLocation = allocator.pop();
+        
+        leftOperand = genVal(leftOperand, leftLocation);
+        rightOperand = genVal(rightOperand, rightLocation);
         
         leftOperand.appendAsm(rightOperand.getAsm());
 
@@ -250,6 +258,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genUnary(Code operand, TTYPE type, String operator) {
         Location l = allocator.pop();
+        operand = genVal(operand, l);
 
         switch(operator) {
             case "-":
@@ -270,7 +279,8 @@ public class Mx86 extends AbstractMachine {
     public Code genCall(TFUNCTION f, Code arguments) {
         arguments.appendAsm("call f_" + f.getName());
         arguments.appendAsm("add esp, " + f.getParameterTypes().getSize());
-        allocator.push(new Location(Location.LocationType.REGISTER, 0));
+        if(!(f.getReturnType() instanceof TVOID))
+            allocator.push(new Location(Location.LocationType.REGISTER, 0));
         return arguments;
     }
 
@@ -282,19 +292,22 @@ public class Mx86 extends AbstractMachine {
     // declare a variable with an initial value
     public Code genDecl(INFOVAR info, Code value) {
         Location l = allocator.pop();
+        value = genVal(value, l);
         value.appendAsm("push " + x86Location(l));
         return value;
     }
 
     // expression instruction
     public Code genInst(TTYPE type, Code value) {
-        value.prependAsm("");
+        if(!(type instanceof TVOID))
+            allocator.pop();
         return value;
     }
     
     public Code genArg(Code e, TTYPE type)
     {
         Location l = allocator.pop();
+        e = genVal(e, l);
         e.appendAsm("push " + x86Location(l));
         return e;
     }
@@ -302,7 +315,11 @@ public class Mx86 extends AbstractMachine {
     public Code genAcces(Code pointerCode, TTYPE pointedType) {
         Location l = allocator.pop();
         Location d = allocator.get();
-        pointerCode.appendAsm("mov " + x86Location(d) + ", [" + x86Location(l) + "]");
+        if(pointerCode.getIsAddress()) {
+            pointerCode.appendAsm("mov " + x86Location(d) + ", [" + x86Location(l) + "]");
+        }
+        pointerCode.setIsAddress(true);
+        pointerCode.setLocation(null);
         allocator.push(d);
         return pointerCode;
     }
@@ -319,10 +336,10 @@ public class Mx86 extends AbstractMachine {
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         Location l = allocator.get();
-        Code c = new Code("mov " + x86Location(l) + ", " + x86Location(i.getLocation()));
+        Code c = new Code("lea " + x86Location(l) + ", " + x86Location(i.getLocation()));
         allocator.push(l);
         c.setIsAddress(false);
-        c.setAddress(i.getLocation().getOffset());
+        c.setLocation(i.getLocation());
         return c;
     }
 
@@ -352,5 +369,20 @@ public class Mx86 extends AbstractMachine {
         Location l = allocator.get();
         allocator.push(l);
         return new Code("mov " + x86Location(l) + ", " + c);
+    }
+    
+    /**
+     * Ensures the Code gives a value
+     */
+    private Code genVal(Code operand, Location l) {
+        if(operand.getLocation() != null) {
+            return new Code("mov " + x86Location(l) + ", " + x86Location(operand.getLocation()));
+        }
+        else if(operand.getIsAddress()) {
+            operand.appendAsm("mov " + x86Location(l) + ", " + x86Location(l));
+            operand.setIsAddress(false);
+        }
+
+        return operand;
     }
 }

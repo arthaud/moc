@@ -154,8 +154,8 @@ public class MTAM extends AbstractMachine {
         Code retCode = genVal(affectedVal, type);
         retCode.prependAsm(genComment("affected value :"));
 
-        if (address.getAddress() != null) {
-            retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getAddress() + "[LB] " + genComment("affectation"));
+        if (address.getLocation() != null) {
+            retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getLocation().getOffset() + "[LB] " + genComment("affectation"));
         } else {
             assert(address.getIsAddress());
             retCode.appendAsm(genComment("affected address :"));
@@ -278,7 +278,7 @@ public class MTAM extends AbstractMachine {
         }
 
         pointerCode.setIsAddress(true);
-        pointerCode.setAddress(null);
+        pointerCode.setLocation(null);
         return pointerCode;
     }
 
@@ -295,7 +295,7 @@ public class MTAM extends AbstractMachine {
     public Code genVariable(INFOVAR i) {
         Code retCode = new Code("LOAD (" + i.getSize() + ") " + i.getLocation().getOffset() + "[LB]");
         retCode.setIsAddress(false);
-        retCode.setAddress(i.getLocation().getOffset());
+        retCode.setLocation(i.getLocation());
         return retCode;
     }
 
@@ -348,8 +348,8 @@ public class MTAM extends AbstractMachine {
      * Ensures the Code gives a value
      */
     private Code genVal(Code operand, TTYPE type) {
-        if(operand.getAddress() != null) {
-            return new Code("LOAD (" + type.getSize() + ") " + operand.getAddress() + "[LB]");
+        if(operand.getLocation() != null) {
+            return new Code("LOAD (" + type.getSize() + ") " + operand.getLocation().getOffset() + "[LB]");
         }
         else if(operand.getIsAddress()) {
             operand.appendAsm("LOADI (" + type.getSize() + ")");

@@ -454,7 +454,7 @@ EX -> affect A #gen ;
     if (!EX^htype.constructFrom(A^type)) {
         error(TYPES_incompatible, EX^htype, A^type);
     }
-    elseif (!EX^hcode.getIsAddress() && EX^hcode.getAddress() == null) {
+    elseif (!EX^hcode.getIsAddress() && EX^hcode.getLocation() == null) {
         error(AFF_impossible);
     }
 
