@@ -1,0 +1,8 @@
+#include lib_x86.moc
+
+int main()
+{
+    int x = 5;
+    x = x + 1;
+    return x;
+}

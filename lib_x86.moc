@@ -1,0 +1,61 @@
+asm("
+; preamble
+global _start
+section .text
+_start:
+call f_main
+push eax ; push the return value of the main for call to the exit function
+call f_exit
+
+; program
+")
+
+//
+// system calls
+//
+// See this page for doing system calls :
+// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
+
+void exit(int return_code) {
+    asm("
+        ; exit syscall
+        mov eax, 1
+        mov ebx, [ebp + 8] ; return_code param.
+        int 0x80
+    ");
+}
+
+int write(int fd, char* buf, int nbytes) {
+    asm("
+        ; write syscall
+        mov eax, 4
+        mov ebx, [ebp + 8] ; fd param.
+        mov ecx, [ebp + 12] ; buf param.
+        mov edx, [ebp + 16] ; nbytes param.
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+int read(int fd, char* buf, int nbytes) {
+    asm("
+        ; read syscall
+        mov eax, 3
+        mov ebx, [ebp + 8] ; fd param.
+        mov ecx, [ebp + 12] ; buf param.
+        mov edx, [ebp + 16] ; nbytes param.
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+int open(char* filename, int flags, int mode) {
+    asm("
+        ; open syscall
+        mov eax, 5
+        mov ebx, [ebp + 8] ; filename param.
+        mov ecx, [ebp + 12] ; flags param.
+        mov edx, [ebp + 16] ; mode param.
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+
