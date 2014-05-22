@@ -339,7 +339,7 @@ public class Mx86 extends AbstractMachine {
         X86VariableLocator vl = (X86VariableLocator) vloc;
         if(vl.getLocalOffset() != 0)
         {
-            instsCode.appendAsm("sub esp, " + (-vl.getLocalOffset()));
+            instsCode.appendAsm("add esp, " + (-vl.getLocalOffset()));
         }
         return instsCode;
     }
