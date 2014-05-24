@@ -57,5 +57,3 @@ int open(char* filename, int flags, int mode) {
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
-
-

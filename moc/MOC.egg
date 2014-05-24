@@ -154,6 +154,7 @@ ENTITIES -> FUNCTION ENTITIES #gen ;
 -- functions
 FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC #gen ;
 global LTYPES param_types;
+    TFUNCTION fun;
 
 #trans {
     -- symbols table for parameters
@@ -177,14 +178,14 @@ global LTYPES param_types;
         error(VAR_exists, ident^txt);
     }
     else {
-        TFUNCTION fun = new TFUNCTION(ident^txt, TYPE^type, param_types);
+        fun = new TFUNCTION(ident^txt, TYPE^type, param_types);
         FUNCTION^st.insert(ident^txt, new INFOFUN(fun));
         FUNCTION^st.setCurrentFunction(fun);
     }
 }
 
 #gen {
-    FUNCTION^code = FUNCTION^machine.genFunction(FUNCTION^st.getCurrentFunction(), BLOC^code);
+    FUNCTION^code = FUNCTION^machine.genFunction(fun, BLOC^code);
     FUNCTION^st.setCurrentFunction(null);
 }
 
@@ -221,6 +222,7 @@ FUNC_PARAMETERSX -> comma FUNC_PARAMETER #trans FUNC_PARAMETERSX ;
     FUNC_PARAMETERSX^types.add(param_type);
     FUNC_PARAMETERSX1^types = FUNC_PARAMETERSX^types;
 
+    -- check if the parameter already exists
     INFO i = FUNC_PARAMETERSX^st.localSearch(param_name);
 
     if (i != null) {
@@ -256,7 +258,17 @@ REFS -> #type ;
 
 REFS -> mult #trans REFS #type ;
 #trans {
-    REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
+    match (REFS^htype) {
+        case TCLASS {
+            -- type TINSTANCE
+            TCLASS class = REFS^htype;
+            REFS1^htype = new TINSTANCE(class, REFS^machine.getPointerSize());
+        }
+        default {
+            -- type TPOINTER
+            REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
+        }
+    }
 }
 
 #type {
@@ -322,6 +334,7 @@ INST -> TYPE ident #trans AFF semicolon #gen ;
 #trans {
     AFF^htype = TYPE^type;
     
+    -- check if the variable already exists
     INFO i = INST^st.localSearch(ident^txt);
 
     if (i != null) {
@@ -410,12 +423,26 @@ INST -> while opar E cpar #trans BLOC #gen ;
 -- function return
 INST -> return E semicolon #gen ;
 #gen {
-    TTYPE return_type = INST^st.getCurrentFunction().getReturnType();
-    if (!return_type.constructFrom(E^type)) {
-        error(TYPES_incompatible, return_type, E^type);
+    TTYPE returnType;
+
+    -- 2 cases: function return or method return
+    if (INST^st.getCurrentFunction() != null) {
+        returnType = INST^st.getCurrentFunction().getReturnType();
+    }
+    else {
+        returnType = INST^st.getCurrentMethod().getReturnType();
     }
 
-    INST^code = INST^machine.genReturn(E^code, INST^st.getCurrentFunction());
+    if (!returnType.constructFrom(E^type)) {
+        error(TYPES_incompatible, returnType, E^type);
+    }
+
+    if (INST^st.getCurrentFunction() != null) {
+        INST^code = INST^machine.genReturn(E^code, INST^st.getCurrentFunction());
+    }
+    else {
+        INST^code = new Code(""); -- TODO
+    }
 }
 
 -- inline asm
@@ -723,7 +750,6 @@ F -> ident #gen ;
             case INFOVAR {
                 INFOVAR info = i;
                 F^type = info.getType();
-
                 F^code = F^machine.genVariable(info);
             }
             default {
@@ -751,6 +777,7 @@ F -> mult F #gen ;
 -- subprogram call arguments
 ARGS -> #gen ;
 #gen {
+    -- check number of parameters
     if(ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGS^function.getName());
     }
@@ -764,6 +791,7 @@ ARGS -> E #trans ARGSX #gen;
     ARGSX^types = ARGS^types;
     ARGSX^hcode = ARGS^machine.genArg(E^code, E^type);
 
+    -- check number of parameters
     if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGS^function.getName());
     }
@@ -792,6 +820,7 @@ ARGSX -> comma E #trans ARGSX #gen ;
     ARGSX^types.add(E^type);
     ARGSX1^types = ARGSX^types;
 
+    -- check number of parameters
     if(ARGSX^types.size() > ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGSX^function.getName());
     }
@@ -827,6 +856,7 @@ IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS 
         error(VAR_exists, class_ident^txt);
     }
 
+    -- symbols table for attributes and methods
     ST st = new ST(IMPLEMENTATION^st);
     ATTRIBUTES^st = st;
     METHODS^st = st;
@@ -838,7 +868,7 @@ IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS 
     METHODS^hmethods = methods;
 
     -- insert class in the current symbols table
-    TCLASS class = new TCLASS(class_ident^txt, SUPER^class, new TSTRUCT(fields), methods);
+    TCLASS class = new TCLASS(class_ident^txt, SUPER^class, fields, methods);
     IMPLEMENTATION^st.insert(class_ident^txt, new INFOCLASS(class));
     IMPLEMENTATION^st.setCurrentClass(class);
 }
@@ -856,6 +886,7 @@ SUPER -> #class ;
 
 SUPER -> colon class_ident #class ;
 #class {
+    -- seach for class_ident in the symbols table
     INFO i = SUPER^st.globalSearch(class_ident^txt);
 
     if (i == null) {
@@ -879,7 +910,8 @@ ATTRIBUTES -> ;
 
 ATTRIBUTES -> TYPE ident semicolon #attr ATTRIBUTES ;
 #attr {
-    if (ATTRIBUTES^hfields.search(ident^txt) != null) {
+    -- check if the attribute already exists in the class or some super classes
+    if (ATTRIBUTES^st.getCurrentClass().findAttribute(ident^txt) != null) {
         error(ATTR_exists, ident^txt);
     }
 
@@ -897,7 +929,7 @@ METHODS -> #gen ;
     METHODS^code = new Code("");
 }
 
-METHODS -> QUAL PTYPE #params MFUNC_PARAMETERS BLOC #method METHODS #gen ;
+METHODS -> QUAL PTYPE #params MFUNC_PARAMETERS #method BLOC METHODS #gen ;
 global LFIELDS fields;
 
 #params {
@@ -914,12 +946,19 @@ global LFIELDS fields;
 }
 
 #method {
-    -- TODO: check if the method already exists
-    METHODS^hmethods.add(new METHOD(PTYPE^type, fields, QUAL^static));
+    -- check if the method is already defined
+    if (METHODS^st.getCurrentClass().findMethodByName(fields, false) != null) {
+        error(METH_exists, METHODS^st.getCurrentClass().findMethodByName(fields, false));
+    }
+
+    METHOD method = new METHOD(PTYPE^type, fields, QUAL^static);
+    METHODS^hmethods.add(method);
+    METHODS^st.setCurrentMethod(method);
 }
 
 #gen {
     METHODS^code = new Code("");
+    METHODS^st.setCurrentMethod(null);
 }
 
 -- method or attribute qualifier: + = class, - = instance
@@ -932,6 +971,7 @@ QUAL -> minus #gen ;
 -- type class
 STYPE -> class_ident #type ;
 #type {
+    -- search for class_ident in the symbols table
     INFO i = STYPE^st.globalSearch(class_ident^txt);
 
     if (i == null) {
@@ -950,9 +990,6 @@ STYPE -> class_ident #type ;
     }
 }
 
--- type BOOL
---STYPE -> bool ;
-
 -- type "any"
 TYPE -> id #type ;
 #type {
@@ -970,7 +1007,8 @@ MFUNC_PARAMETERS -> ;
 
 MFUNC_PARAMETERS -> MFUNC_PARAMETER #param MFUNC_PARAMETERS ;
 #param {
-    if (MFUNC_PARAMETERS^hfields.search(MFUNC_PARAMETER^field.getName()) != null) {
+    -- check if the parameter is already defined
+    if (MFUNC_PARAMETERS^hfields.find(MFUNC_PARAMETER^field.getName()) != null) {
         error(PARAM_exists, MFUNC_PARAMETER^field.getName());
     }
 
@@ -1010,13 +1048,26 @@ MFUNC_PARAMETER -> ident colon PTYPE ident #field ;
 
 F -> self #gen ;
 #gen {
+    if (F^st.getCurrentMethod() == null) {
+        error(SELF_outside_method);
+    }
+    elseif (F^st.getCurrentMethod().isStatic()) {
+        error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
+    }
+
     F^type = new TINSTANCE(F^st.getCurrentClass(), F^machine.getPointerSize());
     F^code = new Code("");
 }
 
 F -> super #gen ;
 #gen {
-    if (F^st.getCurrentClass().getSuperType() == null) {
+    if (F^st.getCurrentMethod() == null) {
+        error(SUPER_outside_method);
+    }
+    elseif (F^st.getCurrentMethod().isStatic()) {
+        error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
+    }
+    elseif (F^st.getCurrentClass().getSuperType() == null) {
         error(SUPER_undefined);
     }
 
@@ -1026,25 +1077,75 @@ F -> super #gen ;
 
 -- method call
 F -> osbra F #args MARGS csbra #gen ;
+global LFIELDS fields;
+
 #args {
-    MARGS^hfields = new LFIELDS();
+    fields = new LFIELDS();
+    MARGS^hfields = fields;
 }
 
 #gen {
-    --TODO: check method call
-    F^type = null;
+    METHOD method = null;
+
+    match (F1^type) {
+        case TINSTANCE {
+            TINSTANCE instance = F1^type;
+            method = instance.getType().findCallableMethod(fields);
+
+            if (method == null) {
+                error(METH_undefined, instance.getType().getName(), fields);
+            }
+            elseif (method.isStatic()) {
+                error(METH_static, instance.getType().getName(), fields);
+            }
+        }
+        default {
+            error(TYPE_not_instance, F1^type);
+        }
+    }
+
+    F^type = method.getReturnType();
     F^code = new Code("");
 }
 
 -- for class method call
 F -> osbra class_ident #args MARGS csbra #gen ;
+global TCLASS class;
+    LFIELDS fields;
+
 #args {
-    MARGS^hfields = new LFIELDS();
+    INFO i = F^st.globalSearch(class_ident^txt);
+
+    if (i == null) {
+        error(CLASS_undefined, class_ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOCLASS {
+                INFOCLASS info = i;
+                class = info.getType();
+            }
+            default {
+                error(INFO_not_class, class_ident^txt);
+            }
+        }
+    }
+
+    fields = new LFIELDS();
+    MARGS^hfields = fields;
 }
 
 #gen {
-    --TODO: check method call
-    F^type = null;
+    METHOD method = class.findCallableMethod(fields);
+
+    if (method == null) {
+        error(METH_undefined, class.getName(), fields);
+    }
+    elseif (!method.isStatic()) {
+        error(METH_not_static, class.getName(), fields);
+    }
+
+    F^type = method.getReturnType();
     F^code = new Code("");
 }
 
@@ -1053,7 +1154,8 @@ MARGS -> ;
 
 MARGS -> MARG #args MARGS ;
 #args {
-    if (MARGS^hfields.search(MARG^field.getName()) != null) {
+    -- check if the parameter is already defined
+    if (MARGS^hfields.find(MARG^field.getName()) != null) {
         error(PARAM_exists, MARG^field.getName());
     }
 

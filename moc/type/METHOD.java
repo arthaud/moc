@@ -23,32 +23,30 @@ public class METHOD {
         return isStatic;
     }
 
-    public boolean constructFrom(TTYPE other) {
-        return false;
+    public boolean compareName(LFIELDS parameters) {
+        if (this.parameters.size() != parameters.size())
+            return false;
+
+        for(int i=0; i < this.parameters.size(); i++) {
+            if (!this.parameters.get(i).getName().equals(parameters.get(i).getName()))
+                return false;
+        }
+
+        return true;
     }
 
-    public boolean comparableWith(TTYPE other, String op) {
-        return false;
-    }
+    public boolean callable(LFIELDS parameters) {
+        if (this.parameters.size() != parameters.size())
+            return false;
 
-    public boolean binaryUsable(TTYPE other, String op) {
-        return false;
-    }
+        for(int i=0; i < this.parameters.size(); i++) {
+            if (!this.parameters.get(i).getName().equals(parameters.get(i).getName())
+                || (this.parameters.get(i).getType() == null && parameters.get(i).getType() != null)
+                || (this.parameters.get(i).getType() != null && !this.parameters.get(i).getType().constructFrom(parameters.get(i).getType())))
+                return false;
+        }
 
-    public boolean unaryUsable(String op) {
-        return false;
-    }
-
-    public boolean isCastableTo(TTYPE other) {
-        return false;
-    }
-
-    public boolean testable() {
-        return false;
-    }
-
-    public boolean equals(TTYPE other) {
-        return false; // no need
+        return true;
     }
 
     public String toString() {

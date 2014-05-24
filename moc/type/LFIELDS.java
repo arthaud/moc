@@ -15,7 +15,7 @@ public class LFIELDS extends ArrayList<FIELD> {
         return size;
     }
 
-    public FIELD search(String name) {
+    public FIELD find(String name) {
         for (FIELD f : this) {
             if (f.getName().equals(name))
                 return f;

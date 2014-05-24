@@ -18,31 +18,43 @@ public class TINSTANCE implements TTYPE {
     }
 
     public boolean constructFrom(TTYPE other) {
-        return false; // TODO
+        return equals(other) || other instanceof TNULL || other instanceof TID;
     }
 
     public boolean comparableWith(TTYPE other, String op) {
-        return false; // TODO
+        if(!op.equals("==") && !op.equals("!="))
+            return false;
+
+        return other instanceof TID || other instanceof TNULL || other instanceof TINSTANCE;
     }
 
     public boolean binaryUsable(TTYPE other, String op) {
-        return false; // TODO
+        return false;
     }
 
     public boolean unaryUsable(String op) {
-        return false; // TODO
+        return false;
     }
 
     public boolean isCastableTo(TTYPE other) {
-        return false; // TODO
+        return other instanceof TINTEGER
+            || other instanceof TPOINTER
+            || other instanceof TINSTANCE
+            || other instanceof TID;
     }
 
     public boolean testable() {
-        return false; // TODO
+        return false;
     }
 
     public boolean equals(TTYPE other) {
-        return false; // TODO
+        if(other instanceof TINSTANCE)
+        {
+            TINSTANCE instance = (TINSTANCE) other;
+            return type.equals(instance.getType());
+        }
+        else
+            return false;
     }
 
     public String toString() {

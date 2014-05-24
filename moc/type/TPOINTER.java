@@ -18,26 +18,14 @@ public class TPOINTER implements TTYPE {
     }
 
     public boolean constructFrom(TTYPE other) {
-        if(other instanceof TPOINTER)
-        {
-            TPOINTER p = (TPOINTER) other;
-            return type.equals(p.getType());
-        }
-        else
-            return other instanceof TNULL;
+        return equals(other) || other instanceof TNULL;
     }
 
     public boolean comparableWith(TTYPE other, String op) {
         if(!op.equals("==") && !op.equals("!="))
             return false;
 
-        if(other instanceof TPOINTER)
-        {
-            TPOINTER p = (TPOINTER) other;
-            return type.equals(p.getType());
-        }
-        else
-            return other instanceof TNULL;
+        return equals(other) || other instanceof TNULL;
     }
 
     public boolean binaryUsable(TTYPE other, String op) {
@@ -50,7 +38,9 @@ public class TPOINTER implements TTYPE {
 
     public boolean isCastableTo(TTYPE other) {
         return other instanceof TINTEGER
-            || other instanceof TPOINTER;
+            || other instanceof TPOINTER
+            || other instanceof TINSTANCE
+            || other instanceof TID;
     }
 
     public boolean testable() {
