@@ -12,7 +12,7 @@ elif [[ -z "$1" ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
     echo "optional arguments:"
     echo "  -h, --help  show this help message and exit"
 else
-    rm -f /tmp/p.moc /tmp/p.86 /tmp/p.o &&
+    rm -f /tmp/p.moc /tmp/p.x86 /tmp/p.o &&
     ./preprocessor.py "$1" /tmp/p.moc &&
     ./mocc -m x86 /tmp/p.moc &&
     nasm -f elf /tmp/p.x86 &&
