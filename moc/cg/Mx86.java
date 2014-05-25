@@ -79,7 +79,7 @@ public class Mx86 extends AbstractMachine {
 
         public X86VariableLocator(int offset) {
             this.offset = offset;
-            localOffset = -4;
+            localOffset = 0;
         }
 
         public Location generate(TTYPE param) {
