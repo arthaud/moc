@@ -131,7 +131,7 @@ public class ST extends HashMap<String, INFO> {
 
         Set<Map.Entry<String, INFO>> s = entrySet();
         for (Map.Entry<String, INFO> e : s) {
-            sb.append("\t" + e.getKey() + " : " + e.getValue() + '\n');
+            sb.append("\t" + e.getKey() + " : " + e.getValue().toString().replace("\n", "\n\t\t") + '\n');
         }
 
         return sb.toString();

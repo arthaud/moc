@@ -89,7 +89,12 @@ public class TCLASS implements TTYPE {
     }
 
     public boolean equals(TTYPE other) {
-        return false;
+        if(other instanceof TCLASS) {
+            TCLASS cl = (TCLASS) other;
+            return name.equals(cl.getName());
+        }
+        else
+            return false;
     }
 
     public String toString() {
@@ -99,10 +104,15 @@ public class TCLASS implements TTYPE {
         if(superClass != null)
             sb.append(" : " + superClass.getName());
 
-        sb.append("\n");
-        sb.append(attributes);
-        sb.append("\n");
-        sb.append(methods);
+        if(attributes.size() > 0) {
+            sb.append("\n");
+            sb.append(attributes);
+        }
+
+        if(methods.size() > 0) {
+            sb.append("\n");
+            sb.append(methods);
+        }
 
         return sb.toString();
     }
