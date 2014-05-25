@@ -1,0 +1,22 @@
+@class Point {
+    int x;
+    int y;
+}
+
+-(int)x {
+    return x;
+}
+
+-(int)y {
+    return y;
+}
+
+-(void)x:(int)a y:(int)b {
+    x = a;
+    y = b;
+}
+
+-(void)x:(int)toto y:(int)titi {
+    x = 42;
+}
+@end

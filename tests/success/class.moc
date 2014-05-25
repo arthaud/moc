@@ -1,0 +1,23 @@
+@class Point {
+    int x;
+    int y;
+}
++(id)init {
+    x = 0;
+    y = 0;
+}
+-(int)x {
+    return x;
+}
+-(int)y {
+    return y;
+}
+-(void)x:(int)a y:(int)b {
+    x = a;
+    y = b;
+}
+@end
+
+void main() {
+    Point *o = [Point init];
+}

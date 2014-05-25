@@ -1,0 +1,14 @@
+@class Point {
+    int x;
+    int y;
+}
+
+-(int)x {
+    return x;
+}
+
+-(int)x {
+    return 42;
+}
+
+@end

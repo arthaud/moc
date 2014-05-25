@@ -1,0 +1,10 @@
+@class Point {
+    int x;
+    int y;
+}
+
++(id)test {
+    [self x];
+}
+
+@end

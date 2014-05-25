@@ -1,0 +1,20 @@
+@class NSObject {
+    int a;
+}
++(id)init {
+    a = 0;
+}
+@end
+
+@class Point : NSObject {
+    int x;
+    int y;
+}
+
++(id)init {
+    x = 0;
+    y = 0;
+    a = true;
+}
+
+@end

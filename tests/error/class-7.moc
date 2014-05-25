@@ -1,0 +1,9 @@
+@class Point {
+    int x;
+    int y;
+}
+
+-(void) x:(int)a x:(void)b {
+}
+
+@end
