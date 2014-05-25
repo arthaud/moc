@@ -22,9 +22,16 @@ public class TCLASS implements TTYPE {
     }
 
     public int getSize() {
-        return superClass.getSize() + attributes.getSize();
+        if (superClass != null) {
+            return superClass.getSize() + attributes.getSize();
+        } else {
+            return attributes.getSize();
+        }
     }
 
+    /**
+     * Find an attribute of the class
+     */
     public FIELD findAttribute(String name) {
         return findAttribute(name, true);
     }
@@ -38,6 +45,28 @@ public class TCLASS implements TTYPE {
         return attribute;
     }
 
+    /**
+     * Get the offset of an attribute
+     */
+    public int getAttributeOffset(String name) {
+        assert(findAttribute(name) != null);
+
+        if (attributes.find(name) != null) {
+            if (superClass != null) {
+                return superClass.getSize() + attributes.getOffset(name);
+            }
+            else {
+                return attributes.getOffset(name);
+            }
+        }
+        else {
+            return superClass.getAttributeOffset(name);
+        }
+    }
+
+    /**
+     * Find a method by name
+     */
     public METHOD findMethodByName(LFIELDS parameters) {
         return findMethodByName(parameters, true);
     }
@@ -51,6 +80,9 @@ public class TCLASS implements TTYPE {
         return method;
     }
 
+    /**
+     * Find a callable method with the corresponding parameters
+     */
     public METHOD findCallableMethod(LFIELDS parameters) {
         return findCallableMethod(parameters, true);
     }

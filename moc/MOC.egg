@@ -740,10 +740,24 @@ global LTYPES args_types; TFUNCTION fun;
 
 F -> ident #gen ;
 #gen {
+    -- search for ident in the symbols table
     INFO i = F^st.globalSearch(ident^txt);
 
     if (i == null) {
-        error(VAR_undefined, ident^txt);
+        -- search for ident in class attributes
+        TCLASS currentClass = F^st.getCurrentClass();
+
+        if (currentClass != null && currentClass.findAttribute(ident^txt) != null) {
+            FIELD attr = currentClass.findAttribute(ident^txt);
+            INTEGER offset = currentClass.getAttributeOffset(ident^txt);
+
+            F^type = attr.getType();
+            F^code = new Code("; offset " + offset); -- TODO
+            F^code.setIsAddress(true); -- TODO: to be done in a genAttribute method..
+        }
+        else {
+            error(VAR_undefined, ident^txt);
+        }
     }
     else {
         match (i) {
@@ -916,11 +930,6 @@ ATTRIBUTES -> TYPE ident semicolon #attr ATTRIBUTES ;
     }
 
     ATTRIBUTES^hfields.add(new FIELD(ident^txt, TYPE^type));
-
-    -- no need to check if it's already in the symbols table
-    Location loc = null; -- TODO
-    INFOVAR info = new INFOVAR(TYPE^type, loc);
-    ATTRIBUTES^st.insert(ident^txt, info);
 }
 
 -- methods

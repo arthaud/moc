@@ -15,6 +15,23 @@ public class LFIELDS extends ArrayList<FIELD> {
         return size;
     }
 
+    /**
+     * Get the offset of a field
+     */
+    public int getOffset(String name) {
+        assert(find(name) != null);
+        int offset = 0;
+
+        for (FIELD f : this) {
+            if (f.getName().equals(name))
+                return offset;
+
+            offset += f.getType().getSize();
+        }
+
+        return -1; // should never happens
+    }
+
     public FIELD find(String name) {
         for (FIELD f : this) {
             if (f.getName().equals(name))
