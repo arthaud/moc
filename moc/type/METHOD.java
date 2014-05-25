@@ -49,6 +49,10 @@ public class METHOD {
         return true;
     }
 
+    public String getLabel() {
+        return parameters.getLabel();
+    }
+
     public String toString() {
         return returnType.toString() + " " + " (" + parameters.toString() + ")";
     }

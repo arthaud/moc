@@ -41,6 +41,19 @@ public class LFIELDS extends ArrayList<FIELD> {
         return null;
     }
 
+    public String getLabel() {
+        StringBuffer sb = new StringBuffer();
+
+        for (FIELD f : this) {
+            if(sb.length() > 0)
+                sb.append("_");
+
+            sb.append(f.getName());
+        }
+
+        return sb.toString();
+    }
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
 
