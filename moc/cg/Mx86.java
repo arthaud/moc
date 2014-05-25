@@ -123,6 +123,8 @@ public class Mx86 extends AbstractMachine {
         code.prependAsm("mov ebp, esp");
         code.prependAsm("push ebp");
         code.prependAsm("f_" + function.getName() + ":");
+        code.prependAsm("\n" + genComment("### " + function + " #############"));
+
         code.appendAsm("f_" + function.getName() + "_end:");
         code.appendAsm("mov esp, ebp");
         code.appendAsm("pop ebp");
@@ -139,6 +141,7 @@ public class Mx86 extends AbstractMachine {
         trueBloc.prependAsm("cond_then_" + num_cond + ":");
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
 
+        c.prependAsm(genComment("if condition :"));
         c.appendAsm("test " + genLocation(l) + ", " + genLocation(l));
         c.appendAsm("jeq cond_then_" + num_cond);
         c.appendAsm(falseBloc.getAsm());
@@ -153,6 +156,7 @@ public class Mx86 extends AbstractMachine {
         condition.appendAsm("test " + genLocation(l) + ", " + genLocation(l));
         condition.appendAsm("jne end_loop" + num);
         c.prependAsm(condition.getAsm());
+        c.prependAsm(genComment("loop condition :"));
         c.prependAsm("loop_" + num + ":");
         c.appendAsm("end_loop_" + num + ":");
         return c;
@@ -175,6 +179,8 @@ public class Mx86 extends AbstractMachine {
         Location a = allocator.pop();
 
         affectedVal = genVal(affectedVal, v);
+        address.prependAsm(genComment("affected address :"));
+        address.appendAsm(genComment("affected value :"));
         address.appendAsm(affectedVal.getAsm());
         address.appendAsm("mov [" + genLocation(a) + "], " + genLocation(v));
         return address;
@@ -187,6 +193,9 @@ public class Mx86 extends AbstractMachine {
 
         leftOperand = genVal(leftOperand, leftLocation);
         rightOperand = genVal(rightOperand, rightLocation);
+
+        leftOperand.prependAsm(genComment("left operand :"));
+        rightOperand.prependAsm(genComment("right operand :"));
 
         leftOperand.appendAsm(rightOperand.getAsm());
 
@@ -335,7 +344,7 @@ public class Mx86 extends AbstractMachine {
         X86VariableLocator vl = (X86VariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
-            instsCode.appendAsm("add esp, " + (-vl.getLocalOffset()));
+            instsCode.appendAsm("add esp, " + (-vl.getLocalOffset()) + " " + genComment("removing local variables"));
         }
 
         return instsCode;
