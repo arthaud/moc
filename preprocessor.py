@@ -25,6 +25,10 @@ class Preprocessor:
                         line = line.strip()
                         if line.startswith('#include'):
                             filename = ' '.join(line.split(' ')[1:])
+
+                            if filename[0] in ('"', "'") and filename[-1] in ('"', "'"):
+                                filename = filename[1:-1]
+
                             include_paths = list(filter(os.path.isfile, map(lambda s: os.path.join(s, filename), self.include_dirs)))
 
                             if not include_paths:

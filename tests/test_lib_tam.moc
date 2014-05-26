@@ -1,4 +1,4 @@
-#include lib_tam.moc
+#include "lib_tam.moc"
 
 void main() {
     char* s = "hello";
