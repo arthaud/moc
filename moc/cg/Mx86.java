@@ -7,7 +7,7 @@ import moc.st.INFOVAR;
 import java.util.ArrayDeque;
 
 /**
- * The TAM machine and its generation functions
+ * The x86 machine and its generation functions
  */
 public class Mx86 extends AbstractMachine {
 
@@ -179,11 +179,17 @@ public class Mx86 extends AbstractMachine {
         Location a = allocator.pop();
 
         affectedVal = genVal(affectedVal, v);
-        address.prependAsm(genComment("affected address :"));
-        address.appendAsm(genComment("affected value :"));
-        address.appendAsm(affectedVal.getAsm());
-        address.appendAsm("mov [" + genLocation(a) + "], " + genLocation(v));
-        return address;
+        affectedVal.prependAsm(genComment("affected value :"));
+
+        if (address.getLocation() != null) {
+            affectedVal.appendAsm("mov " + genLocation(address.getLocation()) + ", " + genLocation(v));
+            return affectedVal;
+        } else {
+            address.prependAsm(genComment("affected address :"));
+            address.appendAsm(affectedVal.getAsm());
+            address.appendAsm("mov [" + genLocation(a) + "], " + genLocation(v));
+            return address;
+        }
     }
 
     public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
@@ -231,31 +237,31 @@ public class Mx86 extends AbstractMachine {
                 break;
             case "==":
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", zf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", zf");
                 break;
             case "!=":
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", zf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", zf");
                 leftOperand.appendAsm("neg " + genLocation(leftLocation));
                 break;
             case ">":
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", sf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
                 break;
             case "<=":
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", sf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
                 leftOperand.appendAsm("neg " + genLocation(leftLocation));
                 break;
             case ">=":
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", sf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
                 leftOperand.appendAsm("or " + genLocation(leftLocation) + ", zf");
                 break;
             case "<":
                 // TODO
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mv " + genLocation(leftLocation) + ", sf");
+                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
@@ -353,7 +359,7 @@ public class Mx86 extends AbstractMachine {
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         Location l = allocator.get();
-        Code c = new Code("lea " + genLocation(l) + ", " + genLocation(i.getLocation()));
+        Code c = new Code("mov " + genLocation(l) + ", " + genLocation(i.getLocation()));
         allocator.push(l);
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
@@ -396,7 +402,7 @@ public class Mx86 extends AbstractMachine {
             return new Code("mov " + genLocation(l) + ", " + genLocation(operand.getLocation()));
         }
         else if(operand.getIsAddress()) {
-            operand.appendAsm("mov " + genLocation(l) + ", " + genLocation(l));
+            operand.appendAsm("mov " + genLocation(l) + ", [" + genLocation(l) + "]");
             operand.setIsAddress(false);
         }
 
