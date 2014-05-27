@@ -1,11 +1,12 @@
 asm("
 ; preamble
 global _start
+
 section .text
 _start:
-call f_main
-push eax ; push the return value of the main for call to the exit function
-call f_exit
+    call f_main
+    push eax ; push the return value of the main for call to the exit function
+    call f_exit
 
 ; program
 ")
@@ -54,6 +55,32 @@ int open(char* filename, int flags, int mode) {
         mov ebx, [ebp + 8] ; filename param.
         mov ecx, [ebp + 12] ; flags param.
         mov edx, [ebp + 16] ; mode param.
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+// PROT_READ = 1
+// PROT_WRITE = 2
+// PROT_EXEC = 4
+// MAP_SHARED = 1
+// MAP_PRIVATE = 2
+// MAP_FIXED = 4
+// MAP_ANONYMOUS = 32
+void* mmap(void* addr, int len, int prot, int flags, int fildes, int offset) {
+    asm("
+        ; mmap syscall
+        mov eax, 90
+        lea ebx, [ebp + 0x8] ; struct mmap_arg_struct
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+int munmap(void* addr, int len) {
+    asm("
+        ; munmap syscall
+        mov eax, 91
+        mov ebx, [ebp + 8] ; addr param
+        mov ecx, [ebp + 12] ; len param
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
