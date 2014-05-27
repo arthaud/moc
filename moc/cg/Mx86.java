@@ -142,8 +142,8 @@ public class Mx86 extends AbstractMachine {
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
 
         c.prependAsm(genComment("if condition :"));
-        c.appendAsm("test " + genLocation(l) + ", " + genLocation(l));
-        c.appendAsm("jeq cond_then_" + num_cond);
+        c.appendAsm("cmp " + genLocation(l) + ", 0");
+        c.appendAsm("jne cond_then_" + num_cond);
         c.appendAsm(falseBloc.getAsm());
         c.appendAsm(trueBloc.getAsm());
         return c;
@@ -153,11 +153,12 @@ public class Mx86 extends AbstractMachine {
         int num = getLabelNum();
         Location l = allocator.pop();
         condition = genVal(condition, l);
-        condition.appendAsm("test " + genLocation(l) + ", " + genLocation(l));
-        condition.appendAsm("jne end_loop" + num);
+        condition.appendAsm("cmp " + genLocation(l) + ", 0");
+        condition.appendAsm("je end_loop_" + num);
         c.prependAsm(condition.getAsm());
         c.prependAsm(genComment("loop condition :"));
         c.prependAsm("loop_" + num + ":");
+        c.appendAsm("jmp loop_" + num);
         c.appendAsm("end_loop_" + num + ":");
         return c;
     }
@@ -213,17 +214,24 @@ public class Mx86 extends AbstractMachine {
                 leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
                 break;
             case "*":
-                // mul work only with one parameter...
-                leftOperand.appendAsm("push eax");
-                leftOperand.appendAsm("push edx");
-                leftOperand.appendAsm("mov eax, " + genLocation(leftLocation));
-                leftOperand.appendAsm("mul " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", eax");
-                leftOperand.appendAsm("pop edx");
-                leftOperand.appendAsm("pop eax");
-                break;
             case "/":
-                leftOperand.appendAsm("div " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+            case "%":
+                // mul and div work only with one parameter...
+                leftOperand.appendAsm(genComment("operator " + operator));
+                boolean eaxUsed = leftLocation.getOffset() == 0 || rightLocation.getOffset() == 0;
+                boolean edxUsed = leftLocation.getOffset() == 3 || rightLocation.getOffset() == 3;
+
+                if (!eaxUsed) leftOperand.appendAsm("push eax");
+                if (!edxUsed) leftOperand.appendAsm("push edx");
+                if (leftLocation.getOffset() != 0) leftOperand.appendAsm("mov eax, " + genLocation(leftLocation));
+
+                if (operator.equals("*")) leftOperand.appendAsm("mul " + genLocation(rightLocation));
+                else leftOperand.appendAsm("div " + genLocation(rightLocation));
+
+                if (!operator.equals("%") && leftLocation.getOffset() != 0) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", eax");
+                if (operator.equals("%") && leftLocation.getOffset() != 3) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", edx");
+                if (!edxUsed) leftOperand.appendAsm("pop edx");
+                if (!eaxUsed) leftOperand.appendAsm("pop eax");
                 break;
             case "&&":
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
@@ -231,37 +239,32 @@ public class Mx86 extends AbstractMachine {
             case "||":
                 leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
                 break;
-            case "%":
-                // TODO
-                leftOperand.appendAsm("TODO:modulo " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                break;
             case "==":
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", zf");
-                break;
             case "!=":
+                leftOperand.appendAsm(genComment("operator " + operator));
                 leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", zf");
-                leftOperand.appendAsm("neg " + genLocation(leftLocation));
-                break;
-            case ">":
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
-                break;
-            case "<=":
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
-                leftOperand.appendAsm("neg " + genLocation(leftLocation));
-                break;
-            case ">=":
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
-                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", zf");
+                leftOperand.appendAsm("pushfd");
+                leftOperand.appendAsm("pop " + genLocation(leftLocation));
+
+                if (operator.equals("!=")) leftOperand.appendAsm("not " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x40");
                 break;
             case "<":
-                // TODO
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", sf");
+            case ">=":
+            case ">":
+            case "<=":
+                leftOperand.appendAsm(genComment("operator " + operator));
+
+                if (operator.equals("<") || operator.equals(">="))
+                    leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+                else
+                    leftOperand.appendAsm("cmp " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+
+                leftOperand.appendAsm("pushfd");
+                leftOperand.appendAsm("pop " + genLocation(leftLocation));
+
+                if (operator.equals(">=") || operator.equals("<=")) leftOperand.appendAsm("not " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x80");
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");
@@ -280,7 +283,11 @@ public class Mx86 extends AbstractMachine {
                 operand.appendAsm("neg " + genLocation(l));
                 break;
             case "!":
-                operand.appendAsm("not " + genLocation(l));
+                operand.appendAsm(genComment("operator !"));
+                operand.appendAsm("cmp " + genLocation(l) + ", 0");
+                operand.appendAsm("pushfd");
+                operand.appendAsm("pop " + genLocation(l));
+                operand.appendAsm("and " + genLocation(l) + ", 0x40");
                 break;
             default:
                 throw new RuntimeException("Unknown operator.");

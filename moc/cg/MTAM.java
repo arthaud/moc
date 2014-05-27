@@ -225,8 +225,6 @@ public class MTAM extends AbstractMachine {
         Code c = genVal(operand, type);
 
         switch(operator) {
-        case "+":
-            break;
         case "-":
             c.appendAsm("SUBR INeg");
             break;
