@@ -234,6 +234,24 @@ public class Mx86 extends AbstractMachine {
                 if (!eaxUsed) leftOperand.appendAsm("pop eax");
                 break;
             case "&&":
+                // "and" in x86 is a bitwise operator.
+                // 0b10 and 0b100 = 0, too bad..
+                leftOperand.appendAsm(genComment("operator " + operator));
+
+                // leftLocation > 0
+                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", 0");
+                leftOperand.appendAsm("pushfd");
+                leftOperand.appendAsm("pop " + genLocation(leftLocation));
+                leftOperand.appendAsm("not " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x40");
+
+                // rightLocation > 0
+                leftOperand.appendAsm("cmp " + genLocation(rightLocation) + ", 0");
+                leftOperand.appendAsm("pushfd");
+                leftOperand.appendAsm("pop " + genLocation(rightLocation));
+                leftOperand.appendAsm("not " + genLocation(rightLocation));
+                leftOperand.appendAsm("and " + genLocation(rightLocation) + ", 0x40");
+
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
                 break;
             case "||":
