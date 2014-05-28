@@ -26,7 +26,7 @@ public class Mx86 extends AbstractMachine {
                     return l;
             }
 
-            return null;
+            throw new RuntimeException("No more unused registers !");
         }
 
         public String toString() {
@@ -301,7 +301,7 @@ public class Mx86 extends AbstractMachine {
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x80");
                 break;
             default:
-                throw new RuntimeException("Unknown operator.");
+                throw new RuntimeException("Unknown operator: " + operator);
         }
 
         allocator.push(leftLocation);
@@ -324,7 +324,7 @@ public class Mx86 extends AbstractMachine {
                 operand.appendAsm("and " + genLocation(l) + ", 0x40");
                 break;
             default:
-                throw new RuntimeException("Unknown operator.");
+                throw new RuntimeException("Unknown operator: " + operator);
         }
 
         allocator.push(l);
@@ -336,11 +336,26 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genCall(TFUNCTION f, Code arguments) {
-        arguments.appendAsm("call f_" + f.getName());
-        arguments.appendAsm("add esp, " + f.getParameterTypes().getSize());
+        Location l = allocator.get();
 
+        arguments.prependAsm(genComment("push parameters :"));
+        arguments.appendAsm("call f_" + f.getName());
+
+        if (!(f.getReturnType() instanceof TVOID) && l.getOffset() != 0) {
+            arguments.appendAsm("mov " + genLocation(l) + ", eax");
+        }
+
+        arguments.appendAsm("add esp, " + f.getParameterTypes().getSize() + " " + genComment("removing parameters"));
+
+        // push registers
+        for (Location loc : allocator) {
+            arguments.prependAsm("push " + genLocation(loc));
+            arguments.appendAsm("pop " + genLocation(loc));
+        }
+
+        // need to be done here and not before (not to disturb the backup registers)
         if(!(f.getReturnType() instanceof TVOID))
-            allocator.push(new Location(Location.LocationType.REGISTER, 0));
+            allocator.push(l);
 
         return arguments;
     }

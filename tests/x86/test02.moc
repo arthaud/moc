@@ -12,8 +12,9 @@ int main()
 {
     int x = f1(1) + f1(2); // 5
     int y = f1(f2(1, 2)); // 6
+    int z = f2(3, 1) + f1(1) * 2; // 14
 
-    if (x + y == 11) {
+    if (x + y + z == 25) {
         return 42;
     }
 
