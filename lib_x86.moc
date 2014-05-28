@@ -2,8 +2,14 @@ asm("
 ; preamble
 global _start
 
+section .data
+    ; heap management :
+    heap: dd 0          ; beginning of the unallocated area
+    heap_size: dd 4096  ; size of the area
+
 section .text
 _start:
+    call f_libx86_init
     call f_main
     push eax ; push the return value of the main for call to the exit function
     call f_exit
@@ -21,7 +27,7 @@ void exit(int return_code) {
     asm("
         ; exit syscall
         mov eax, 1
-        mov ebx, [ebp + 8] ; return_code param.
+        mov ebx, %return_code
         int 0x80
     ");
 }
@@ -30,9 +36,9 @@ int write(int fd, char* buf, int nbytes) {
     asm("
         ; write syscall
         mov eax, 4
-        mov ebx, [ebp + 8] ; fd param.
-        mov ecx, [ebp + 12] ; buf param.
-        mov edx, [ebp + 16] ; nbytes param.
+        mov ebx, %fd
+        mov ecx, %buf
+        mov edx, %nbytes
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
@@ -41,9 +47,9 @@ int read(int fd, char* buf, int nbytes) {
     asm("
         ; read syscall
         mov eax, 3
-        mov ebx, [ebp + 8] ; fd param.
-        mov ecx, [ebp + 12] ; buf param.
-        mov edx, [ebp + 16] ; nbytes param.
+        mov ebx, %fd
+        mov ecx, %buf
+        mov edx, %nbytes
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
@@ -52,9 +58,9 @@ int open(char* filename, int flags, int mode) {
     asm("
         ; open syscall
         mov eax, 5
-        mov ebx, [ebp + 8] ; filename param.
-        mov ecx, [ebp + 12] ; flags param.
-        mov edx, [ebp + 16] ; mode param.
+        mov ebx, %filename
+        mov ecx, %flags
+        mov edx, %mode
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
@@ -62,15 +68,17 @@ int open(char* filename, int flags, int mode) {
 // PROT_READ = 1
 // PROT_WRITE = 2
 // PROT_EXEC = 4
+
 // MAP_SHARED = 1
 // MAP_PRIVATE = 2
 // MAP_FIXED = 4
 // MAP_ANONYMOUS = 32
+
 void* mmap(void* addr, int len, int prot, int flags, int fildes, int offset) {
     asm("
         ; mmap syscall
         mov eax, 90
-        lea ebx, [ebp + 0x8] ; struct mmap_arg_struct
+        lea ebx, [ebp + 8] ; struct mmap_arg_struct *
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
@@ -79,8 +87,72 @@ int munmap(void* addr, int len) {
     asm("
         ; munmap syscall
         mov eax, 91
-        mov ebx, [ebp + 8] ; addr param
-        mov ecx, [ebp + 12] ; len param
+        mov ebx, %addr
+        mov ecx, %len
         int 0x80 ; the result is returned into eax : perfect
     ");
 }
+
+//
+// heap management
+//
+
+int sys_break(void* addr) {
+    asm("
+        mov eax, 45
+        mov ebx, %addr
+        int 0x80 ; the result is returned into eax : perfect
+    ");
+}
+
+void libx86_init() {
+    void* heap = (void*) sys_break(NULL); // the beginning of the heap
+    sys_break(heap + 4096); // ask for 4096 bytes
+
+    asm("
+        mov eax, %heap
+        mov [heap], eax ; store heap in a global var
+    ");
+}
+
+// Maxime Arthaud's malloc
+void* malloc(int size) {
+    void* heap;
+    int heap_size;
+
+    // get heap and heap_size global var
+    asm("
+        mov eax, [heap] ; heap
+        mov %heap, eax
+        mov eax, [heap_size] ; heap_size
+        mov %heap_size, eax
+    ");
+
+    if (size > 262144) {
+        return mmap(NULL, size, 3, 34, -1, 0);
+    }
+
+    void* r = heap;
+
+    if (size <= heap_size) {
+        heap = heap + size;
+        heap_size = heap_size - size;
+    }
+    else {
+        sys_break(heap + size + 4096);
+        heap = heap + size;
+        heap_size = 4096;
+    }
+
+    // store heap and heap_size global var
+    asm("
+        mov eax, %heap
+        mov [heap], eax ; heap
+        mov eax, %heap_size
+        mov [heap_size], eax ; heap_size
+    ");
+
+    return r;
+}
+
+void free(void* p) {}
