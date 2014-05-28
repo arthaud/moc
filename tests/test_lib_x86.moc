@@ -2,16 +2,12 @@
 
 int main()
 {
-    int* p = (int*) mmap(NULL, 200000, 3, 34, -1, 0);
-    *p = 1;
-    p = p + 1;
-    *p = 2;
-    p = p - 1;
+    int* p = (int*)malloc(4094);
+    int* q = (int*)malloc(100);
+    int* r = (int*)malloc(42);
 
-    munmap((void*)p, 200000);
+    *q = 269554195;
+    *r = 539042339;
 
-    int x = 5;
-    x = x + 1;
-
-    return x;
+    return 42;
 }

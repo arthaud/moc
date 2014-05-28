@@ -1,0 +1,21 @@
+#include "lib_x86.moc"
+
+int f1(int x) {
+    return x + 1;
+}
+
+int f2(int x, int y) {
+    return x * x + y * y;
+}
+
+int main()
+{
+    int x = f1(1) + f1(2); // 5
+    int y = f1(f2(1, 2)); // 6
+
+    if (x + y == 11) {
+        return 42;
+    }
+
+    return 0;
+}

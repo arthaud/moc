@@ -1,0 +1,20 @@
+#include "lib_x86.moc"
+
+int main()
+{
+    int x = 1 + 2 * 3; // 7
+    int y = 5 - 5 / 2; // 3
+
+    if (x + y > 6) {
+        if ((x < 2) || (y > 3)) {
+            return 0;
+        }
+        else {
+            if (true && (x - y == 4)) {
+                return 42;
+            }
+        }
+    }
+
+    return 0;
+}
