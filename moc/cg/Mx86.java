@@ -16,6 +16,7 @@ public class Mx86 extends AbstractMachine {
     };
 
     private class Allocator extends ArrayDeque<Location> {
+        private static final long serialVersionUID = 1L;
 
         /* returns a new unused location */
         public Location get() {
@@ -26,6 +27,20 @@ public class Mx86 extends AbstractMachine {
             }
 
             return null;
+        }
+
+        public String toString() {
+            StringBuffer sb = new StringBuffer("[");
+
+            for(Location l : this) {
+                if(sb.length() > 1)
+                    sb.append(", ");
+
+                sb.append(registerNames[l.getOffset()]);
+            }
+
+            sb.append("]");
+            return sb.toString();
         }
     }
 
@@ -150,9 +165,10 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genLoop(Code condition, Code c) {
-        int num = getLabelNum();
         Location l = allocator.pop();
         condition = genVal(condition, l);
+
+        int num = getLabelNum();
         condition.appendAsm("cmp " + genLocation(l) + ", 0");
         condition.appendAsm("je end_loop_" + num);
         c.prependAsm(condition.getAsm());
