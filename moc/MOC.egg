@@ -649,7 +649,7 @@ F -> character #gen ;
 
 F -> null #gen ;
 #gen {
-    F^type = new TNULL();
+    F^type = new TNULL(F^machine.getPointerSize());
     F^code = F^machine.genNull();
 }
 

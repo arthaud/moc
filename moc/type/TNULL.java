@@ -1,10 +1,14 @@
 package moc.type;
 
 public class TNULL implements TTYPE {
-    public TNULL() {}
+    private int size;
+
+    public TNULL(int size) {
+        this.size = size;
+    }
 
     public int getSize() {
-        return 0;
+        return size;
     }
 
     public boolean constructFrom(TTYPE other) {
