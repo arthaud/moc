@@ -1,10 +1,12 @@
 package moc.cg;
 
+import java.util.ArrayDeque;
+
 import moc.type.TTYPE;
 import moc.type.TVOID;
+import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.st.INFOVAR;
-import java.util.ArrayDeque;
 
 /**
  * The x86 machine and its generation functions
@@ -149,7 +151,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         Location l = allocator.pop();
-        c = genVal(c, l);
+        c = genVal(c, l, new TBOOL(1));
 
         int num_cond = getLabelNum();
         falseBloc.appendAsm("jmp cond_end_" + num_cond);
@@ -166,7 +168,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genLoop(Code condition, Code c) {
         Location l = allocator.pop();
-        condition = genVal(condition, l);
+        condition = genVal(condition, l, new TBOOL(1));
 
         int num = getLabelNum();
         condition.appendAsm("cmp " + genLocation(l) + ", 0");
@@ -181,7 +183,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genReturn(Code returnVal, TFUNCTION function) {
         Location l = allocator.pop();
-        returnVal = genVal(returnVal, l);
+        returnVal = genVal(returnVal, l, function.getReturnType());
 
         if(! genLocation(l).equals("eax")) {
             returnVal.appendAsm("mov eax, " + genLocation(l));
@@ -195,16 +197,16 @@ public class Mx86 extends AbstractMachine {
         Location v = allocator.pop();
         Location a = allocator.pop();
 
-        affectedVal = genVal(affectedVal, v);
+        affectedVal = genVal(affectedVal, v, type);
         affectedVal.prependAsm(genComment("affected value :"));
 
         if (address.getLocation() != null) {
-            affectedVal.appendAsm("mov " + genLocation(address.getLocation()) + ", " + genLocation(v));
+            affectedVal.appendAsm(genMovRegToMem(genLocation(address.getLocation()), v, type.getSize()));
             return affectedVal;
         } else {
             address.prependAsm(genComment("affected address :"));
             address.appendAsm(affectedVal.getAsm());
-            address.appendAsm("mov [" + genLocation(a) + "], " + genLocation(v));
+            address.appendAsm(genMovRegToMem("[" + genLocation(a) + "]", v, type.getSize()));
             return address;
         }
     }
@@ -214,8 +216,8 @@ public class Mx86 extends AbstractMachine {
         Location rightLocation = allocator.pop();
         Location leftLocation = allocator.pop();
 
-        leftOperand = genVal(leftOperand, leftLocation);
-        rightOperand = genVal(rightOperand, rightLocation);
+        leftOperand = genVal(leftOperand, leftLocation, leftType);
+        rightOperand = genVal(rightOperand, rightLocation, rightType);
 
         leftOperand.prependAsm(genComment("left operand :"));
         rightOperand.prependAsm(genComment("right operand :"));
@@ -310,7 +312,7 @@ public class Mx86 extends AbstractMachine {
 
     public Code genUnary(Code operand, TTYPE type, String operator) {
         Location l = allocator.pop();
-        operand = genVal(operand, l);
+        operand = genVal(operand, l, type);
 
         switch(operator) {
             case "-":
@@ -368,8 +370,8 @@ public class Mx86 extends AbstractMachine {
     // declare a variable with an initial value
     public Code genDecl(INFOVAR info, Code value) {
         Location l = allocator.pop();
-        value = genVal(value, l);
-        value.appendAsm("push " + genLocation(l));
+        value = genVal(value, l, info.getType());
+        value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
     }
 
@@ -383,8 +385,8 @@ public class Mx86 extends AbstractMachine {
 
     public Code genArg(Code e, TTYPE type) {
         Location l = allocator.pop();
-        e = genVal(e, l);
-        e.appendAsm("push " + genLocation(l));
+        e = genVal(e, l, type);
+        e.appendAsm(genPush(l, type.getSize()));
         return e;
     }
 
@@ -393,7 +395,7 @@ public class Mx86 extends AbstractMachine {
         Location d = allocator.get();
 
         if(pointerCode.getIsAddress()) {
-            pointerCode.appendAsm("mov " + genLocation(d) + ", [" + genLocation(l) + "]");
+            pointerCode.appendAsm(genMovMemToReg(genLocation(d), "[" + genLocation(l) + "]", pointedType.getSize()));
         }
 
         pointerCode.setIsAddress(true);
@@ -415,10 +417,12 @@ public class Mx86 extends AbstractMachine {
     public Code genVariable(INFOVAR i) {
         assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
         Location l = allocator.get();
-        Code c = new Code("mov " + genLocation(l) + ", " + genLocation(i.getLocation()));
         allocator.push(l);
+
+        Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
+
         return c;
     }
 
@@ -429,7 +433,7 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genString(String txt) {
-        return new Code("");
+        return new Code(""); // TODO
     }
 
     public Code genNull() {
@@ -447,21 +451,84 @@ public class Mx86 extends AbstractMachine {
     public Code genChar(String c) {
         Location l = allocator.get();
         allocator.push(l);
-        return new Code("mov " + genLocation(l) + ", " + c);
+
+        if(c.equals("'\\0'"))
+            return new Code("mov " + genLocation(l) + ", 0");
+        else if(c.equals("'\\n'"))
+            return new Code("mov " + genLocation(l) + ", 10");
+        else if(c.equals("'\\r'"))
+            return new Code("mov " + genLocation(l) + ", 13");
+        else if(c.equals("'\\t'"))
+            return new Code("mov " + genLocation(l) + ", 9");
+        else
+            return new Code("mov " + genLocation(l) + ", " + c);
     }
 
     /**
      * Ensures the Code gives a value
      */
-    private Code genVal(Code operand, Location l) {
+    private Code genVal(Code operand, Location l, TTYPE type) {
         if(operand.getLocation() != null) {
-            return new Code("mov " + genLocation(l) + ", " + genLocation(operand.getLocation()));
+            return new Code(genMovMemToReg(genLocation(l), genLocation(operand.getLocation()), type.getSize()));
         }
         else if(operand.getIsAddress()) {
-            operand.appendAsm("mov " + genLocation(l) + ", [" + genLocation(l) + "]");
+            operand.appendAsm(genMovMemToReg(genLocation(l), "[" + genLocation(l) + "]", type.getSize()));
             operand.setIsAddress(false);
         }
 
         return operand;
+    }
+
+    /**
+     * Generate a push
+     */
+    private String genPush(Location operand, int size) {
+        if (size == 4) {
+            return "push " + genLocation(operand);
+        }
+        else {
+            String c = "sub esp, " + size + "\n";
+            c += genMovRegToMem("[esp]", operand, size);
+            return c;
+        }
+    }
+
+    /**
+     * Generate a mov from registers to memory
+     */
+    private String genMovRegToMem(String left, Location right, int size) {
+        assert(right.getType() == Location.LocationType.REGISTER);
+
+        switch(size) {
+            case 4: {
+                return "mov " + left + ", " + genLocation(right);
+            }
+            case 2: {
+                String[] registerNames = {"ax", "bx", "cx", "dx", "si", "di"};
+                return "mov " + left + ", " + registerNames[right.getOffset()];
+            }
+            case 1: {
+                String[] registerNames = {"al", "bl", "cl", "dl", "sil", "dil"};
+                return "mov " + left + ", " + registerNames[right.getOffset()];
+            }
+            default:
+                throw new RuntimeException("Invalid size: " + size);
+        }
+    }
+
+    /**
+     * Generate a mov from memory to a register
+     */
+    private String genMovMemToReg(String left, String right, int size) {
+        switch(size) {
+            case 4:
+                return "mov " + left + ", " + right;
+            case 2:
+                return "movzx " + left + ", WORD " + right;
+            case 1:
+                return "movzx " + left + ", BYTE " + right;
+            default:
+                throw new RuntimeException("Invalid size: " + size);
+        }
     }
 }
