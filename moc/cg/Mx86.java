@@ -13,6 +13,10 @@ import moc.st.INFOVAR;
  */
 public class Mx86 extends AbstractMachine {
 
+    private int stringOffset = 0;
+
+    private Allocator allocator = new Allocator();
+
     public static final String[] registerNames = {
         "eax", "ebx", "ecx", "edx", "esi", "edi"
     };
@@ -46,7 +50,9 @@ public class Mx86 extends AbstractMachine {
         }
     }
 
-    Allocator allocator = new Allocator();
+    public Mx86() {
+        initCode = "section .data\n";
+    }
 
     public String getName() {
         return "x86_32";
@@ -433,7 +439,14 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genString(String txt) {
-        return new Code(""); // TODO
+        int offset = stringOffset;
+        stringOffset++;
+
+        txt = txt.replace("\\n", "\",10,\"").replace("\\r", "\",13,\"").replace("\\t", "\",9,\""); // fix for nasm..
+        initCode += "\tstr_" + offset + ": db " + txt + ", 0\n";
+        Location l = allocator.get();
+        allocator.push(l);
+        return new Code("mov " + genLocation(l) + ", str_" + offset);
     }
 
     public Code genNull() {
