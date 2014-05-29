@@ -1002,7 +1002,7 @@ STYPE -> class_ident #type ;
 -- type "any"
 TYPE -> id #type ;
 #type {
-    TYPE^type = new TID();
+    TYPE^type = new TID(TYPE^machine.getPointerSize());
 }
 
 -- method return type between parentheses

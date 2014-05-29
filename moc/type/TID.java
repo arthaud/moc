@@ -1,10 +1,14 @@
 package moc.type;
 
 public class TID implements TTYPE {
-    public TID() {}
+    private int size;
+
+    public TID(int size) {
+        this.size = size;
+    }
 
     public int getSize() {
-        return 0; // TODO: check
+        return size;
     }
 
     public boolean constructFrom(TTYPE other) {
