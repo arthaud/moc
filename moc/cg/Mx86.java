@@ -35,6 +35,10 @@ public class Mx86 extends AbstractMachine {
             throw new RuntimeException("No more unused registers !");
         }
 
+        public boolean containsRegister(int i) {
+            return contains(new Location(Location.LocationType.REGISTER, i));
+        }
+
         public String toString() {
             StringBuffer sb = new StringBuffer("[");
 
@@ -241,20 +245,37 @@ public class Mx86 extends AbstractMachine {
             case "%":
                 // mul and div work only with one parameter...
                 leftOperand.appendAsm(genComment("operator " + operator));
-                boolean eaxUsed = leftLocation.getOffset() == 0 || rightLocation.getOffset() == 0;
-                boolean edxUsed = leftLocation.getOffset() == 3 || rightLocation.getOffset() == 3;
 
-                if (!eaxUsed) leftOperand.appendAsm("push eax");
-                if (!edxUsed) leftOperand.appendAsm("push edx");
+                // save registers
+                if (allocator.containsRegister(0)) leftOperand.appendAsm("push eax");
+                if (allocator.containsRegister(3)) leftOperand.appendAsm("push edx");
+
+                if (rightLocation.getOffset() == 3) {
+                    // get an unused register
+                    allocator.push(rightLocation);
+                    allocator.push(leftLocation);
+                    Location newLocation = allocator.get();
+                    allocator.pop();
+                    allocator.pop();
+
+                    // use newLocation as right operand
+                    leftOperand.appendAsm("mov " + genLocation(newLocation) + ", edx");
+                    rightLocation = newLocation;
+                }
+
+                // prepare
                 if (leftLocation.getOffset() != 0) leftOperand.appendAsm("mov eax, " + genLocation(leftLocation));
+                leftOperand.appendAsm("mov edx, 0"); // high part of the operand
 
                 if (operator.equals("*")) leftOperand.appendAsm("mul " + genLocation(rightLocation));
                 else leftOperand.appendAsm("div " + genLocation(rightLocation));
 
                 if (!operator.equals("%") && leftLocation.getOffset() != 0) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", eax");
                 if (operator.equals("%") && leftLocation.getOffset() != 3) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", edx");
-                if (!edxUsed) leftOperand.appendAsm("pop edx");
-                if (!eaxUsed) leftOperand.appendAsm("pop eax");
+
+                // restore registers
+                if (allocator.containsRegister(3)) leftOperand.appendAsm("pop edx");
+                if (allocator.containsRegister(0)) leftOperand.appendAsm("pop eax");
                 break;
             case "&&":
                 // "and" in x86 is a bitwise operator.
