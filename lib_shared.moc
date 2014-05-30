@@ -1,0 +1,90 @@
+//
+// asm-independent shared functions between lib_x86 and lib_tam
+//
+
+//
+// manage memory
+//
+
+void memcpy(char* dest, char* src, int n) {
+    while(n > 0) {
+        *dest = *src;
+        src = src + 1;
+        dest = dest + 1;
+        n = n - 1;
+    }
+}
+
+//
+// misc.
+//
+
+int strlen(char* str) {
+    int x = 0;
+
+    while(*str != '\0') {
+        x = x + 1;
+        str = str + 1;
+    }
+
+    return x;
+}
+
+void strrev(char* p) {
+    char* end = p + strlen(p) - 1;
+
+    while(p < end) {
+        char tmp = *end;
+        *end = *p;
+        *p = tmp;
+        p = p + 1;
+        end = end - 1;
+    }
+}
+
+int atoi(char* str) {
+    int x = 0;
+
+    while(*str != '\0') {
+        if((*str < '0') || (*str > '9')) {
+            return -1;
+        }
+
+        x = 10 * x + (int)(*str) - (int)'0';
+        str = str + 1;
+    }
+
+    return x;
+}
+
+char* itoa(int value) {
+    char* p = (char*) malloc(33);
+    char* s = p;
+
+    while (value > 0) {
+        *p = (char)((int)'0' + value % 10);
+        value = value / 10;
+        p = p + 1;
+    }
+
+    *p = '\0';
+    strrev(s);
+    return s;
+}
+
+void strcpy(char* dest, char* src) {
+    while(*src != '\0') {
+        *dest = *src;
+        src = src + 1;
+        dest = dest + 1;
+    }
+}
+
+int strcmp(char* s1, char* s2) {
+    while((*s1 != '\0') && (*s2 != '\0') && (*s1 == *s2)) {
+        s1 = s1 + 1;
+        s2 = s2 + 1;
+    }
+
+    return (int)*s1 - (int)*s2;
+}

@@ -156,3 +156,31 @@ void* malloc(int size) {
 }
 
 void free(void* p) {}
+
+// include shared functions
+#include "lib_shared.moc"
+
+//
+// print functions
+//
+
+void print_char(char c) {
+    char *s = "X";
+    *s = c;
+    write(1, s, 1);
+}
+
+void print(char *s) {
+    write(1, s, strlen(s));
+}
+
+void println(char *str) {
+    print(str);
+    print_char('\n');
+}
+
+void print_int(int i) {
+    char* p = itoa(i);
+    print(p);
+    free((void*)p);
+}

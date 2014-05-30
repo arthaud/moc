@@ -34,7 +34,7 @@ void print_int(int i) {
 }
 
 //
-// manage memory
+// heap management
 //
 
 void* malloc(int size) {
@@ -49,49 +49,5 @@ void free(void* p) {
     // SUBR MFree doesn't work
 }
 
-void memcpy(char* dest, char* src, int n) {
-    while(n > 0) {
-        *dest = *src;
-        src = src + 1;
-        dest = dest + 1;
-        n = n - 1;
-    }
-}
-
-//
-// misc.
-//
-
-int atoi(char* str) {
-    int x = 0;
-
-    while(*str != '\0') {
-        if((*str < '0') || (*str > '9')) {
-            return -1;
-        }
-
-        x = 10 * x + (int)(*str) - (int)'0';
-        str = str + 1;
-    }
-
-    return x;
-}
-
-void strcpy(char* dest, char* src) {
-    while(*src != '\0') {
-        *dest = *src;
-        src = src + 1;
-        dest = dest + 1;
-    }
-}
-
-int strlen(char* str) {
-    int x = 0;
-
-    while(*str != '\0') {
-        x = x + 1;
-        str = str + 1;
-    }
-
-    return x;
-}
+// include shared functions
+#include "lib_shared.moc"
