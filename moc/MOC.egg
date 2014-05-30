@@ -702,7 +702,7 @@ F -> opar TYPE cpar F #gen ;
     }
 
     F^type = TYPE^type;
-    F^code = F^machine.genCast(TYPE^type, F1^code);
+    F^code = F^machine.genCast(TYPE^type, F1^type, F1^code);
 }
 
 -- subprogram call

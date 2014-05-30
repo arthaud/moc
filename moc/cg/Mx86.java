@@ -359,7 +359,10 @@ public class Mx86 extends AbstractMachine {
         return operand;
     }
 
-    public Code genCast(TTYPE type, Code castedCode) {
+    public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
+        Location l = allocator.pop();
+        castedCode = genVal(castedCode, l, oldType);
+        allocator.push(l);
         return castedCode;
     }
 

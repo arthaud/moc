@@ -238,8 +238,8 @@ public class MTAM extends AbstractMachine {
         return c;
     }
 
-    public Code genCast(TTYPE type, Code castedCode) {
-        return castedCode;
+    public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
+        return genVal(castedCode, oldType);
     }
 
     public Code genCall(TFUNCTION f, Code arguments) {

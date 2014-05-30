@@ -41,7 +41,7 @@ public interface IMachine {
 
     Code genUnary(Code operand, TTYPE type, String operator);
 
-    Code genCast(TTYPE type, Code castedCode);
+    Code genCast(TTYPE newType, TTYPE oldType, Code castedCode);
 
     Code genCall(TFUNCTION func, Code arguments);
     
