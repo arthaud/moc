@@ -10,7 +10,7 @@ section .data
 section .text
 _start:
     call f_libx86_init
-    mov eax, [esp]     ; argc
+    mov eax, [esp] ; argc
     lea ebx, [esp + 4] ; argv
     lea ecx, [esp + 8 + 4 * eax] ; environ
     push ecx
@@ -186,6 +186,11 @@ void println(char *str) {
 }
 
 void print_int(int i) {
+    if (i < 0) {
+        print_char('-');
+        i = -i;
+    }
+
     char* p = itoa(i);
     print(p);
     free((void*)p);
