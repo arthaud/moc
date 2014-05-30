@@ -16,9 +16,6 @@ public class TID implements TTYPE {
     }
 
     public boolean comparableWith(TTYPE other, String op) {
-        if(!op.equals("==") && !op.equals("!="))
-            return false;
-
         return other instanceof TID || other instanceof TNULL || other instanceof TINSTANCE;
     }
 

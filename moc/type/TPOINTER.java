@@ -22,10 +22,7 @@ public class TPOINTER implements TTYPE {
     }
 
     public boolean comparableWith(TTYPE other, String op) {
-        if(!op.equals("==") && !op.equals("!="))
-            return false;
-
-        return equals(other) || other instanceof TNULL;
+        return other instanceof TPOINTER || other instanceof TNULL;
     }
 
     public boolean binaryUsable(TTYPE other, String op) {
