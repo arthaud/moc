@@ -106,11 +106,10 @@ public class Mx86 extends AbstractMachine {
         }
 
         public Location generate(TTYPE param) {
-            int res = offset;
             offset -= param.getSize();
             localOffset -= param.getSize();
 
-            return new Location(Location.LocationType.STACKFRAME, res);
+            return new Location(Location.LocationType.STACKFRAME, offset);
         }
 
         public int getLocalOffset() {
@@ -123,7 +122,7 @@ public class Mx86 extends AbstractMachine {
     }
 
     public VariableLocator getVariableLocator() {
-        return new X86VariableLocator(-4);
+        return new X86VariableLocator(0);
     }
 
     /* Convert a Location to a string representing it in x86 */
