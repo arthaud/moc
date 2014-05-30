@@ -1,0 +1,14 @@
+#include "lib_x86.moc"
+
+int main()
+{
+    char* s = "hello world\nahah\n";
+    char* p = s;
+    p = p + 12;
+    *p = 'o';
+    p = p + 2;
+    *p = 'o';
+
+    print(s);
+    return 0;
+}

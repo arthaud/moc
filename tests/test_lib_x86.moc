@@ -2,12 +2,40 @@
 
 int main()
 {
-    int* p = (int*)malloc(4094);
-    int* q = (int*)malloc(100);
-    int* r = (int*)malloc(42);
+    char* s = "hello";
 
-    *q = 269554195;
-    *r = 539042339;
+    println(s);
+    print_int(42);
+    print_char('\n');
 
-    return 42;
+    print_int(atoi("97") + 1);
+    print_char('\n');
+
+    strcpy(s + 2, "abc");
+    println(s);
+
+    char* p = (char*) malloc(4094);
+    char* q = (char*) malloc(100);
+
+    memcpy(p, s, 4);
+    println(p);
+
+    print("what is your name ? ");
+    int size = read(0, p, 4096);
+    *(p + size) = '\0';
+
+    if((strcmp(p, "maxime\n") == 0)
+        || (strcmp(p, "korantin\n") == 0)
+        || (strcmp(p, "etienne\n") == 0)) {
+        println("welcome, master.");
+    }
+    else {
+        print("I don't know you, ");
+        print(p);
+    }
+
+    free((void*)p);
+    free((void*)q);
+
+    return 0;
 }

@@ -21,7 +21,10 @@ void main() {
 
     char* p = (char*) malloc(10);
     char* q = (char*) malloc(2);
+
     memcpy(p, s, 4);
     println(p);
+
     free((void*) p);
+    free((void*) q);
 }
