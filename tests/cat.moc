@@ -1,0 +1,45 @@
+#include "lib_x86.moc"
+
+int main(int argc, char** argv)
+{
+    if (argc < 2) {
+        println("usage: cat [-h] FILE...");
+        println("error: too few arguments");
+        return 1;
+    }
+
+    argv = argv + 4;
+    if ((strcmp(*argv, "-h") == 0) || (strcmp(*argv, "--help") == 0)) {
+        println("usage: cat [-h] FILE...");
+        println("Concatenate files and print on the standard output\n");
+        println("optional arguments:");
+        println("  -h, --help  show this help message and exit");
+        return 0;
+    }
+
+    char* buffer = (char*) malloc(2048);
+
+    while(*argv != NULL) {
+        int fd = open(*argv, 2, 0);
+        int size = 1;
+
+        if (fd < 0) {
+            print("error ");
+            print_int(fd);
+            print(": cannot open ");
+            println(*argv);
+            return 1;
+        }
+
+        while(size > 0) {
+            size = read(fd, buffer, 2048);
+            *(buffer + size) = '\0';
+            print(buffer);
+        }
+
+        argv = argv + 4;
+    }
+
+    free((void*) buffer);
+    return 0;
+}
