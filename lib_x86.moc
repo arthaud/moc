@@ -10,6 +10,12 @@ section .data
 section .text
 _start:
     call f_libx86_init
+    mov eax, [esp]     ; argc
+    lea ebx, [esp + 4] ; argv
+    lea ecx, [esp + 8 + 4 * eax] ; environ
+    push ecx
+    push ebx
+    push eax
     call f_main
     push eax ; push the return value of the main for call to the exit function
     call f_exit

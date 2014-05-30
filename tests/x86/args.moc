@@ -1,0 +1,22 @@
+#include "lib_x86.moc"
+
+int main(int argc, char** argv, char** environ)
+{
+    println("arguments:");
+    while(*argv != NULL) {
+        print("\t'");
+        print(*argv);
+        print("'\n");
+        argv = argv + 4;
+    }
+
+    println("\nenviron:");
+    while(*environ != NULL) {
+        print("\t'");
+        print(*environ);
+        print("'\n");
+        environ = environ + 4;
+    }
+
+    return 0;
+}
