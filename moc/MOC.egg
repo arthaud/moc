@@ -1193,8 +1193,8 @@ MARGS -> MARG #args MARGS #gen ;
 }
 
 #gen {
-    Code c = MARG^code;
-    c.appendAsm(MARGS1^code.getAsm());
+    Code c = MARGS1^code;
+    c.appendAsm(MARG^code.getAsm());
     MARGS^code = c;
 }
 
