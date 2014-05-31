@@ -60,6 +60,6 @@ public class METHOD {
     }
 
     public String toString() {
-        return returnType.toString() + " (" + parameters.toString() + ")";
+        return (isStatic ? "+" : "-") + " " + returnType.toString() + " (" + parameters.toString() + ")";
     }
 }

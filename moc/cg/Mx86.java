@@ -162,11 +162,20 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genMethod(METHOD method, Code code) {
-        return new Code(""); // TODO
+        code.prependAsm("mov ebp, esp");
+        code.prependAsm("push ebp");
+        code.prependAsm("m_" + method.getDefClass().getName() + "__" + method.getLabel() + ":");
+        code.prependAsm("\n" + genComment("### " + method.getDefClass().getName() + " :: " + method + " #############"));
+
+        code.appendAsm("m_" + method.getDefClass().getName() + "__" + method.getLabel() + "_end:");
+        code.appendAsm("mov esp, ebp");
+        code.appendAsm("pop ebp");
+        code.appendAsm("ret");
+        return code;
     }
 
     public Code genClass(TCLASS cl, Code code) {
-        return new Code(""); // TODO
+        return code;
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
@@ -201,16 +210,25 @@ public class Mx86 extends AbstractMachine {
         return c;
     }
 
-    public Code genReturn(Code returnVal, TFUNCTION function) {
+    private Code genReturn(String label, TTYPE returnType, Code returnVal) {
         Location l = allocator.pop();
-        returnVal = genVal(returnVal, l, function.getReturnType());
+        returnVal = genVal(returnVal, l, returnType);
 
         if(! genLocation(l).equals("eax")) {
             returnVal.appendAsm("mov eax, " + genLocation(l));
         }
 
-        returnVal.appendAsm("jmp f_" + function.getName() + "_end");
+        returnVal.appendAsm("jmp " + label + "_end");
         return returnVal;
+    }
+
+    public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
+        return genReturn("f_" + function.getName(), function.getReturnType(), returnVal);
+    }
+
+    public Code genMethodReturn(Code returnVal, METHOD method) {
+        return genReturn("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
+                            method.getReturnType(), returnVal);
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
@@ -377,17 +395,17 @@ public class Mx86 extends AbstractMachine {
         return castedCode;
     }
 
-    public Code genFunctionCall(TFUNCTION f, Code arguments) {
+    private Code genCall(String label, TTYPE returnType, int parametersSize, Code arguments) {
         Location l = allocator.get();
 
         arguments.prependAsm(genComment("push parameters :"));
-        arguments.appendAsm("call f_" + f.getName());
+        arguments.appendAsm("call " + label);
 
-        if (!(f.getReturnType() instanceof TVOID) && l.getOffset() != 0) {
+        if (!(returnType instanceof TVOID) && l.getOffset() != 0) {
             arguments.appendAsm("mov " + genLocation(l) + ", eax");
         }
 
-        arguments.appendAsm("add esp, " + f.getParameterTypes().getSize() + " " + genComment("removing parameters"));
+        arguments.appendAsm("add esp, " + parametersSize + " " + genComment("removing parameters"));
 
         // push registers
         for (Location loc : allocator) {
@@ -396,14 +414,24 @@ public class Mx86 extends AbstractMachine {
         }
 
         // need to be done here and not before (not to disturb the backup registers)
-        if(!(f.getReturnType() instanceof TVOID))
+        if(!(returnType instanceof TVOID))
             allocator.push(l);
 
         return arguments;
     }
 
+    public Code genFunctionCall(TFUNCTION f, Code arguments) {
+        return genCall("f_" + f.getName(),
+                        f.getReturnType(),
+                        f.getParameterTypes().getSize(),
+                        arguments);
+    }
+
     public Code genMethodCall(METHOD method, Code arguments) {
-        return new Code(""); // TODO
+        return genCall("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
+                        method.getReturnType(),
+                        method.getParameters().getSize(),
+                        arguments);
     }
 
     // declare a variable
@@ -471,7 +499,15 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genAttribute(TCLASS cl, FIELD attribute) {
-        Code c = new Code(""); // TODO
+        Location l = allocator.get();
+        allocator.push(l);
+
+        // get attribute offset
+        int offset = cl.getAttributeOffset(attribute.getName())
+                + getPointerSize(); // first element is the address of the vtable
+
+        Code c = new Code(genMovMemToReg(genLocation(l), "[ebp + 8]", 4));
+        c.appendAsm("add " + genLocation(l) + ", " + offset);
         c.setIsAddress(true);
         return c;
     }

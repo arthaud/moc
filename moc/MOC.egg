@@ -439,10 +439,10 @@ INST -> return E semicolon #gen ;
     }
 
     if (INST^st.getCurrentFunction() != null) {
-        INST^code = INST^machine.genReturn(E^code, INST^st.getCurrentFunction());
+        INST^code = INST^machine.genFunctionReturn(E^code, INST^st.getCurrentFunction());
     }
     else {
-        INST^code = new Code(""); -- TODO
+        INST^code = INST^machine.genMethodReturn(E^code, INST^st.getCurrentMethod());
     }
 }
 
@@ -956,8 +956,11 @@ global LFIELDS fields;
     fields = new LFIELDS();
     MFUNC_PARAMETERS^hfields = fields;
     MFUNC_PARAMETERS^plocator = METHODS^machine.getParametersLocator();
-    -- add the special self parameter
-    MFUNC_PARAMETERS^plocator.generate(new TINSTANCE(METHODS^st.getCurrentClass(), METHODS^machine.getPointerSize()));
+
+    if (! QUAL^static) {
+        -- add the special self parameter
+        MFUNC_PARAMETERS^plocator.generate(new TINSTANCE(METHODS^st.getCurrentClass(), METHODS^machine.getPointerSize()));
+    }
 }
 
 #method {

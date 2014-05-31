@@ -38,7 +38,9 @@ public interface IMachine {
 
     Code genLoop(Code condition, Code Bloc);
 
-    Code genReturn(Code returnVal, TFUNCTION fun);
+    Code genFunctionReturn(Code returnVal, TFUNCTION fun);
+
+    Code genMethodReturn(Code returnVal, METHOD method);
 
     Code includeAsm(String asmCode, ST symbolsTable);
 

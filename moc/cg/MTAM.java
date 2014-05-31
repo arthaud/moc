@@ -153,12 +153,16 @@ public class MTAM extends AbstractMachine {
         return retCode;
     }
 
-    public Code genReturn(Code returnVal, TFUNCTION fun) {
+    public Code genFunctionReturn(Code returnVal, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
         Code c = genVal(returnVal, fun.getReturnType());
         c.appendAsm("RETURN (" + retsize + ") " + paramsize);
         return c;
+    }
+
+    public Code genMethodReturn(Code returnVal, METHOD method) {
+        return new Code(""); // TODO
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {

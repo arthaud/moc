@@ -9,7 +9,8 @@ public class LFIELDS extends ArrayList<FIELD> {
         int size = 0;
 
         for (FIELD f : this) {
-            size += f.getType().getSize();
+            if (f.getType() != null)
+                size += f.getType().getSize();
         }
 
         return size;
