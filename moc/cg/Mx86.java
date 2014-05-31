@@ -6,6 +6,9 @@ import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
+import moc.type.METHOD;
+import moc.type.FIELD;
+import moc.type.TCLASS;
 import moc.st.INFOVAR;
 
 /**
@@ -156,6 +159,14 @@ public class Mx86 extends AbstractMachine {
         code.appendAsm("pop ebp");
         code.appendAsm("ret");
         return code;
+    }
+
+    public Code genMethod(METHOD method, Code code) {
+        return new Code(""); // TODO
+    }
+
+    public Code genClass(TCLASS cl, Code code) {
+        return new Code(""); // TODO
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
@@ -366,7 +377,7 @@ public class Mx86 extends AbstractMachine {
         return castedCode;
     }
 
-    public Code genCall(TFUNCTION f, Code arguments) {
+    public Code genFunctionCall(TFUNCTION f, Code arguments) {
         Location l = allocator.get();
 
         arguments.prependAsm(genComment("push parameters :"));
@@ -389,6 +400,10 @@ public class Mx86 extends AbstractMachine {
             allocator.push(l);
 
         return arguments;
+    }
+
+    public Code genMethodCall(METHOD method, Code arguments) {
+        return new Code(""); // TODO
     }
 
     // declare a variable
@@ -451,6 +466,23 @@ public class Mx86 extends AbstractMachine {
         Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
+
+        return c;
+    }
+
+    public Code genAttribute(TCLASS cl, FIELD attribute) {
+        Code c = new Code(""); // TODO
+        c.setIsAddress(true);
+        return c;
+    }
+
+    public Code genSelf() {
+        Location l = allocator.get();
+        allocator.push(l);
+
+        Code c = new Code(genMovMemToReg(genLocation(l), "[ebp + 8]", 4));
+        c.setIsAddress(false);
+        c.setLocation(new Location(Location.LocationType.STACKFRAME, 8));
 
         return c;
     }

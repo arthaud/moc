@@ -4,6 +4,9 @@ import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
+import moc.type.METHOD;
+import moc.type.FIELD;
+import moc.type.TCLASS;
 import moc.st.INFOVAR;
 
 /**
@@ -103,6 +106,14 @@ public class MTAM extends AbstractMachine {
         }
 
         return code;
+    }
+
+    public Code genMethod(METHOD method, Code code) {
+        return new Code(""); // TODO
+    }
+
+    public Code genClass(TCLASS cl, Code code) {
+        return new Code(""); // TODO
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
@@ -242,9 +253,13 @@ public class MTAM extends AbstractMachine {
         return genVal(castedCode, oldType);
     }
 
-    public Code genCall(TFUNCTION f, Code arguments) {
+    public Code genFunctionCall(TFUNCTION f, Code arguments) {
         arguments.appendAsm("CALL (LB) f_" + f.getName());
         return arguments;
+    }
+
+    public Code genMethodCall(METHOD method, Code arguments) {
+        return new Code(""); // TODO
     }
 
     // declare a variable
@@ -294,6 +309,19 @@ public class MTAM extends AbstractMachine {
         Code retCode = new Code("LOAD (" + i.getSize() + ") " + i.getLocation().getOffset() + "[LB]");
         retCode.setIsAddress(false);
         retCode.setLocation(i.getLocation());
+        return retCode;
+    }
+
+    public Code genAttribute(TCLASS cl, FIELD attribute) {
+        Code retCode = new Code(""); // TODO
+        retCode.setIsAddress(true);
+        return retCode;
+    }
+
+    public Code genSelf() {
+        Code retCode = new Code("LOAD (1) -1[LB]");
+        retCode.setIsAddress(false);
+        retCode.setLocation(new Location(Location.LocationType.STACKFRAME, -1));
         return retCode;
     }
 

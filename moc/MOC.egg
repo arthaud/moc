@@ -30,7 +30,8 @@ syn type : TTYPE for
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
-inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
+inh plocator : ParametersLocator for
+         FUNC_PARAMETERS, FUNC_PARAMETERSX, MFUNC_PARAMETERS, MFUNC_PARAMETER;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 syn class : TCLASS for SUPER;
 syn static : BOOLEAN for QUAL;
@@ -43,7 +44,7 @@ syn code : Code for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F,
-         IMPLEMENTATION, METHODS;
+         IMPLEMENTATION, METHODS, MARGS, MARG;
 inh hcode : Code for 
          EX, AX, RX, TX , ARGSX;
 
@@ -735,7 +736,7 @@ global LTYPES args_types; TFUNCTION fun;
 }
 
 #gen {
-    F^code = F^machine.genCall(fun, ARGS^code);
+    F^code = F^machine.genFunctionCall(fun, ARGS^code);
 }
 
 F -> ident #gen ;
@@ -749,11 +750,9 @@ F -> ident #gen ;
 
         if (currentClass != null && currentClass.findAttribute(ident^txt) != null) {
             FIELD attr = currentClass.findAttribute(ident^txt);
-            INTEGER offset = currentClass.getAttributeOffset(ident^txt);
 
             F^type = attr.getType();
-            F^code = new Code("; offset " + offset); -- TODO
-            F^code.setIsAddress(true); -- TODO: to be done in a genAttribute method..
+            F^code = F^machine.genAttribute(currentClass, attr);
         }
         else {
             error(VAR_undefined, ident^txt);
@@ -865,6 +864,8 @@ ENTITIES -> IMPLEMENTATION ENTITIES #gen ;
 
 -- class definition
 IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS t_end #gen ;
+global TCLASS class;
+
 #trans {
     if (IMPLEMENTATION^st.localSearch(class_ident^txt) != null) {
         error(VAR_exists, class_ident^txt);
@@ -882,13 +883,13 @@ IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS 
     METHODS^hmethods = methods;
 
     -- insert class in the current symbols table
-    TCLASS class = new TCLASS(class_ident^txt, SUPER^class, fields, methods);
+    class = new TCLASS(class_ident^txt, SUPER^class, fields, methods);
     IMPLEMENTATION^st.insert(class_ident^txt, new INFOCLASS(class));
     IMPLEMENTATION^st.setCurrentClass(class);
 }
 
 #gen {
-    IMPLEMENTATION^code = new Code("");
+    IMPLEMENTATION^code = IMPLEMENTATION^machine.genClass(class, METHODS^code);
     IMPLEMENTATION^st.setCurrentClass(null);
 }
 
@@ -940,6 +941,7 @@ METHODS -> #gen ;
 
 METHODS -> QUAL PTYPE #params MFUNC_PARAMETERS #method BLOC METHODS #gen ;
 global LFIELDS fields;
+    METHOD method;
 
 #params {
     -- symbols table for parameters
@@ -950,8 +952,12 @@ global LFIELDS fields;
     -- variable locator
     BLOC^vlocator = METHODS^machine.getVariableLocator();
 
+    -- management of parameters
     fields = new LFIELDS();
     MFUNC_PARAMETERS^hfields = fields;
+    MFUNC_PARAMETERS^plocator = METHODS^machine.getParametersLocator();
+    -- add the special self parameter
+    MFUNC_PARAMETERS^plocator.generate(new TINSTANCE(METHODS^st.getCurrentClass(), METHODS^machine.getPointerSize()));
 }
 
 #method {
@@ -960,13 +966,15 @@ global LFIELDS fields;
         error(METH_exists, METHODS^st.getCurrentClass().findMethodByName(fields, false));
     }
 
-    METHOD method = new METHOD(PTYPE^type, fields, QUAL^static);
+    method = new METHOD(METHODS^st.getCurrentClass(), PTYPE^type, fields, QUAL^static);
     METHODS^hmethods.add(method);
     METHODS^st.setCurrentMethod(method);
 }
 
 #gen {
-    METHODS^code = new Code("");
+    Code c = METHODS^machine.genMethod(method, BLOC^code);
+    c.appendAsm(METHODS1^code.getAsm());
+    METHODS^code = c;
     METHODS^st.setCurrentMethod(null);
 }
 
@@ -1042,7 +1050,7 @@ MFUNC_PARAMETER -> ident colon PTYPE ident #field ;
         error(VAR_exists, ident1^txt);
     }
     else {
-        Location loc = null; -- TODO
+        Location loc = MFUNC_PARAMETER^plocator.generate(PTYPE^type);
         INFOVAR info = new INFOVAR(PTYPE^type, loc);
         MFUNC_PARAMETER^st.insert(ident1^txt, info);
     }
@@ -1065,7 +1073,7 @@ F -> self #gen ;
     }
 
     F^type = new TINSTANCE(F^st.getCurrentClass(), F^machine.getPointerSize());
-    F^code = new Code("");
+    F^code = F^machine.genSelf();
 }
 
 F -> super #gen ;
@@ -1081,7 +1089,7 @@ F -> super #gen ;
     }
 
     F^type = new TINSTANCE(F^st.getCurrentClass().getSuperType(), F^machine.getPointerSize());
-    F^code = new Code("");
+    F^code = F^machine.genSelf();
 }
 
 -- method call
@@ -1114,7 +1122,10 @@ global LFIELDS fields;
     }
 
     F^type = method.getReturnType();
-    F^code = new Code("");
+
+    Code c = F^machine.genArg(F1^code, F1^type); -- self parameter
+    MARGS^code.appendAsm(c.getAsm());
+    F^code = F^machine.genMethodCall(method, MARGS^code);
 }
 
 -- for class method call
@@ -1155,13 +1166,16 @@ global TCLASS class;
     }
 
     F^type = method.getReturnType();
-    F^code = new Code("");
+    F^code = F^machine.genMethodCall(method, MARGS^code);
 }
 
 -- method call arguments
-MARGS -> ;
+MARGS -> #gen ;
+#gen {
+    MARGS^code = new Code("");
+}
 
-MARGS -> MARG #args MARGS ;
+MARGS -> MARG #args MARGS #gen ;
 #args {
     -- check if the parameter is already defined
     if (MARGS^hfields.find(MARG^field.getName()) != null) {
@@ -1171,14 +1185,22 @@ MARGS -> MARG #args MARGS ;
     MARGS^hfields.add(MARG^field);
 }
 
+#gen {
+    Code c = MARG^code;
+    c.appendAsm(MARGS1^code.getAsm());
+    MARGS^code = c;
+}
+
 -- selector + arg
 MARG -> ident colon E #arg ;
 #arg {
     MARG^field = new FIELD(ident^txt, E^type);
+    MARG^code = MARG^machine.genArg(E^code, E^type);
 }
 
 -- selector without arg
 MARG -> ident #arg ;
 #arg {
     MARG^field = new FIELD(ident^txt, null);
+    MARG^code = new Code("");
 }

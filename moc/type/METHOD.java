@@ -1,14 +1,20 @@
 package moc.type;
 
 public class METHOD {
+    private TCLASS defClass;
     private TTYPE returnType;
     private LFIELDS parameters;
     private boolean isStatic;
 
-    public METHOD(TTYPE returnType, LFIELDS parameters, boolean isStatic) {
+    public METHOD(TCLASS defClass, TTYPE returnType, LFIELDS parameters, boolean isStatic) {
+        this.defClass = defClass;
         this.returnType = returnType;
         this.parameters = parameters;
         this.isStatic = isStatic;
+    }
+
+    public TCLASS getDefClass() {
+        return defClass;
     }
 
     public TTYPE getReturnType() {
