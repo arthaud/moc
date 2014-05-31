@@ -59,6 +59,13 @@ public class METHOD {
         return parameters.getLabel();
     }
 
+    /**
+     * Get the offset of the method in the vtable
+     */
+    public int getVtableOffset() {
+        return defClass.getVtable().indexOf(this);
+    }
+
     public String toString() {
         return (isStatic ? "+" : "-") + " " + returnType.toString() + " (" + parameters.toString() + ")";
     }

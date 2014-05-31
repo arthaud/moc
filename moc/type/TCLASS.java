@@ -96,6 +96,39 @@ public class TCLASS implements TTYPE {
         return method;
     }
 
+    /**
+     * Get the Virtual Table
+     */
+    public LMETHODS getVtable() {
+        LMETHODS vtable;
+
+        if (superClass == null)
+            vtable = new LMETHODS();
+        else
+            vtable = superClass.getVtable();
+
+        for(METHOD method : methods) {
+            if (method.isStatic())
+                continue;
+
+            boolean inserted = false;
+
+            // insert method in vtable
+            for(int i = 0; i < vtable.size() && !inserted; i++) {
+                if (vtable.get(i).compareName(method.getParameters())) {
+                    vtable.set(i, method);
+                    inserted = true;
+                }
+            }
+
+            if (!inserted) {
+                vtable.add(method); // just add it
+            }
+        }
+
+        return vtable;
+    }
+
     public boolean constructFrom(TTYPE other) {
         return false;
     }
