@@ -29,6 +29,10 @@ public class METHOD {
         return isStatic;
     }
 
+    public boolean isConstructor() {
+        return parameters.size() == 1 && parameters.get(0).getName().equals("init");
+    }
+
     public boolean compareName(LFIELDS parameters) {
         if (this.parameters.size() != parameters.size())
             return false;

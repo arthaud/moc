@@ -426,7 +426,7 @@ INST -> return E semicolon #gen ;
 #gen {
     TTYPE returnType;
 
-    -- 2 cases: function return or method return
+    -- 2 cases: function or method
     if (INST^st.getCurrentFunction() != null) {
         returnType = INST^st.getCurrentFunction().getReturnType();
     }
@@ -747,8 +747,11 @@ F -> ident #gen ;
     if (i == null) {
         -- search for ident in class attributes
         TCLASS currentClass = F^st.getCurrentClass();
+        METHOD currentMethod = F^st.getCurrentMethod();
 
-        if (currentClass != null && currentClass.findAttribute(ident^txt) != null) {
+        if (currentClass != null && currentMethod != null
+            && (!currentMethod.isStatic() || currentMethod.isConstructor())
+            && currentClass.findAttribute(ident^txt) != null) {
             FIELD attr = currentClass.findAttribute(ident^txt);
 
             F^type = attr.getType();
@@ -825,6 +828,7 @@ ARGSX -> #gen ;
     if(ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGSX^function.getName());
     }
+
     ARGSX^code = ARGSX^hcode;
 }
 
@@ -1071,7 +1075,7 @@ F -> self #gen ;
     if (F^st.getCurrentMethod() == null) {
         error(SELF_outside_method);
     }
-    elseif (F^st.getCurrentMethod().isStatic()) {
+    elseif (F^st.getCurrentMethod().isStatic() && ! F^st.getCurrentMethod().isConstructor()) {
         error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
     }
 
@@ -1084,7 +1088,7 @@ F -> super #gen ;
     if (F^st.getCurrentMethod() == null) {
         error(SUPER_outside_method);
     }
-    elseif (F^st.getCurrentMethod().isStatic()) {
+    elseif (F^st.getCurrentMethod().isStatic() && ! F^st.getCurrentMethod().isConstructor()) {
         error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
     }
     elseif (F^st.getCurrentClass().getSuperType() == null) {
