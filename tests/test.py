@@ -125,9 +125,9 @@ def run():
     check('error with already defined attributes 2',
         'error/class-4.moc', True, 'The attribute x already exists')
     check('error with already defined methods 1',
-        'error/class-5.moc', True, 'The method int \(null x\) already exists')
+        'error/class-5.moc', True, 'The method \- int \(null x\) already exists')
     check('error with already defined methods 2',
-        'error/class-6.moc', True, 'The method void \(int x, int y\) already exists')
+        'error/class-6.moc', True, 'The method \- void \(int x, int y\) already exists')
     check('error with already defined parameters 1',
         'error/class-7.moc', True, 'The parameter x already exists')
     check('error with already defined parameters 2',
@@ -135,11 +135,11 @@ def run():
     check('error when using self outside a method',
         'error/class-9.moc', True, 'Using self outside a method')
     check('error when using self inside a static method',
-        'error/class-10.moc', True, 'Method id \(null test\) of class Point is static')
+        'error/class-10.moc', True, 'Method \+ id \(null test\) of class Point is static')
     check('error when using super outside a method',
         'error/class-11.moc', True, 'Using super outside a method')
     check('error when using super inside a static method',
-        'error/class-12.moc', True, 'Method id \(null test\) of class Point is static')
+        'error/class-12.moc', True, 'Method \+ id \(null test\) of class Point is static')
     check('error when using super inside a class without superclass',
         'error/class-13.moc', True, 'Cannot use super in a class without a superclass')
     check('error with already defined arguments',
