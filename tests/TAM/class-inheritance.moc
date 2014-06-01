@@ -1,0 +1,49 @@
+#include lib_tam.moc
+
+@class NSObject {
+}
++(id)init {}
+@end
+
+@class Point : NSObject {
+    int x;
+    int y;
+}
++(id)init {
+    x = 1;
+    y = 2;
+}
+-(int)x {
+    return x;
+}
+-(int)y {
+    return y;
+}
+-(void)x:(int)a y:(int)b {
+    x = a;
+    y = b;
+}
+@end
+
+@class ColoredPoint : Point {
+    char* color;
+}
++(id)init {
+    x = 3;
+    y = 4;
+    color = "blue";
+}
+-(char*)color {
+    return color;
+}
+-(void)setColor:(char*)a {
+    color = a;
+}
+@end
+
+void main() {
+    Point *o = [ColoredPoint init];
+    char* toto = [(ColoredPoint*)o color];
+    print( toto);
+    
+}
