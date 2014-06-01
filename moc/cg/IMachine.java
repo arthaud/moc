@@ -56,6 +56,8 @@ public interface IMachine {
 
     Code genMethodCall(METHOD method, Code arguments);
 
+    Code genSuperMethodCall(METHOD method, Code arguments);
+
     Code genArg(Code argument, TTYPE type);
 
     // declare a variable

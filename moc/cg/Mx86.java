@@ -468,9 +468,11 @@ public class Mx86 extends AbstractMachine {
         int parametersSize = method.getParameters().getSize();
 
         if (method.isStatic()) {
+            // static call
             label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
         }
         else {
+            // dynamic call
             parametersSize += getPointerSize(); // self parameter
             Location l = allocator.get();
             arguments.appendAsm("mov " + genLocation(l) + ", [esp] " + genComment("self"));
@@ -485,6 +487,14 @@ public class Mx86 extends AbstractMachine {
         return genCall(label,
                         method.getReturnType(),
                         parametersSize,
+                        arguments);
+    }
+
+    public Code genSuperMethodCall(METHOD method, Code arguments) {
+        // static call
+        return genCall("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
+                        method.getReturnType(),
+                        method.getParameters().getSize() + getPointerSize(),
                         arguments);
     }
 

@@ -266,6 +266,10 @@ public class MTAM extends AbstractMachine {
         return new Code(""); // TODO
     }
 
+    public Code genSuperMethodCall(METHOD method, Code arguments) {
+        return new Code(""); // TODO
+    }
+
     // declare a variable
     public Code genDecl(INFOVAR info) {
         return new Code("PUSH " + info.getType().getSize());

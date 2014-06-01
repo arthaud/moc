@@ -35,6 +35,7 @@ inh plocator : ParametersLocator for
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 syn class : TCLASS for SUPER;
 syn static : BOOLEAN for QUAL;
+syn super : BOOLEAN for F;
 
 syn field : FIELD for MFUNC_PARAMETER, MARG;
 inh hfields : LFIELDS for ATTRIBUTES, MFUNC_PARAMETERS, MARGS;
@@ -634,36 +635,42 @@ F -> integer #gen ;
 #gen {
     F^type = new TINTEGER(F^machine.getIntSize());
     F^code = F^machine.genInt(integer^txt);
+    F^super = false;
 }
 
 F -> string #gen ;
 #gen {
     F^type = new TPOINTER(new TCHAR(F^machine.getCharSize()), F^machine.getPointerSize());
     F^code = F^machine.genString(string^txt);
+    F^super = false;
 }
 
 F -> character #gen ;
 #gen {
     F^type = new TCHAR(F^machine.getCharSize());
     F^code = F^machine.genChar(character^txt);
+    F^super = false;
 }
 
 F -> null #gen ;
 #gen {
     F^type = new TNULL(F^machine.getPointerSize());
     F^code = F^machine.genNull();
+    F^super = false;
 }
 
 F -> true #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
     F^code = F^machine.genBool(1);
+    F^super = false;
 }
 
 F -> false #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
     F^code = F^machine.genBool(0);
+    F^super = false;
 }
 
 F -> OPUN F #gen ;
@@ -674,6 +681,7 @@ F -> OPUN F #gen ;
 
     F^type = F1^type;
     F^code = F^machine.genUnary(F1^code, F1^type, OPUN^name);
+    F^super = false;
 }
 
 -- unary expressions
@@ -691,6 +699,7 @@ F -> opar E cpar #gen ;
 #gen {
     F^type = E^type;
     F^code = E^code;
+    F^super = false;
 }
 
 F -> opar TYPE cpar F #gen ;
@@ -704,6 +713,7 @@ F -> opar TYPE cpar F #gen ;
 
     F^type = TYPE^type;
     F^code = F^machine.genCast(TYPE^type, F1^type, F1^code);
+    F^super = false;
 }
 
 -- subprogram call
@@ -737,6 +747,7 @@ global LTYPES args_types; TFUNCTION fun;
 
 #gen {
     F^code = F^machine.genFunctionCall(fun, ARGS^code);
+    F^super = false;
 }
 
 F -> ident #gen ;
@@ -773,6 +784,8 @@ F -> ident #gen ;
             }
         }
     }
+
+    F^super = false;
 }
 
 -- pointed-to memory access
@@ -788,6 +801,8 @@ F -> mult F #gen ;
             error(TYPE_not_pointer, F1^type);
         }
     }
+
+    F^super = false;
 }
 
 -- subprogram call arguments
@@ -1081,6 +1096,7 @@ F -> self #gen ;
 
     F^type = new TINSTANCE(F^st.getCurrentClass(), F^machine.getPointerSize());
     F^code = F^machine.genSelf();
+    F^super = false;
 }
 
 F -> super #gen ;
@@ -1097,6 +1113,7 @@ F -> super #gen ;
 
     F^type = new TINSTANCE(F^st.getCurrentClass().getSuperType(), F^machine.getPointerSize());
     F^code = F^machine.genSelf();
+    F^super = true;
 }
 
 -- method call
@@ -1132,7 +1149,15 @@ global LFIELDS fields;
 
     Code c = F^machine.genArg(F1^code, F1^type); -- self parameter
     MARGS^code.appendAsm(c.getAsm());
-    F^code = F^machine.genMethodCall(method, MARGS^code);
+
+    if (F1^super) {
+        F^code = F^machine.genSuperMethodCall(method, MARGS^code); -- without late binding
+    }
+    else {
+        F^code = F^machine.genMethodCall(method, MARGS^code);
+    }
+
+    F^super = false;
 }
 
 -- for class method call
@@ -1174,6 +1199,7 @@ global TCLASS class;
 
     F^type = method.getReturnType();
     F^code = F^machine.genMethodCall(method, MARGS^code);
+    F^super = false;
 }
 
 -- method call arguments
