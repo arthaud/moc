@@ -23,6 +23,15 @@ public class LMETHODS extends ArrayList<METHOD> {
         return null;
     }
 
+    public boolean hasConstructor() {
+        for (METHOD f: this) {
+            if(f.isConstructor())
+                return true;
+        }
+
+        return false;
+    }
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
 

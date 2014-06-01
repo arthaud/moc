@@ -955,6 +955,10 @@ ATTRIBUTES -> TYPE ident semicolon #attr ATTRIBUTES ;
 -- methods
 METHODS -> #gen ;
 #gen {
+    if (!METHODS^hmethods.hasConstructor()) {
+        error(CLASS_missing_constructor, METHODS^st.getCurrentClass().getName());
+    }
+
     METHODS^code = new Code("");
 }
 

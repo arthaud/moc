@@ -23,6 +23,9 @@
 
 @class B : A {
 }
++(id) init {
+    [super init];
+}
 @end
 
 @class C : B {

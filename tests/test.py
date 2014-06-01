@@ -156,6 +156,8 @@ def run():
         'error/class-19.moc', True, 'Class Point have no method null foo')
     check('error when trying to call a no static method of a class',
         'error/class-20.moc', True, 'Method null x of class Point is not static')
+    check('error when missing constructor',
+        'error/class-26.moc', True, 'Class Point has no constructor')
 
     check('type consistency with classes 1',
         'error/class-21.moc', True, 'Class Point have no method bool x, int y')
