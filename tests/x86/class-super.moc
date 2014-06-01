@@ -1,0 +1,64 @@
+#include "lib_x86.moc"
+
+@class A {
+    int x;
+    int y;
+}
++(id) init {
+    x = 0;
+    y = 0;
+}
+-(int) x {
+    return x;
+}
+-(int) y {
+    return y;
+}
+-(void) x:(int)a y:(int)b {
+    x = a;
+    y = b;
+}
+@end
+
+
+@class B : A {
+}
+@end
+
+@class C : B {
+    int z;
+}
++(id) init {
+    x = 0;
+    y = 0;
+    z = 0;
+}
+-(void) x:(int)a y:(int)b z:(int)c {
+    [super x:a y:b];
+    z = c;
+}
+-(int) z {
+    return z;
+}
+-(int) x {
+    return [super x] + 42;
+}
+@end
+
+int main(int argc, char** argv) {
+    A* p = [A init];
+    [p x:1 y:2];
+    print_int([p y]);
+    print_char('\n');
+
+    C* q = [C init];
+    [q x:1 y:2 z:3];
+    print_int([q z]);
+    print_char('\n');
+
+    A* r = (A*) q;
+    print_int([r x]); // it's another trap !
+    print_char('\n');
+
+    return 0;
+}
