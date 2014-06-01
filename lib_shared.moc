@@ -80,6 +80,21 @@ void strcpy(char* dest, char* src) {
     }
 }
 
+char* strdup(char* s) {
+    char* p = (char*) malloc(strlen(s) + 1);
+    strcpy(p, s);
+    return p;
+}
+
+char* strcat(char* s1, char* s2) {
+    int strlen_s1 = strlen(s1);
+    int size = strlen_s1 + strlen(s2) + 1;
+    char* p = (char*) malloc(size);
+    strcpy(p, s1);
+    strcpy(p + strlen_s1, s2);
+    return p;
+}
+
 int strcmp(char* s1, char* s2) {
     while((*s1 != '\0') && (*s2 != '\0') && (*s1 == *s2)) {
         s1 = s1 + 1;
