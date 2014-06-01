@@ -1136,7 +1136,7 @@ global LFIELDS fields;
             if (method == null) {
                 error(METH_undefined, instance.getType().getName(), fields);
             }
-            elseif (method.isStatic()) {
+            elseif (method.isStatic() && !(F1^super && method.isConstructor())) {
                 error(METH_static, instance.getType().getName(), fields);
             }
         }

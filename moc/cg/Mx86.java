@@ -187,7 +187,7 @@ public class Mx86 extends AbstractMachine {
 
             // initializer
             Code init = genFunction("m_" + method.getDefClass().getName() + "__" + method.getLabel() + "__",
-                            method.getDefClass().getName() + " :: " + method + "__",
+                            method.getDefClass().getName() + " :: " + method + " initializer",
                             code);
 
             constructor.appendAsm(init.getAsm());
@@ -491,8 +491,13 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genSuperMethodCall(METHOD method, Code arguments) {
+        String label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
+
+        if (method.isConstructor()) // special case
+            label += "__";
+
         // static call
-        return genCall("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
+        return genCall(label,
                         method.getReturnType(),
                         method.getParameters().getSize() + getPointerSize(),
                         arguments);

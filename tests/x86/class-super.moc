@@ -29,8 +29,7 @@
     int z;
 }
 +(id) init {
-    x = 0;
-    y = 0;
+    [super init];
     z = 0;
 }
 -(void) x:(int)a y:(int)b z:(int)c {
