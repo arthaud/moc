@@ -118,55 +118,48 @@ public class MTAM extends AbstractMachine {
             Code constructor = new Code("m_" + method.getDefClass().getName() + "__" + method.getLabel()+ ":");
             constructor.appendAsm("LOADL " + size);
             constructor.appendAsm("SUBR MAlloc");
-            //initialize pointer to the vtable 
-            constructor.appendAsm("LOADL %%VTABLE%%");
+            constructor.appendAsm("LOADL %%VTABLE%%"); // initialize pointer to the vtable
             constructor.appendAsm("LOAD (1)  3[LB]");
             constructor.appendAsm("STOREI (1)");
 
-            //call the initializer
+            // call the initializer
             constructor.appendAsm("LOAD (1)  3[LB]");
-           // constructor.appendAsm( "LOADL 0 ; fix CALLI");
-
             constructor.appendAsm("CALL (LB) m_" + method.getDefClass().getName() + "__" + method.getLabel() + "__");
-           // constructor.appendAsm("CALLI");
             constructor.appendAsm("RETURN (1) 0");
-            
-            //initializer
-                       code.prependAsm(
+
+            // initializer
+            code.prependAsm(
                 "m_" + method.getDefClass().getName() + "__" + method.getLabel() + "__" + ":");
             code.prependAsm("\n" + genComment("### " + method + " initializer #############"));
             code.appendAsm("RETURN (0) 1");
-            
+
             code.prependAsm(constructor.getAsm());  
-  
-        }else{
-            if (! method.isStatic())
-                code.prependAsm(
+        }
+        else {
+            code.prependAsm(
                     "m_" + method.getDefClass().getName() + "__" + method.getLabel() + ":");
             code.prependAsm("\n" + genComment("### " + method + " #############"));
 
             if (method.getReturnType() instanceof TVOID) {
                 code.appendAsm("RETURN (0) " + method.getParameters().getSize());
             }
-
-
         }
+
         return code;
     }
 
     public Code genClass(TCLASS cl, Code code) {
-        //generate the vtable
+        // generate the vtable
         LMETHODS vtable = cl.getVtable();
-       code.setAsm( code.getAsm().replace("%%VTABLE%%", String.valueOf(initOffset)));// the position of the vtable is known only now
+        code.setAsm(code.getAsm().replace("%%VTABLE%%", String.valueOf(initOffset))); // the position of the vtable is known only now
 
-        initCode +=  cl.getName() + "_vtable:\n";
+        initCode += cl.getName() + "_vtable:\n";
         for(METHOD method : vtable) {
             initCode += "LOADA m_" + method.getDefClass().getName() + "__" + method.getLabel() + "\n";
-            initOffset++ ;
+            initOffset++;
         }
 
         return code;
-
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
@@ -215,8 +208,8 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genMethodReturn(Code returnVal, METHOD method) {
-        int retsize = method.getReturnType().getSize() ;
-        int paramsize = method.getParameters().getSize() +1 ;
+        int retsize = method.getReturnType().getSize();
+        int paramsize = method.getParameters().getSize() + 1;
         Code c = genVal(returnVal, method.getReturnType());
         c.appendAsm("RETURN (" + retsize + ") " + paramsize);
         return c;
@@ -322,25 +315,24 @@ public class MTAM extends AbstractMachine {
     public Code genMethodCall(METHOD method, Code arguments) {
         if (method.isStatic()) {
             arguments.appendAsm("CALL (LB) m_" + method.getDefClass().getName() + "__" + method.getLabel());
-
-        }else{
-        arguments.appendAsm( "LOADL 0 ;fix CALLI");// Fix for CALLI misplacing LB 
-        arguments.appendAsm("LOAD (1) -2[ST]");
-        arguments.appendAsm("LOADI (1)"); //load the vtable 
-        if(method.getVtableOffset() > 0){
-            arguments.appendAsm("LOADL "+ method.getVtableOffset());
-            arguments.appendAsm("SUBR IAdd");
         }
-        arguments.appendAsm("LOADI (1)");
-        arguments.appendAsm("CALLI");
-
+        else {
+            arguments.appendAsm("LOADL 0 " + genComment("fix CALLI")); // Fix for CALLI misplacing LB 
+            arguments.appendAsm("LOAD (1) -2[ST]");
+            arguments.appendAsm("LOADI (1)"); // load the vtable
+            if(method.getVtableOffset() > 0){
+                arguments.appendAsm("LOADL " + method.getVtableOffset());
+                arguments.appendAsm("SUBR IAdd");
+            }
+            arguments.appendAsm("LOADI (1)");
+            arguments.appendAsm("CALLI");
         }
-    return arguments;
 
+        return arguments;
     }
 
     public Code genSuperMethodCall(METHOD method, Code arguments) {
-         String label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
+        String label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
 
         if (method.isConstructor()) // special case
             label += "__";
@@ -401,11 +393,11 @@ public class MTAM extends AbstractMachine {
 
     public Code genAttribute(TCLASS cl, FIELD attribute) {
         Code retCode = genSelf();
-         int offset = cl.getAttributeOffset(attribute.getName())
-                + getPointerSize(); // first element is the vtable address
-        retCode.appendAsm("LOADL " + offset);
+        int offset = cl.getAttributeOffset(attribute.getName())
+            + getPointerSize(); // first element is the vtable address
+        retCode.appendAsm("LOADL " + offset + " " + genComment("offset for " + attribute.getName()));
         retCode.appendAsm("SUBR IAdd");
-        
+
         retCode.setIsAddress(true);
         retCode.setLocation(null);
         return retCode;
