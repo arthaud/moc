@@ -133,7 +133,7 @@ public class MTAM extends AbstractMachine {
             code.prependAsm("\n" + genComment("### " + method + " initializer #############"));
             code.appendAsm("RETURN (0) 1");
 
-            code.prependAsm(constructor.getAsm());  
+            code.prependAsm(constructor.getAsm());
         }
         else {
             code.prependAsm(
@@ -141,7 +141,12 @@ public class MTAM extends AbstractMachine {
             code.prependAsm("\n" + genComment("### " + method + " #############"));
 
             if (method.getReturnType() instanceof TVOID) {
-                code.appendAsm("RETURN (0) " + method.getParameters().getSize());
+                int parametersSize = method.getParameters().getSize();
+
+                if (!method.isStatic())
+                    parametersSize += 1;
+
+                code.appendAsm("RETURN (0) " + parametersSize);
             }
         }
 
@@ -209,7 +214,11 @@ public class MTAM extends AbstractMachine {
 
     public Code genMethodReturn(Code returnVal, METHOD method) {
         int retsize = method.getReturnType().getSize();
-        int paramsize = method.getParameters().getSize() + 1;
+        int paramsize = method.getParameters().getSize();
+
+        if (!method.isStatic())
+            paramsize += 1; // self parameter
+
         Code c = genVal(returnVal, method.getReturnType());
         c.appendAsm("RETURN (" + retsize + ") " + paramsize);
         return c;
