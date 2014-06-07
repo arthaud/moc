@@ -7,11 +7,6 @@
 \usepackage{hyperref}
 \usepackage{minted}
 
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-\renewcommand{\headrulewidth}{1pt}
-\renewcommand{\footrulewidth}{\headrulewidth}
-
 \title{Rapport projet de TDL}
 \author{Korantin Auguste \and Etienne Lebrun \and Maxime Arthaud}
 \date{mai 2014}
@@ -30,11 +25,11 @@
   \newpage
 
 \section{Introduction}
-    Nous avons décidé de s'éloigner un peu du sujet, puisque nous
+    Nous avons décidé de nous éloigner un peu du sujet, puisque nous
     n'avons pas utilisé EGG, mais une modification de ce dernier faite
     par Maxime (avec de nombreux ajouts intéressants, mais une syntaxe
     légèrement différente, et donc incompatible).
-    De plus, nous avons souhaité non pas compiler le code seulement en TAM,
+    De plus, nous avons souhaité compiler non seulement en TAM,
     mais aussi en x86.
 
     Notre compilateur est modulaire et contient donc des classes « machines » capables de générer du code
@@ -45,21 +40,59 @@
 
     Nous disposons aussi d'un petit système de préprocesseur permettant d'inclure d'autres fichiers.
     
-    Pour pouvoir s'amuser un peu, nous avons aussi développé une librairie TAM qui propose quelques
-    fonctions utiles, pour afficher du texte... en appelant une simple fonction (au lieu de mettre
-    du code assembleur).
-    De même, nous disposons d'une petite librairie x86, développée entièrement par nos soins et qui
-    effectue des appels systèmes (via une interruption processeur), afin de lire, d'écrire, de faire
-    de l'allocation dynamique... Nous avons même codé une petite implémentation de la commande « cat »
-    en MOC.
- 
+    Pour pouvoir nous amuser un peu, nous avons aussi développé une librairie
+    TAM qui propose quelques fonctions utiles, pour afficher du texte... en
+    appelant une simple fonction (au lieu de mettre du code assembleur).
+    De même, nous disposons d'une petite librairie x86, développée entièrement
+    par nos soins et qui effectue des appels systèmes (via une interruption processeur),
+    afin de lire, d'écrire, de faire de l'allocation dynamique...
+    Nous avons même codé une implémentation de la commande « cat » en MOC.
+
 \section{EGG}
 
-erreur quand init n'est pas déclaré
+\subsection{Typage}
+Pour gérer les types, nous avons une interface TTYPE.
+Cette interface a une méthode $getSize()$ pour obtenir la taille du type, en fonction de la machine.
 
-tds 
+\paragraph{}
+Plusieurs méthodes gèrent la consistance des types:
+\begin{description}
+    \item[constructFrom(TTYPE other) :] retourne vrai si l'on peut construire le type grâce à partir du type $other$
+    \item[comparableWith(TTYPE other) :] retourne vrai si l'on peut comparer les 2 types
+    \item[binaryUsable(TTYPE other, String op) :] retourne vrai si l'on peut utiliser l'opérateur binaire $op$
+    \item[unaryUsable(String op) :] retourne vrai si l'on peut utiliser l'opérateur unaire $op$
+    \item[isCastableTo(TTYPE other) :] retourne vrai si l'on peut caster le type vers le type $other$
+    \item[testable() :] retourne vrai si le type peut être utilisé dans un $if$
+    \item[equals(TTYPE other) :] permet de comparer 2 types.
+\end{description}
 
-bla bla bla
+\paragraph{}
+Notre système de vérification est assez souple, comme le C. Par exemple, on peut caster un pointeur d'un type vers
+un pointeur d'un autre type quelconque.
+
+\subsection{Table des symboles}
+Notre table des symboles peut contenir 3 types d'objets : des variables, des fonctions et des classes.
+
+Les fonctions ont un nom, et la liste des types des paramètres.
+Lors de l'appel d'une fonction (règle $F \rightarrow $ $ident$ $opar$ $ARGS$ $cpar$), on vérifie son existence dans la table des symboles.
+Pour chaque argument, on vérifie que le type est compatible.
+Avec du recul, il aurait été mieux de générer la liste des types des arguments dans le MOC.egg
+et de faire la vérification après en Java.
+
+\subsection{Partie 2}
+La partie 2 consiste à ajouter la gestion des classes.
+Nous avons une classe TCLASS, qui contient une référence vers la classe parente,
+la liste des attributs et des méthodes, sans inclure les attributs et les méthodes
+de la classe parente. Quand on essaie d'appeler une méthode, on appelle la méthode
+$findCallableMethod$ de TCLASS, qui va regarder dans la classe et si besoin dans les
+classes parentes. Les classes sont dans la table des symboles, il n'est pas nécessaire
+de mettre les attributs et les méthodes dans la table.
+
+Une méthode $getVTable()$ permet de générer la liste des méthodes de la classe,
+avec l'offset de chaque méthode.
+
+Nous avons du gérer spécialement la méthode init, qui est statique mais crée implicitement un objet.
+Nous gérons aussi le mot clef $super$ qui force un appel sans résolution tardive.
 
 \section{La machine TAM}
 
@@ -69,41 +102,41 @@ bla bla bla
 
 Un des premiers problèmes que nous avons eu à résoudre est la gestion des chaînes de caractères.
 Nous voulions en effet qu'elles soient compatibles avec les char*, ce qui n'est pas possible 
-avec les fonctions proposées par TAM, qui ne gèrent que des chaînes statiques.
-La règle  F -> string appelle donc la  fonction genString() de la classe MTAM.
-Celle ci génère un code qui sera executé au début du programme, et qui positionne la chaine en mémoire 
-en début de pile avec des LOADL . Le code renvoyé par genString() pose sur la pile un pointeur vers le 
+avec les fonctions proposées par TAM, qui ne gère que des chaînes statiques.
+La règle $F \rightarrow string$ appelle donc la  fonction $genString()$ de la classe MTAM.
+Celle-ci génère un code qui sera exécuté au début du programme, et qui positionne la chaine en mémoire
+en début de pile avec des LOADL . Le code renvoyé par $genString()$ pose sur la pile un pointeur vers le
 premier caractère de la chaîne.
 
 \subsubsection{sous-classes TAM Parameters et Variable Locator}
 
 Ces classes sont nécessaires car le traitement des variables et des paramètres diffère en fonction du langage cible.
 
-Le parameters locator permet de positionner les paramètres lors de l'appel d'une fonction. Le premier paramètre se situe en -1[LB], 
+Le $ParametersLocator$ permet de positionner les paramètres lors de l'appel d'une fonction. Le premier paramètre se situe en -1[LB],
 les suivants sont en dessous.
 
-Le variable locator est initialisé à partir d'un offset initial, et alloue les positions en décalant l'offset en fonction de la taille des variables.
-À chaque nouveau bloc, un nouveau locator est généré à partir du précédent en lui communiquant son offset courant. De cette manière , les variables locales
-au sous bloc pouront être écrasées par le premier bloc.
+Le $VariableLocator$ est initialisé à partir d'un offset initial, et alloue les positions en décalant l'offset en fonction de la taille des variables.
+À chaque nouveau bloc, un nouveau $locator$ est généré à partir du précédent en lui communiquant son offset courant. De cette manière, les variables locales
+au sous-bloc pourront être écrasées par le premier bloc.
  
 
 \subsubsection{lib TAM}
 
-nous avons décidé d'écrire une petite librairie standard, principalement pour gérer les méthodes sur les 
-chaînes de caractères et malloc. C'est elle aussi qui contient l'assembleur inline "CALL (LB) f\_main 
-    HALT " qui permet de lancer le programme principal. Elle est donc inclue dans tous les tests de TAM à l'aide du #include qui est remplacé par le préprocesseur.
+Nous avons décidé d'écrire une petite librairie standard, principalement pour gérer les méthodes sur les
+chaînes de caractères et malloc. C'est elle aussi qui contient l'assembleur inline "CALL (LB) f\_main
+    HALT " qui permet de lancer le programme principal. Elle est donc inclue dans tous les tests de TAM à l'aide du \#include qui est remplacé par le préprocesseur.
 L'inclusion de la boucle while à la définition du langage a permis de la rédiger en grande partie en Moc.
 
 \subsection{Partie 2}
 
 La principale difficulté de cette partie 2 a été la gestion de la liaison tardive.
-Nous avons donc implémenté un système de table de virtuels.
+Nous avons donc implémenté un système de table de méthodes virtuelles.
 Le code qui génère la vtable est ajouté au code d'initialisation lors de la création de la classe correspondante.
 Il est constitué d'autant de LOADA que de méthodes , suivis des labels correspondants, ceux de la classe mère pour 
-les méthodes qui n'ont pas été redéfinies. Le premier champ d'une instance de classe est un lien vers la vtable de la classe réelle.
+les méthodes qui n'ont pas été redéfinies. Le premier champ d'une instance de classe est un pointeur vers la vtable de la classe réelle.
 Lors d'un appel de méthode, on ajoute à celui-ci la position de la méthode voulue dans la vtable.
-On charge la valeur avec un loadi puis on appelle la méthode avec un CALLI.
-CALLI n'empilant que deux valeurs, on doit rajouter une valeur sur la pile avec un LOADL 0 .
+On charge la valeur avec un LOADI puis on appelle la méthode avec un CALLI.
+CALLI n'empilant que deux valeurs, on doit rajouter une valeur sur la pile avec un LOADL 0.
 
 
 
@@ -111,7 +144,7 @@ CALLI n'empilant que deux valeurs, on doit rajouter une valeur sur la pile avec 
 
 La machine x86 est chargée de générer du code assembleur x86 (qui devra être compilé par nasm).
 Au final, elle est très proche de la machine TAM et je ne m'étendrai pas sur le sujet.
-Toutefois, un point différe complètement : là ou TAM est une machine à pile pure, en x86 nous
+Toutefois, un point diffère complètement : là ou TAM est une machine à pile pure, en x86 nous
 devons gérer les registres.
 
 \subsection{Gestion des registres}
@@ -123,7 +156,7 @@ il suffisait de faire comme TAM en effectuant des pop, de faire le calcul, et de
 sur la pile. Ce système aurait été très simple, mais nous aurions toujours utilisé un ou deux
 registres, et notre but était d'aller un peu plus loin que la simple machine à pile.
 
-A l'autre extrème, il aurait été possible dans l'idéal de stocker certaines variables
+A l'autre extrême, il aurait été possible dans l'idéal de stocker certaines variables
 uniquement dans des registres, sans jamais les mettre en mémoire, et d'utiliser tous les
 registres de manière intensive. C'est ce que font les vrais compilateurs, mais il s'agit
 de quelque chose d'extrêmement complexe.
@@ -142,10 +175,10 @@ trop dure à mettre en oeuvre.
 
 Pour faciliter le travail, nous avons développé une petite bibliothèque qu'il suffit d'inclure,
 et qui se charge de générer un squelette de programme en assembleur, avec une dizaine de 
-fonctions utile pour permettre à nos programme de faire des choses : lire, écrire, quitter,
+fonctions utiles pour permettre à nos programme de faire des choses : lire, écrire, quitter,
 afficher du texte...
 
-Son développement fût très intéressant, puisque nous avons tout fait nous même, sans faire
+Son développement fut très intéressant, puisque nous avons tout fait nous-même, sans faire
 appel à une bibliothèque tierce comme la libc.
 Pour communiquer avec le système d'exploitation, il suffit d'utiliser l'instruction « int »
 permettant de faire une interruption, et de mettre les bonnes données dans les registres,
@@ -173,10 +206,13 @@ void print(char *s) {
 
 \section{Tests}
 
+Nous avons une série de tests pour le système de types.
+Celui-ci est fait en python, et peut être lancé avec $python3$ $test.py$
+
 \section{Conclusion}
 
 Ce projet aura été l'occasion d'effectuer un petit compilateur jouet,
-et nous aura permis de ce rendre compte que c'était une tâche assez longue,
+et nous aura permis de nous rendre compte que c'était une tâche assez longue,
 mais réalisable.
 
 Toutefois, nous avons aussi mis le doigt sur le fait que s'il est simple
@@ -192,4 +228,3 @@ Arriver à effectuer des appels système pour avoir un programme qui fait
 de vraies actions sur nos ordinateurs était aussi particulièrement sympathique !
 
 \end{document}
-
