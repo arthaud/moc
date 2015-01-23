@@ -35,9 +35,7 @@ public class TPOINTER implements TTYPE {
 
     public boolean isCastableTo(TTYPE other) {
         return other instanceof TINTEGER
-            || other instanceof TPOINTER
-            || other instanceof TINSTANCE
-            || other instanceof TID;
+            || other instanceof TPOINTER;
     }
 
     public boolean testable() {

@@ -32,9 +32,7 @@ public class TINTEGER implements TTYPE {
         return other instanceof TINTEGER
             || other instanceof TBOOL
             || other instanceof TCHAR
-            || other instanceof TPOINTER
-            || other instanceof TINSTANCE
-            || other instanceof TID;
+            || other instanceof TPOINTER;
     }
 
     public boolean testable() {

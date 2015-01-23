@@ -79,20 +79,11 @@ sugar not        is  "\!" ;
 sugar colon      is  "\:" ;
 sugar osbra      is  "\[" ;
 sugar csbra      is  "\]" ;
-sugar id         is  "id" ;
-sugar class      is  "@class" ;
-sugar t_end      is  "@end" ;
-sugar self       is  "self" ;
---sugar bool       is  "BOOL" ;
---sugar yes        is "YES" ;
---sugar no         is "NO" ;
 
 term integer     is  "[0-9]+" ;
 term character   is  "\'([^\']|\\[0nrt])\'" ;
 term string      is  "\"[^\"]*\"" ;
 term ident       is  "[a-z][_0-9A-Za-z]*" ;
-term class_ident is  "[A-Z][_0-9A-Za-z]*" ; -- class name
---term stringo     is  "@\"[^\"]*\"" ; -- MOC string
 
 
 PROGRAM -> #init ENTITIES #gen ;
@@ -247,17 +238,8 @@ REFS -> #type ;
 
 REFS -> mult #trans REFS #type ;
 #trans {
-    match (REFS^htype) {
-        case TCLASS {
-            -- type TINSTANCE
-            TCLASS class = REFS^htype;
-            REFS1^htype = new TINSTANCE(class, REFS^machine.getPointerSize());
-        }
-        default {
-            -- type TPOINTER
-            REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
-        }
-    }
+    -- type TPOINTER
+    REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
 }
 
 #type {
@@ -285,7 +267,7 @@ STYPE -> bool #type ;
     STYPE^type = new TBOOL(STYPE^machine.getBoolSize());
 }
 
--- method body and instructions blocks
+-- instructions blocks
 BLOC -> ocbra #trans INSTS ccbra #gen ;
 global ST st;
 
@@ -414,24 +396,13 @@ INST -> return E semicolon #gen ;
 #gen {
     TTYPE returnType;
 
-    -- 2 cases: function or method
-    if (INST^st.getCurrentFunction() != null) {
-        returnType = INST^st.getCurrentFunction().getReturnType();
-    }
-    else {
-        returnType = INST^st.getCurrentMethod().getReturnType();
-    }
+    returnType = INST^st.getCurrentFunction().getReturnType();
 
     if (!returnType.constructFrom(E^type)) {
         error(TYPES_incompatible, returnType, E^type);
     }
 
-    if (INST^st.getCurrentFunction() != null) {
-        INST^code = INST^machine.genFunctionReturn(E^code, INST^st.getCurrentFunction());
-    }
-    else {
-        INST^code = INST^machine.genMethodReturn(E^code, INST^st.getCurrentMethod());
-    }
+    INST^code = INST^machine.genFunctionReturn(E^code, INST^st.getCurrentFunction());
 }
 
 -- inline asm
@@ -733,21 +704,7 @@ F -> ident #gen ;
     INFO i = F^st.globalSearch(ident^txt);
 
     if (i == null) {
-        -- search for ident in class attributes
-        TCLASS currentClass = F^st.getCurrentClass();
-        METHOD currentMethod = F^st.getCurrentMethod();
-
-        if (currentClass != null && currentMethod != null
-            && (!currentMethod.isStatic() || currentMethod.isConstructor())
-            && currentClass.findAttribute(ident^txt) != null) {
-            FIELD attr = currentClass.findAttribute(ident^txt);
-
-            F^type = attr.getType();
-            F^code = F^machine.genAttribute(currentClass, attr);
-        }
-        else {
-            error(VAR_undefined, ident^txt);
-        }
+        error(VAR_undefined, ident^txt);
     }
     else {
         match (i) {

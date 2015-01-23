@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import moc.type.TFUNCTION;
-import moc.type.TCLASS;
-import moc.type.METHOD;
 
 /**
  * A hierarchical symbols table
@@ -25,16 +23,6 @@ public class ST extends HashMap<String, INFO> {
     private TFUNCTION currentFunction;
 
     /**
-     * The current class
-     */
-    private TCLASS currentClass;
-
-    /**
-     * The current method
-     */
-    private METHOD currentMethod;
-
-    /**
      * Constructor for a symbols table without mother
      */
     public ST() {
@@ -48,8 +36,6 @@ public class ST extends HashMap<String, INFO> {
         super();
         mother = p;
         currentFunction = null;
-        currentClass = null;
-        currentMethod = null;
     }
 
     public ST getMother() {
@@ -93,30 +79,6 @@ public class ST extends HashMap<String, INFO> {
         }
 
         return currentFunction;
-    }
-
-    public void setCurrentClass(TCLASS cl) {
-        currentClass = cl;
-    }
-
-    public TCLASS getCurrentClass() {
-        if (currentClass == null && mother != null) {
-            return mother.getCurrentClass();
-        }
-
-        return currentClass;
-    }
-
-    public void setCurrentMethod(METHOD method) {
-        currentMethod = method;
-    }
-
-    public METHOD getCurrentMethod() {
-        if (currentMethod == null && mother != null) {
-            return mother.getCurrentMethod();
-        }
-
-        return currentMethod;
     }
 
     public String toString() {

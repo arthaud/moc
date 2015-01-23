@@ -6,10 +6,6 @@ import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
-import moc.type.METHOD;
-import moc.type.LMETHODS;
-import moc.type.FIELD;
-import moc.type.TCLASS;
 import moc.st.INFOVAR;
 
 /**
@@ -167,51 +163,6 @@ public class Mx86 extends AbstractMachine {
         return genFunction("f_" + function.getName(), function.toString(), code);
     }
 
-    public Code genMethod(METHOD method, Code code) {
-        if (method.isConstructor()) {
-            // constructor
-            int size = method.getDefClass().getSize()
-                + getPointerSize(); // first element is the vtable address
-
-            Code constructor = new Code("");
-            constructor.appendAsm("push " + size);
-            constructor.appendAsm("call f_malloc");
-            constructor.appendAsm("add esp, 4");
-            constructor.appendAsm("push eax");
-            constructor.appendAsm("mov dword [eax], " + method.getDefClass().getName() + "_vtable");
-            constructor.appendAsm("call m_" + method.getDefClass().getName() + "__" + method.getLabel() + "__");
-            constructor.appendAsm("mov eax, [ebp - 4]"); // return value
-            constructor = genFunction("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
-                                        method.getDefClass().getName() + " :: " + method,
-                                        constructor);
-
-            // initializer
-            Code init = genFunction("m_" + method.getDefClass().getName() + "__" + method.getLabel() + "__",
-                            method.getDefClass().getName() + " :: " + method + " initializer",
-                            code);
-
-            constructor.appendAsm(init.getAsm());
-            return constructor;
-        }
-        else {
-            return genFunction("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
-                                method.getDefClass().getName() + " :: " + method,
-                                code);
-        }
-    }
-
-    public Code genClass(TCLASS cl, Code code) {
-        // insert vtable
-        LMETHODS vtable = cl.getVtable();
-
-        initCode += "\t" + cl.getName() + "_vtable:\n";
-        for(METHOD method : vtable) {
-            initCode += "\t\tdd m_" + method.getDefClass().getName() + "__" + method.getLabel() + "\n";
-        }
-
-        return code;
-    }
-
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         Location l = allocator.pop();
         c = genVal(c, l, new TBOOL(1));
@@ -258,11 +209,6 @@ public class Mx86 extends AbstractMachine {
 
     public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
         return genReturn("f_" + function.getName(), function.getReturnType(), returnVal);
-    }
-
-    public Code genMethodReturn(Code returnVal, METHOD method) {
-        return genReturn("m_" + method.getDefClass().getName() + "__" + method.getLabel(),
-                            method.getReturnType(), returnVal);
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
@@ -463,46 +409,6 @@ public class Mx86 extends AbstractMachine {
                         arguments);
     }
 
-    public Code genMethodCall(METHOD method, Code arguments) {
-        String label;
-        int parametersSize = method.getParameters().getSize();
-
-        if (method.isStatic()) {
-            // static call
-            label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
-        }
-        else {
-            // dynamic call
-            parametersSize += getPointerSize(); // self parameter
-            Location l = allocator.get();
-            arguments.appendAsm("mov " + genLocation(l) + ", [esp] " + genComment("self"));
-            arguments.appendAsm("mov " + genLocation(l) + ", [" + genLocation(l) + "] " + genComment("vtable"));
-
-            if (method.getVtableOffset() > 0)
-                arguments.appendAsm("add " + genLocation(l) + ", " + (4 * method.getVtableOffset()) + " " + genComment("method offset"));
-
-            label = "[" + genLocation(l) + "]";
-        }
-
-        return genCall(label,
-                        method.getReturnType(),
-                        parametersSize,
-                        arguments);
-    }
-
-    public Code genSuperMethodCall(METHOD method, Code arguments) {
-        String label = "m_" + method.getDefClass().getName() + "__" + method.getLabel();
-
-        if (method.isConstructor()) // special case
-            label += "__";
-
-        // static call
-        return genCall(label,
-                        method.getReturnType(),
-                        method.getParameters().getSize() + getPointerSize(),
-                        arguments);
-    }
-
     // declare a variable
     public Code genDecl(INFOVAR info) {
         return new Code("sub esp, " + info.getType().getSize());
@@ -563,31 +469,6 @@ public class Mx86 extends AbstractMachine {
         Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
-
-        return c;
-    }
-
-    public Code genAttribute(TCLASS cl, FIELD attribute) {
-        Location l = allocator.get();
-        allocator.push(l);
-
-        // get attribute offset
-        int offset = cl.getAttributeOffset(attribute.getName())
-                + getPointerSize(); // first element is the vtable address
-
-        Code c = new Code(genMovMemToReg(genLocation(l), "[ebp + 8]", 4));
-        c.appendAsm("add " + genLocation(l) + ", " + offset + " " + genComment("offset for " + attribute.getName()));
-        c.setIsAddress(true);
-        return c;
-    }
-
-    public Code genSelf() {
-        Location l = allocator.get();
-        allocator.push(l);
-
-        Code c = new Code(genMovMemToReg(genLocation(l), "[ebp + 8]", 4));
-        c.setIsAddress(false);
-        c.setLocation(new Location(Location.LocationType.STACKFRAME, 8));
 
         return c;
     }

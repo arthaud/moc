@@ -16,7 +16,7 @@ public class TNULL implements TTYPE {
     }
 
     public boolean comparableWith(TTYPE other, String op) {
-        return other instanceof TNULL || other instanceof TPOINTER || other instanceof TINSTANCE || other instanceof TID;
+        return other instanceof TNULL || other instanceof TPOINTER;
     }
 
     public boolean binaryUsable(TTYPE other, String op) {

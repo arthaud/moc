@@ -3,9 +3,6 @@ package moc.cg;
 import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
-import moc.type.TCLASS;
-import moc.type.METHOD;
-import moc.type.FIELD;
 import moc.st.INFOVAR;
 import moc.st.ST;
 
@@ -30,17 +27,11 @@ public interface IMachine {
 
     Code genFunction(TFUNCTION function, Code code);
 
-    Code genMethod(METHOD method, Code code);
-
-    Code genClass(TCLASS cl, Code code);
-
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
     Code genLoop(Code condition, Code Bloc);
 
     Code genFunctionReturn(Code returnVal, TFUNCTION fun);
-
-    Code genMethodReturn(Code returnVal, METHOD method);
 
     Code includeAsm(String asmCode, ST symbolsTable);
 
@@ -53,10 +44,6 @@ public interface IMachine {
     Code genCast(TTYPE newType, TTYPE oldType, Code castedCode);
 
     Code genFunctionCall(TFUNCTION func, Code arguments);
-
-    Code genMethodCall(METHOD method, Code arguments);
-
-    Code genSuperMethodCall(METHOD method, Code arguments);
 
     Code genArg(Code argument, TTYPE type);
 
@@ -87,10 +74,6 @@ public interface IMachine {
      * Terminal cases, to load variable, constants...
     */
     Code genVariable(INFOVAR i);
-
-    Code genAttribute(TCLASS cl, FIELD attribute);
-
-    Code genSelf();
 
     Code genInt(String cst);
 
