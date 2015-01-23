@@ -9,43 +9,31 @@ option k = 2;
 inh source : MOCSourceFile for
          PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F,
-         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
+         E, EX, A, AX, R, RX, T, TX, F;
 inh machine : IMachine for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         TYPE, STYPE, PTYPE, REFS,
-         E, EX, A, AX, R, RX, T, TX, F,
-         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
+         TYPE, STYPE, REFS,
+         E, EX, A, AX, R, RX, T, TX, F;
 inh st : ST for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         TYPE, STYPE, PTYPE, SUPER,
-         E, EX, A, AX, R, RX, T, TX, F,
-         IMPLEMENTATION, METHODS, ATTRIBUTES, MFUNC_PARAMETER, MFUNC_PARAMETERS, MARG, MARGS;
+         TYPE, STYPE,
+         E, EX, A, AX, R, RX, T, TX, F;
 inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
-         TYPE, STYPE, PTYPE, REFS, FUNC_PARAMETER,
+         TYPE, STYPE, REFS, FUNC_PARAMETER,
          E, EX, A, AX, R, RX, T, TX, F;
 inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
-inh plocator : ParametersLocator for
-         FUNC_PARAMETERS, FUNC_PARAMETERSX, MFUNC_PARAMETERS, MFUNC_PARAMETER;
+inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
-syn class : TCLASS for SUPER;
-syn static : BOOLEAN for QUAL;
-syn super : BOOLEAN for F;
-
-syn field : FIELD for MFUNC_PARAMETER, MARG;
-inh hfields : LFIELDS for ATTRIBUTES, MFUNC_PARAMETERS, MARGS;
-inh hmethods : LMETHODS for METHODS;
 
 syn code : Code for 
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F,
-         IMPLEMENTATION, METHODS, MARGS, MARG;
+         E, EX, A, AX, R, RX, T, TX, F;
 inh hcode : Code for 
          EX, AX, RX, TX , ARGSX;
 
@@ -95,7 +83,6 @@ sugar id         is  "id" ;
 sugar class      is  "@class" ;
 sugar t_end      is  "@end" ;
 sugar self       is  "self" ;
-sugar super      is  "super" ;
 --sugar bool       is  "BOOL" ;
 --sugar yes        is "YES" ;
 --sugar no         is "NO" ;
@@ -635,42 +622,36 @@ F -> integer #gen ;
 #gen {
     F^type = new TINTEGER(F^machine.getIntSize());
     F^code = F^machine.genInt(integer^txt);
-    F^super = false;
 }
 
 F -> string #gen ;
 #gen {
     F^type = new TPOINTER(new TCHAR(F^machine.getCharSize()), F^machine.getPointerSize());
     F^code = F^machine.genString(string^txt);
-    F^super = false;
 }
 
 F -> character #gen ;
 #gen {
     F^type = new TCHAR(F^machine.getCharSize());
     F^code = F^machine.genChar(character^txt);
-    F^super = false;
 }
 
 F -> null #gen ;
 #gen {
     F^type = new TNULL(F^machine.getPointerSize());
     F^code = F^machine.genNull();
-    F^super = false;
 }
 
 F -> true #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
     F^code = F^machine.genBool(1);
-    F^super = false;
 }
 
 F -> false #gen ;
 #gen {
     F^type = new TBOOL(F^machine.getBoolSize());
     F^code = F^machine.genBool(0);
-    F^super = false;
 }
 
 F -> OPUN F #gen ;
@@ -681,7 +662,6 @@ F -> OPUN F #gen ;
 
     F^type = F1^type;
     F^code = F^machine.genUnary(F1^code, F1^type, OPUN^name);
-    F^super = false;
 }
 
 -- unary expressions
@@ -699,7 +679,6 @@ F -> opar E cpar #gen ;
 #gen {
     F^type = E^type;
     F^code = E^code;
-    F^super = false;
 }
 
 F -> opar TYPE cpar F #gen ;
@@ -713,7 +692,6 @@ F -> opar TYPE cpar F #gen ;
 
     F^type = TYPE^type;
     F^code = F^machine.genCast(TYPE^type, F1^type, F1^code);
-    F^super = false;
 }
 
 -- subprogram call
@@ -747,7 +725,6 @@ global LTYPES args_types; TFUNCTION fun;
 
 #gen {
     F^code = F^machine.genFunctionCall(fun, ARGS^code);
-    F^super = false;
 }
 
 F -> ident #gen ;
@@ -784,8 +761,6 @@ F -> ident #gen ;
             }
         }
     }
-
-    F^super = false;
 }
 
 -- pointed-to memory access
@@ -801,8 +776,6 @@ F -> mult F #gen ;
             error(TYPE_not_pointer, F1^type);
         }
     }
-
-    F^super = false;
 }
 
 -- subprogram call arguments
@@ -870,374 +843,4 @@ ARGSX -> comma E #trans ARGSX #gen ;
 
 #gen {
     ARGSX^code = ARGSX1^code;
-}
-
---============ MOC extension =================
-
-ENTITIES -> IMPLEMENTATION ENTITIES #gen ;
-#gen {
-    Code c = new Code(IMPLEMENTATION^code.getAsm());
-    c.appendAsm(ENTITIES1^code.getAsm());
-    ENTITIES^code = c;
-}
-
--- class definition
-IMPLEMENTATION -> class class_ident SUPER ocbra #trans ATTRIBUTES ccbra METHODS t_end #gen ;
-global TCLASS class;
-
-#trans {
-    if (IMPLEMENTATION^st.localSearch(class_ident^txt) != null) {
-        error(VAR_exists, class_ident^txt);
-    }
-
-    -- symbols table for attributes and methods
-    ST st = new ST(IMPLEMENTATION^st);
-    ATTRIBUTES^st = st;
-    METHODS^st = st;
-
-    LFIELDS fields = new LFIELDS();
-    ATTRIBUTES^hfields = fields;
-
-    LMETHODS methods = new LMETHODS();
-    METHODS^hmethods = methods;
-
-    -- insert class in the current symbols table
-    class = new TCLASS(class_ident^txt, SUPER^class, fields, methods);
-    IMPLEMENTATION^st.insert(class_ident^txt, new INFOCLASS(class));
-    IMPLEMENTATION^st.setCurrentClass(class);
-}
-
-#gen {
-    IMPLEMENTATION^code = IMPLEMENTATION^machine.genClass(class, METHODS^code);
-    IMPLEMENTATION^st.setCurrentClass(null);
-}
-
--- superclass
-SUPER -> #class ;
-#class {
-    SUPER^class = null;
-}
-
-SUPER -> colon class_ident #class ;
-#class {
-    -- seach for class_ident in the symbols table
-    INFO i = SUPER^st.globalSearch(class_ident^txt);
-
-    if (i == null) {
-        error(CLASS_undefined, class_ident^txt);
-    }
-    else {
-        match (i) {
-            case INFOCLASS {
-                INFOCLASS info = i;
-                SUPER^class = info.getType();
-            }
-            default {
-                error(INFO_not_class, class_ident^txt);
-            }
-        }
-    }
-}
-
--- attributes
-ATTRIBUTES -> ;
-
-ATTRIBUTES -> TYPE ident semicolon #attr ATTRIBUTES ;
-#attr {
-    -- check if the attribute already exists in the class or some super classes
-    if (ATTRIBUTES^st.getCurrentClass().findAttribute(ident^txt) != null) {
-        error(ATTR_exists, ident^txt);
-    }
-
-    ATTRIBUTES^hfields.add(new FIELD(ident^txt, TYPE^type));
-}
-
--- methods
-METHODS -> #gen ;
-#gen {
-    if (!METHODS^hmethods.hasConstructor()) {
-        error(CLASS_missing_constructor, METHODS^st.getCurrentClass().getName());
-    }
-
-    METHODS^code = new Code("");
-}
-
-METHODS -> QUAL PTYPE #params MFUNC_PARAMETERS #method BLOC METHODS #gen ;
-global LFIELDS fields;
-    METHOD method;
-
-#params {
-    -- symbols table for parameters
-    ST st = new ST(METHODS^st);
-    MFUNC_PARAMETERS^st = st;
-    BLOC^st = st;
-
-    -- variable locator
-    BLOC^vlocator = METHODS^machine.getVariableLocator();
-
-    -- management of parameters
-    fields = new LFIELDS();
-    MFUNC_PARAMETERS^hfields = fields;
-    MFUNC_PARAMETERS^plocator = METHODS^machine.getParametersLocator();
-
-    if (! QUAL^static) {
-        -- add the special self parameter
-        MFUNC_PARAMETERS^plocator.generate(new TINSTANCE(METHODS^st.getCurrentClass(), METHODS^machine.getPointerSize()));
-    }
-}
-
-#method {
-    -- check if the method is already defined
-    if (METHODS^st.getCurrentClass().findMethodByName(fields, false) != null) {
-        error(METH_exists, METHODS^st.getCurrentClass().findMethodByName(fields, false));
-    }
-
-    method = new METHOD(METHODS^st.getCurrentClass(), PTYPE^type, fields, QUAL^static);
-    METHODS^hmethods.add(method);
-    METHODS^st.setCurrentMethod(method);
-}
-
-#gen {
-    Code c = METHODS^machine.genMethod(method, BLOC^code);
-    c.appendAsm(METHODS1^code.getAsm());
-    METHODS^code = c;
-    METHODS^st.setCurrentMethod(null);
-}
-
--- method or attribute qualifier: + = class, - = instance
-QUAL -> plus #gen ;
-#gen { QUAL^static = true; }
-
-QUAL -> minus #gen ;
-#gen { QUAL^static = false; }
-
--- type class
-STYPE -> class_ident #type ;
-#type {
-    -- search for class_ident in the symbols table
-    INFO i = STYPE^st.globalSearch(class_ident^txt);
-
-    if (i == null) {
-        error(CLASS_undefined, class_ident^txt);
-    }
-    else {
-        match (i) {
-            case INFOCLASS {
-                INFOCLASS info = i;
-                STYPE^type = info.getType();
-            }
-            default {
-                error(INFO_not_class, class_ident^txt);
-            }
-        }
-    }
-}
-
--- type "any"
-TYPE -> id #type ;
-#type {
-    TYPE^type = new TID(TYPE^machine.getPointerSize());
-}
-
--- method return type between parentheses
-PTYPE -> opar TYPE cpar #type ;
-#type {
-    PTYPE^type = TYPE^type;
-}
-
--- method parameters
-MFUNC_PARAMETERS -> ;
-
-MFUNC_PARAMETERS -> MFUNC_PARAMETER #param MFUNC_PARAMETERS ;
-#param {
-    -- check if the parameter is already defined
-    if (MFUNC_PARAMETERS^hfields.find(MFUNC_PARAMETER^field.getName()) != null) {
-        error(PARAM_exists, MFUNC_PARAMETER^field.getName());
-    }
-
-    MFUNC_PARAMETERS^hfields.add(MFUNC_PARAMETER^field);
-}
-
--- selector without parameters
-MFUNC_PARAMETER -> ident #field ;
-#field {
-    MFUNC_PARAMETER^field = new FIELD(ident^txt, null);
-}
-
--- selector + parameter type + parameter name
-MFUNC_PARAMETER -> ident colon PTYPE ident #field ;
-#field {
-    MFUNC_PARAMETER^field = new FIELD(ident^txt, PTYPE^type);
-
-    -- add ident1 in the symbols table
-    INFO i = MFUNC_PARAMETER^st.localSearch(ident1^txt);
-
-    if (i != null) {
-        error(VAR_exists, ident1^txt);
-    }
-    else {
-        Location loc = MFUNC_PARAMETER^plocator.generate(PTYPE^type);
-        INFOVAR info = new INFOVAR(PTYPE^type, loc);
-        MFUNC_PARAMETER^st.insert(ident1^txt, info);
-    }
-}
-
---F -> nil ;
---F -> yes ;
---F -> no ;
-
--- MOC string (starts with @)
---F -> stringo ;
-
-F -> self #gen ;
-#gen {
-    if (F^st.getCurrentMethod() == null) {
-        error(SELF_outside_method);
-    }
-    elseif (F^st.getCurrentMethod().isStatic() && ! F^st.getCurrentMethod().isConstructor()) {
-        error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
-    }
-
-    F^type = new TINSTANCE(F^st.getCurrentClass(), F^machine.getPointerSize());
-    F^code = F^machine.genSelf();
-    F^super = false;
-}
-
-F -> super #gen ;
-#gen {
-    if (F^st.getCurrentMethod() == null) {
-        error(SUPER_outside_method);
-    }
-    elseif (F^st.getCurrentMethod().isStatic() && ! F^st.getCurrentMethod().isConstructor()) {
-        error(METH_static, F^st.getCurrentClass().getName(), F^st.getCurrentMethod());
-    }
-    elseif (F^st.getCurrentClass().getSuperType() == null) {
-        error(SUPER_undefined);
-    }
-
-    F^type = new TINSTANCE(F^st.getCurrentClass().getSuperType(), F^machine.getPointerSize());
-    F^code = F^machine.genSelf();
-    F^super = true;
-}
-
--- method call
-F -> osbra F #args MARGS csbra #gen ;
-global LFIELDS fields;
-
-#args {
-    fields = new LFIELDS();
-    MARGS^hfields = fields;
-}
-
-#gen {
-    METHOD method = null;
-
-    match (F1^type) {
-        case TINSTANCE {
-            TINSTANCE instance = F1^type;
-            method = instance.getType().findCallableMethod(fields);
-
-            if (method == null) {
-                error(METH_undefined, instance.getType().getName(), fields);
-            }
-            elseif (method.isStatic() && !(F1^super && method.isConstructor())) {
-                error(METH_static, instance.getType().getName(), fields);
-            }
-        }
-        default {
-            error(TYPE_not_instance, F1^type);
-        }
-    }
-
-    F^type = method.getReturnType();
-
-    Code c = F^machine.genArg(F1^code, F1^type); -- self parameter
-    MARGS^code.appendAsm(c.getAsm());
-
-    if (F1^super) {
-        F^code = F^machine.genSuperMethodCall(method, MARGS^code); -- without late binding
-    }
-    else {
-        F^code = F^machine.genMethodCall(method, MARGS^code);
-    }
-
-    F^super = false;
-}
-
--- for class method call
-F -> osbra class_ident #args MARGS csbra #gen ;
-global TCLASS class;
-    LFIELDS fields;
-
-#args {
-    INFO i = F^st.globalSearch(class_ident^txt);
-
-    if (i == null) {
-        error(CLASS_undefined, class_ident^txt);
-    }
-    else {
-        match (i) {
-            case INFOCLASS {
-                INFOCLASS info = i;
-                class = info.getType();
-            }
-            default {
-                error(INFO_not_class, class_ident^txt);
-            }
-        }
-    }
-
-    fields = new LFIELDS();
-    MARGS^hfields = fields;
-}
-
-#gen {
-    METHOD method = class.findCallableMethod(fields);
-
-    if (method == null) {
-        error(METH_undefined, class.getName(), fields);
-    }
-    elseif (!method.isStatic()) {
-        error(METH_not_static, class.getName(), fields);
-    }
-
-    F^type = method.getReturnType();
-    F^code = F^machine.genMethodCall(method, MARGS^code);
-    F^super = false;
-}
-
--- method call arguments
-MARGS -> #gen ;
-#gen {
-    MARGS^code = new Code("");
-}
-
-MARGS -> MARG #args MARGS #gen ;
-#args {
-    -- check if the parameter is already defined
-    if (MARGS^hfields.find(MARG^field.getName()) != null) {
-        error(PARAM_exists, MARG^field.getName());
-    }
-
-    MARGS^hfields.add(MARG^field);
-}
-
-#gen {
-    Code c = MARGS1^code;
-    c.appendAsm(MARG^code.getAsm());
-    MARGS^code = c;
-}
-
--- selector + arg
-MARG -> ident colon E #arg ;
-#arg {
-    MARG^field = new FIELD(ident^txt, E^type);
-    MARG^code = MARG^machine.genArg(E^code, E^type);
-}
-
--- selector without arg
-MARG -> ident #arg ;
-#arg {
-    MARG^field = new FIELD(ident^txt, null);
-    MARG^code = new Code("");
 }
