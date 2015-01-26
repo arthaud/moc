@@ -48,20 +48,21 @@ public class MCRAPS extends AbstractMachine {
         return new DefaultParametersLocator(4);
     }
 
-    public class XSPARCVariableLocator implements VariableLocator {
+    public class XSPARCVariableLocator extends DefaultVariableLocator {
+        public XSPARCVariableLocator(int offset) {
+            super(offset);
+        }
+
         public Location generate(TTYPE param) {
             throw new UnsupportedOperationException("SPARC");
         }
-        public int getLocalOffset() {
-            throw new UnsupportedOperationException("SPARC");
-        }
         public VariableLocator getChild() {
-            throw new UnsupportedOperationException("SPARC");
+            return new XSPARCVariableLocator(offset);
         }
     }
 
     public VariableLocator getVariableLocator() {
-        throw new UnsupportedOperationException("SPARC");
+        return new XSPARCVariableLocator(0);
     }
 
     public String genLocation(Location l) {

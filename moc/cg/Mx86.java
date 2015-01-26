@@ -86,13 +86,9 @@ public class Mx86 extends AbstractMachine {
         return new DefaultParametersLocator(8);
     }
 
-    public class X86VariableLocator implements VariableLocator {
-        private int offset;
-        private int localOffset;
-
+    public class X86VariableLocator extends DefaultVariableLocator {
         public X86VariableLocator(int offset) {
-            this.offset = offset;
-            localOffset = 0;
+            super(offset);
         }
 
         public Location generate(TTYPE param) {
@@ -100,10 +96,6 @@ public class Mx86 extends AbstractMachine {
             localOffset -= param.getSize();
 
             return new Location(Location.LocationType.STACKFRAME, offset);
-        }
-
-        public int getLocalOffset() {
-            return localOffset;
         }
 
         public VariableLocator getChild() {

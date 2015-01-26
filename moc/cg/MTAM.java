@@ -55,13 +55,9 @@ public class MTAM extends AbstractMachine {
         return new TamParametersLocator();
     }
 
-    public class TamVariableLocator implements VariableLocator {
-        private int offset;
-        private int localOffset;
-
+    public class TamVariableLocator extends DefaultVariableLocator {
         public TamVariableLocator(int offset) {
-            this.offset = offset;
-            localOffset = 0;
+            super(offset);
         }
 
         public Location generate(TTYPE param) {
@@ -70,10 +66,6 @@ public class MTAM extends AbstractMachine {
             localOffset += param.getSize();
             
             return new Location(Location.LocationType.STACKFRAME, res);
-        }
-
-        public int getLocalOffset() {
-            return localOffset;
         }
 
         public VariableLocator getChild() {
