@@ -142,10 +142,6 @@ public class MCRAPS extends AbstractMachine {
         throw new UnsupportedOperationException("SPARC");
     }
 
-    public Code genSelf() {
-        throw new UnsupportedOperationException("SPARC");
-    }
-
     public Code genInt(String cst) {
         throw new UnsupportedOperationException("SPARC");
     }
