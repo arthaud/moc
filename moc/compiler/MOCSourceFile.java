@@ -4,6 +4,7 @@ import mg.egg.eggc.runtime.libjava.SourceUnit;
 import moc.cg.AbstractMachine;
 import moc.cg.MTAM;
 import moc.cg.Mx86;
+import moc.cg.MCRAPS;
 
 /**
  * Describes a MOC compilation unit
@@ -28,12 +29,16 @@ public class MOCSourceFile extends SourceUnit {
      * Determines and creates the target machine
      */
     private void setMachine(String machine) {
-
-        if (machine != null && machine.equals("tam")) {
-            this.machine = new MTAM();
-        }
-        else { // default
-            this.machine = new Mx86();
+        if (machine != null) {
+            if (machine.equals("tam")) {
+                this.machine = new MTAM();
+            }
+            else if (machine.equals("x86")) {
+                this.machine = new Mx86();
+            }
+            else { // default
+                this.machine = new MCRAPS();
+            }
         }
     }
 
