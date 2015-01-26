@@ -70,7 +70,15 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genFunction(TFUNCTION function, Code code) {
-        throw new UnsupportedOperationException("SPARC");
+        String label = "f_" + function.getName();
+        Code c = new Code(code.getAsm());
+
+        c.prependAsm(label + ":");
+
+        c.appendAsm(label + "_end:");
+        c.appendAsm("ret");
+
+        return c;
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
@@ -126,7 +134,8 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {
-        throw new UnsupportedOperationException("SPARC");
+        // TODO: remove local variable
+        return instsCode;
     }
 
     public Code genVariable(INFOVAR i) {
