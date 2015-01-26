@@ -12,31 +12,30 @@ import moc.type.TVOID;
 public class MCRAPS extends AbstractMachine {
 
     public MCRAPS() {
-        throw new UnsupportedOperationException("SPARC");
     }
 
     public String getName() {
-        throw new UnsupportedOperationException("SPARC");
+        return "SPARC";
     }
 
     public String getSuffix() {
-        throw new UnsupportedOperationException("SPARC");
+        return "asm";
     }
 
     public int getIntSize() {
-        throw new UnsupportedOperationException("SPARC");
+        return 4;
     }
 
     public int getCharSize() {
-        throw new UnsupportedOperationException("SPARC");
+        return 1;
     }
 
     public int getBoolSize() {
-        throw new UnsupportedOperationException("SPARC");
+        return 1;
     }
 
     public int getPointerSize() {
-        throw new UnsupportedOperationException("SPARC");
+        return 4;
     }
 
     public class XSPARCParametersLocator implements ParametersLocator {
