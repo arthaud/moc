@@ -45,7 +45,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public ParametersLocator getParametersLocator() {
-        throw new UnsupportedOperationException("SPARC");
+        return new DefaultParametersLocator(4);
     }
 
     public class XSPARCVariableLocator implements VariableLocator {

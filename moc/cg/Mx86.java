@@ -82,22 +82,8 @@ public class Mx86 extends AbstractMachine {
         return 4;
     }
 
-    public class X86ParametersLocator implements ParametersLocator {
-        private int offset;
-
-        public X86ParametersLocator() {
-            offset = +8;
-        }
-
-        public Location generate(TTYPE param) {
-            int res = offset;
-            offset += param.getSize();
-            return new Location(Location.LocationType.STACKFRAME, res);
-        }
-    }
-
     public ParametersLocator getParametersLocator() {
-        return new X86ParametersLocator();
+        return new DefaultParametersLocator(8);
     }
 
     public class X86VariableLocator implements VariableLocator {
