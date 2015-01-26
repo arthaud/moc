@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import subprocess
 import re
+import sys
 
 # Manage colors
 ALL_OFF = '\033[1;0m'
@@ -26,10 +27,11 @@ def yellow(s):
     return YELLOW + s + ALL_OFF
 
 def compile_command(path):
-    return ['../mocc', '-m', 'tam', path]
+    global machine
+    return ['../mocc', '-m', machine, path]
 
 def check(title, path, error=False, stderr_match=None, stdout_match=None):
-    global tests, errors
+    global tests, errors, machine
     p = subprocess.Popen(compile_command(path), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     tests += 1
@@ -119,4 +121,7 @@ def run():
     else:
         print(green('  %s tests passed successfully.' % tests))
 
+global machine
+machine = sys.argv[1]
+assert(machine in ['x86', 'tam', 'craps'])
 run()
