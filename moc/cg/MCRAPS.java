@@ -217,99 +217,35 @@ public class MCRAPS extends AbstractMachine {
 
         switch(operator) {
             case "+":
-                leftOperand.appendAsm("add " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+                leftOperand.appendAsm("add " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "-":
-                leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+                leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "*":
+                leftOperand.appendAsm("umulcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                break;
             case "/":
             case "%":
-                // mul and div work only with one parameter...
-                leftOperand.appendAsm(genComment("operator " + operator));
-
-                // save registers
-                if (allocator.containsRegister(0)) leftOperand.appendAsm("push eax");
-                if (allocator.containsRegister(3)) leftOperand.appendAsm("push edx");
-
-                if (rightLocation.getOffset() == 3) {
-                    // get an unused register
-                    allocator.push(rightLocation);
-                    allocator.push(leftLocation);
-                    Location newLocation = allocator.get();
-                    allocator.pop();
-                    allocator.pop();
-
-                    // use newLocation as right operand
-                    leftOperand.appendAsm("mov " + genLocation(newLocation) + ", edx");
-                    rightLocation = newLocation;
-                }
-
-                // prepare
-                if (leftLocation.getOffset() != 0) leftOperand.appendAsm("mov eax, " + genLocation(leftLocation));
-                leftOperand.appendAsm("mov edx, 0"); // high part of the operand
-
-                if (operator.equals("*")) leftOperand.appendAsm("mul " + genLocation(rightLocation));
-                else leftOperand.appendAsm("div " + genLocation(rightLocation));
-
-                if (!operator.equals("%") && leftLocation.getOffset() != 0) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", eax");
-                if (operator.equals("%") && leftLocation.getOffset() != 3) leftOperand.appendAsm("mov " + genLocation(leftLocation) + ", edx");
-
-                // restore registers
-                if (allocator.containsRegister(3)) leftOperand.appendAsm("pop edx");
-                if (allocator.containsRegister(0)) leftOperand.appendAsm("pop eax");
-                break;
+                throw new UnsupportedOperationException("CRAPS");
             case "&&":
-                // "and" in x86 is a bitwise operator.
-                // 0b10 and 0b100 = 0, too bad..
-                leftOperand.appendAsm(genComment("operator " + operator));
-
-                // leftLocation > 0
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", 0");
-                leftOperand.appendAsm("pushfd");
-                leftOperand.appendAsm("pop " + genLocation(leftLocation));
-                leftOperand.appendAsm("not " + genLocation(leftLocation));
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x40");
-
-                // rightLocation > 0
-                leftOperand.appendAsm("cmp " + genLocation(rightLocation) + ", 0");
-                leftOperand.appendAsm("pushfd");
-                leftOperand.appendAsm("pop " + genLocation(rightLocation));
-                leftOperand.appendAsm("not " + genLocation(rightLocation));
-                leftOperand.appendAsm("and " + genLocation(rightLocation) + ", 0x40");
-
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "||":
-                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
+                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "==":
             case "!=":
-                leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                leftOperand.appendAsm("pushfd");
-                leftOperand.appendAsm("pop " + genLocation(leftLocation));
-
-                if (operator.equals("!=")) leftOperand.appendAsm("not " + genLocation(leftLocation));
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x40");
+                leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 1");
+                if (operator.equals("!="))
+                    leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case "<":
             case ">=":
             case ">":
             case "<=":
-                leftOperand.appendAsm(genComment("operator " + operator));
-
-                if (operator.equals("<") || operator.equals(">="))
-                    leftOperand.appendAsm("cmp " + genLocation(leftLocation) + ", " + genLocation(rightLocation));
-                else
-                    leftOperand.appendAsm("cmp " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
-
-                leftOperand.appendAsm("pushfd");
-                leftOperand.appendAsm("pop " + genLocation(leftLocation));
-
-                if (operator.equals(">=") || operator.equals("<=")) leftOperand.appendAsm("not " + genLocation(leftLocation));
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 0x80");
-                break;
+                throw new UnsupportedOperationException("CRAPS : TODO");
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
         }
@@ -324,14 +260,10 @@ public class MCRAPS extends AbstractMachine {
 
         switch(operator) {
             case "-":
-                operand.appendAsm("neg " + genLocation(l));
+                operand.appendAsm("negcc " + genLocation(l));
                 break;
             case "!":
-                operand.appendAsm(genComment("operator !"));
-                operand.appendAsm("cmp " + genLocation(l) + ", 0");
-                operand.appendAsm("pushfd");
-                operand.appendAsm("pop " + genLocation(l));
-                operand.appendAsm("and " + genLocation(l) + ", 0x40");
+                operand.appendAsm("sub " + genLocation(l) + ", 1, " + genLocation(l));
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
