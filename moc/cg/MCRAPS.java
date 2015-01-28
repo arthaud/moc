@@ -141,13 +141,13 @@ public class MCRAPS extends AbstractMachine {
         c = genVal(c, l, new TBOOL(1));
 
         int num_cond = getLabelNum();
-        falseBloc.appendAsm("jmp cond_end_" + num_cond);
+        falseBloc.appendAsm("ba cond_end_" + num_cond);
         trueBloc.prependAsm("cond_then_" + num_cond + ":");
         trueBloc.appendAsm("cond_end_" + num_cond + ":");
 
         c.prependAsm(genComment("if condition :"));
-        c.appendAsm("cmp " + genLocation(l) + ", 0");
-        c.appendAsm("jne cond_then_" + num_cond);
+        c.appendAsm("cmp " + genLocation(l) + ", %r0");
+        c.appendAsm("bne cond_then_" + num_cond);
         c.appendAsm(falseBloc.getAsm());
         c.appendAsm(trueBloc.getAsm());
         return c;
@@ -158,12 +158,12 @@ public class MCRAPS extends AbstractMachine {
         condition = genVal(condition, l, new TBOOL(1));
 
         int num = getLabelNum();
-        condition.appendAsm("cmp " + genLocation(l) + ", 0");
-        condition.appendAsm("je end_loop_" + num);
+        condition.appendAsm("cmp " + genLocation(l) + ", %r0");
+        condition.appendAsm("be end_loop_" + num);
         c.prependAsm(condition.getAsm());
         c.prependAsm(genComment("loop condition :"));
         c.prependAsm("loop_" + num + ":");
-        c.appendAsm("jmp loop_" + num);
+        c.appendAsm("ba loop_" + num);
         c.appendAsm("end_loop_" + num + ":");
         return c;
     }
@@ -355,7 +355,7 @@ public class MCRAPS extends AbstractMachine {
         arguments.appendAsm("call " + label);
 
         if (!(returnType instanceof TVOID) && l.getOffset() != 0) {
-            arguments.appendAsm("mov " + genLocation(l) + ", %r1");
+            arguments.appendAsm("mov %r1, " + genLocation(l));
         }
 
         if (parametersSize > 0) {
