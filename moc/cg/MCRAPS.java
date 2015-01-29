@@ -236,16 +236,38 @@ public class MCRAPS extends AbstractMachine {
                 break;
             case "==":
             case "!=":
-                leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", 1");
+                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
+                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation));
                 if (operator.equals("!="))
-                    leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case "<":
+                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
+                // N
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
+                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                break;
             case ">=":
+                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
+                // not N
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
+                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                break;
             case ">":
+                leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
+                // N
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
+                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                break;
             case "<=":
-                throw new UnsupportedOperationException("CRAPS : TODO");
+                leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
+                // not N
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
+                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
         }
