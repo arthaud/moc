@@ -117,9 +117,9 @@ public class MCRAPS extends AbstractMachine {
         }
         else if(l.getType() == Location.LocationType.STACKFRAME) {
             if(l.getOffset() >= 0)
-                return "[%r29 + " + l.getOffset() + "]";
+                return "[%sp + " + l.getOffset() + "]";
             else
-                return "[%r29 - " + (-l.getOffset()) + "]";
+                return "[%sp - " + (-l.getOffset()) + "]";
         }
         else {
             return "" + l.getOffset();
@@ -317,7 +317,7 @@ public class MCRAPS extends AbstractMachine {
         }
 
         if (parametersSize > 0) {
-            arguments.appendAsm("add %r29, " + parametersSize + ", %r29 " + genComment("removing parameters"));
+            arguments.appendAsm("add %sp, " + parametersSize + ", %sp " + genComment("removing parameters"));
         }
 
         // push registers
@@ -342,7 +342,7 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-        return new Code("sub %r29, " + info.getType().getSize() + ", %r29");
+        return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
     }
 
     // declare a variable with an initial value
@@ -386,7 +386,7 @@ public class MCRAPS extends AbstractMachine {
         SPARCVariableLocator vl = (SPARCVariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
-            instsCode.appendAsm("add %r29, " + (-vl.getLocalOffset()) + ", %r29 " + genComment("removing local variables"));
+            instsCode.appendAsm("add %sp, " + (-vl.getLocalOffset()) + ", %sp " + genComment("removing local variables"));
         }
 
         return instsCode;
@@ -470,8 +470,8 @@ public class MCRAPS extends AbstractMachine {
             return "push " + genLocation(operand);
         }
         else {
-            String c = "sub %r29, " + size + ", %r29\n";
-            c += genMovRegToMem("[%r29]", operand, size);
+            String c = "sub %sp, " + size + ", %sp\n";
+            c += genMovRegToMem("[%sp]", operand, size);
             return c;
         }
     }
