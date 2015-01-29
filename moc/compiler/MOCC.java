@@ -30,7 +30,7 @@ public class MOCC implements Serializable {
 
     private static MOCSourceFile parseArguments(String[] args) throws MOCException {
         String fileName = null;
-        String machine = null;
+        String machine = "craps"; /* default machine */
         int verbosity = 0;
 
         for (int i = 0; i < args.length; i++) {
