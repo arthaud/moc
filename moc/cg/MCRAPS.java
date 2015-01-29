@@ -76,8 +76,9 @@ public class MCRAPS extends AbstractMachine {
         return "asm";
     }
 
+    /* warning: the memory is word addressed! */
     public int getIntSize() {
-        return 4;
+        return 1;
     }
 
     public int getCharSize() {
@@ -89,7 +90,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public int getPointerSize() {
-        return 4;
+        return 1;
     }
 
     public String genComment(String comm) {
@@ -127,9 +128,9 @@ public class MCRAPS extends AbstractMachine {
         }
         else if(l.getType() == Location.LocationType.STACKFRAME) {
             if(l.getOffset() >= 0)
-                return "[%sp + " + l.getOffset() + "]";
+                return "[%fp + " + l.getOffset() + "]";
             else
-                return "[%sp - " + (-l.getOffset()) + "]";
+                return "[%fp - " + (-l.getOffset()) + "]";
         }
         else {
             return "" + l.getOffset();
@@ -138,10 +139,14 @@ public class MCRAPS extends AbstractMachine {
 
     private Code genFunction(String label, String comment, Code code) {
         Code c = new Code(code.getAsm());
+        c.prependAsm("mov %sp, %fp");
+        c.prependAsm("push %fp");
         c.prependAsm(label + ":");
         c.prependAsm("\n" + genComment("### " + comment + " #############"));
 
         c.appendAsm(label + "_end:");
+        c.appendAsm("mov %fp, %sp");
+        c.appendAsm("pop %fp");
         c.appendAsm("ret");
         return c;
     }
@@ -320,7 +325,7 @@ public class MCRAPS extends AbstractMachine {
         Location l = allocator.get();
 
         arguments.prependAsm(genComment("push parameters :"));
-        arguments.appendAsm("call " + label);
+        arguments.appendAsm("rcall " + label);
 
         if (!(returnType instanceof TVOID) && l.getOffset() != 0) {
             arguments.appendAsm("mov %r1, " + genLocation(l));
@@ -476,14 +481,7 @@ public class MCRAPS extends AbstractMachine {
      * Generate a push
      */
     private String genPush(Location operand, int size) {
-        if (size == 4) {
-            return "push " + genLocation(operand);
-        }
-        else {
-            String c = "sub %sp, " + size + ", %sp\n";
-            c += genMovRegToMem("[%sp]", operand, size);
-            return c;
-        }
+        return "push " + genLocation(operand);
     }
 
     /**
@@ -493,23 +491,6 @@ public class MCRAPS extends AbstractMachine {
         assert(right.getType() == Location.LocationType.REGISTER);
 
         return "st " + genLocation(right) + ", " + left;
-        /*
-        switch(size) {
-            case 4: {
-                return "mov " + left + ", " + genLocation(right);
-            }
-            case 2: {
-                String[] registerNames = {"ax", "bx", "cx", "dx", "si", "di"};
-                return "mov " + left + ", " + registerNames[right.getOffset()];
-            }
-            case 1: {
-                String[] registerNames = {"al", "bl", "cl", "dl", "sil", "dil"};
-                return "mov " + left + ", " + registerNames[right.getOffset()];
-            }
-            default:
-                throw new RuntimeException("Invalid size: " + size);
-        }
-        */
     }
 
     /**
@@ -517,17 +498,5 @@ public class MCRAPS extends AbstractMachine {
      */
     private String genMovMemToReg(String left, String right, int size) {
         return "ld " + right + ", " + left;
-        /*
-        switch(size) {
-            case 4:
-                return "mov " + left + ", " + right;
-            case 2:
-                return "movzx " + left + ", WORD " + right;
-            case 1:
-                return "movzx " + left + ", BYTE " + right;
-            default:
-                throw new RuntimeException("Invalid size: " + size);
-        }
-        */
     }
 }
