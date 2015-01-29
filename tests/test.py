@@ -55,6 +55,8 @@ def run():
 
     print(bold('Cleaning tests...'))
     subprocess.check_call(['find', '.', '-name', '*.tam', '-delete'])
+    subprocess.check_call(['find', '.', '-name', '*.x86', '-delete'])
+    subprocess.check_call(['find', '.', '-name', '*.asm', '-delete'])
 
     print(bold('Running tests...'))
     check('empty code', 'success/empty.moc')
