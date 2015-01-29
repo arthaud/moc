@@ -50,4 +50,4 @@ void free(void* p) {
 }
 
 // include shared functions
-#include "lib_shared.moc"
+#include "lib/shared.moc"

@@ -1,4 +1,4 @@
-#include lib_tam.moc
+#include "lib/tam.moc"
 
 @class NSObject {
 }
