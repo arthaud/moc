@@ -55,7 +55,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public MCRAPS() {
-        initCode = "section .data\n";
+        initCode = "";
     }
 
     public String getName() {
@@ -80,6 +80,10 @@ public class MCRAPS extends AbstractMachine {
 
     public int getPointerSize() {
         return 4;
+    }
+
+    public String genComment(String comm) {
+        return "// " + comm;
     }
 
     public ParametersLocator getParametersLocator() {
