@@ -1,0 +1,6 @@
+int main() {
+    int* ssegs = (int*) 0xA0000000;
+
+    *(ssegs + 1) = 0b1111;
+    *ssegs = 0x1234;
+}
