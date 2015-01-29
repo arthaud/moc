@@ -98,7 +98,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public ParametersLocator getParametersLocator() {
-        return new DefaultParametersLocator(4);
+        return new DefaultParametersLocator(2);
     }
 
     public class SPARCVariableLocator extends DefaultVariableLocator {
@@ -257,7 +257,7 @@ public class MCRAPS extends AbstractMachine {
             case "!=":
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
-                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation));
                 if (operator.equals("!="))
                     leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
@@ -265,26 +265,26 @@ public class MCRAPS extends AbstractMachine {
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
                 // N
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
                 break;
             case ">=":
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
                 // not N
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
                 leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case ">":
                 leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
                 // N
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
                 break;
             case "<=":
                 leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
                 // not N
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("slr " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
                 leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             default:
@@ -325,7 +325,9 @@ public class MCRAPS extends AbstractMachine {
         Location l = allocator.get();
 
         arguments.prependAsm(genComment("push parameters :"));
-        arguments.appendAsm("rcall " + label);
+        arguments.appendAsm("push %r28");
+        arguments.appendAsm("call " + label);
+        arguments.appendAsm("pop %r28");
 
         if (!(returnType instanceof TVOID) && l.getOffset() != 0) {
             arguments.appendAsm("mov %r1, " + genLocation(l));
