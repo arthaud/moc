@@ -51,15 +51,19 @@ public abstract class AbstractMachine implements IMachine {
         return "; " + comm;
     }
 
+    public String asmVariablePattern() {
+        return "%([a-z][_0-9A-Za-z]*)";
+    }
+
     public Code includeAsm(String asmCode, ST symbolsTable) {
         String asm = asmCode.substring(1, asmCode.length() - 1); // remove the ""
         StringBuffer sb = new StringBuffer();
 
-        Pattern pattern = Pattern.compile("%[a-z][_0-9A-Za-z]*");
+        Pattern pattern = Pattern.compile(asmVariablePattern());
         Matcher matcher = pattern.matcher(asm);
 
         while (matcher.find()) {
-            String ident = matcher.group().substring(1);
+            String ident = matcher.group(1);
             INFO i = symbolsTable.globalSearch(ident);
 
             if (i == null) {

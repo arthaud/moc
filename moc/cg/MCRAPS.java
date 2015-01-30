@@ -76,6 +76,10 @@ public class MCRAPS extends AbstractMachine {
         return "asm";
     }
 
+    public String asmVariablePattern() {
+        return "\\$([a-z][_0-9A-Za-z]*)";
+    }
+
     /* warning: the memory is word addressed! */
     public int getIntSize() {
         return 1;
