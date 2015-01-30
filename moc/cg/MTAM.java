@@ -271,6 +271,10 @@ public class MTAM extends AbstractMachine {
         pointerCode.setLocation(null);
         return pointerCode;
     }
+    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType){
+        throw new UnsupportedOperationException();
+    }
+
 
     public Code genBloc(Code c, VariableLocator vloc) {
         TamVariableLocator vl = (TamVariableLocator) vloc;

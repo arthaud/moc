@@ -246,6 +246,26 @@ REFS -> mult #trans REFS #type ;
     REFS^type = REFS1^type;
 }
 
+--arrays
+REFS -> osbra integer csbra #trans REFS #type ;
+#trans {
+    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(),
+                               integer^txt);
+}
+
+#type {
+    REFS^type = REFS1^type;
+}
+
+REFS -> osbra csbra #trans REFS #type ;
+#trans {
+    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(),null);
+}
+
+#type {
+    REFS^type = REFS1^type;
+}
+
 -- base types
 STYPE -> void #type ;
 #type {
@@ -304,7 +324,7 @@ INSTS -> INST INSTS #gen ;
 INST -> TYPE ident #trans AFF semicolon #gen ;
 #trans {
     AFF^htype = TYPE^type;
-    
+
     -- check if the variable already exists
     INFO i = INST^st.localSearch(ident^txt);
 
@@ -734,7 +754,46 @@ F -> mult F #gen ;
         }
     }
 }
+F -> ident osbra A csbra #gen ;
+#gen {
+    INFO i = F^st.globalSearch(ident^txt);
+    TTYPE varType;
+    Code varCode;
 
+    if (i == null) {
+        error(VAR_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOVAR {
+                INFOVAR info = i;
+                varType = info.getType();
+                varCode = F^machine.genVariable(info);
+             match(varType){
+                    case TPOINTER{
+                        TPOINTER type=varType;
+                        match(A^type){
+                            case TINTEGER{
+                                F^type = type.getType();
+                                F^code = F^machine.genArrayAcces(varCode,varType,A^code,A^type);
+                            }
+                            default{
+                                error(TYPE_not_integer,A^type);
+                            }
+                        }
+                    }
+                    default{
+                        error(TYPE_not_pointer,varType);
+                    }
+                }
+
+            }
+            default {
+                error(INFO_not_var, ident^txt);
+            }
+        }
+    }
+}
 -- subprogram call arguments
 ARGS -> #gen ;
 #gen {

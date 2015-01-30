@@ -60,6 +60,7 @@ public interface IMachine {
 
     Code genAcces(Code pointerCode, TTYPE pointedType);
 
+    Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType);
     // removes local variables after instCode
     Code genBloc(Code instsCode, VariableLocator vloc);
 

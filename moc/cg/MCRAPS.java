@@ -7,6 +7,8 @@ import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.type.TTYPE;
 import moc.type.TVOID;
+import moc.type.TARRAY;
+import moc.type.TPOINTER;
 
 /**
  * The CRAPS machine and its generation functions
@@ -363,7 +365,13 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-        return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
+    int size;
+    if(info.getType() instanceof TARRAY){
+        size=((TARRAY)info.getType()).getStackSize();
+    }
+    else
+        size=info.getType().getSize();
+        return new Code("sub %sp, " + size + ", %sp");
     }
 
     // declare a variable with an initial value
@@ -401,6 +409,10 @@ public class MCRAPS extends AbstractMachine {
         pointerCode.setLocation(null);
         allocator.push(d);
         return pointerCode;
+    }
+    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+        Code sum = genBinary(pointerCode,pointerType,posCode,posType,"+");
+        return genAcces(sum,((TPOINTER)pointerType).getType());
     }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {

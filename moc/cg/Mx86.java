@@ -428,6 +428,9 @@ public class Mx86 extends AbstractMachine {
         allocator.push(d);
         return pointerCode;
     }
+    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+        throw new UnsupportedOperationException();
+    }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {
         X86VariableLocator vl = (X86VariableLocator) vloc;

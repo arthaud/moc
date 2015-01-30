@@ -1,0 +1,10 @@
+
+int lolo(int[] arg1){
+    return arg1[2];
+}
+int main() {
+         int[50] lol;
+        lol[2]=5;
+        int a= lolo(lol);
+
+}
