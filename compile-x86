@@ -1,11 +1,11 @@
 #!/bin/sh
 
 if [[ $# -lt 1 ]]; then
-    echo "usage: full_compile [-h] FILE"
+    echo "usage: compile-x86 [-h] FILE"
     echo "error: too few arguments"
     exit 1
 elif [[ -z "$1" ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
-    echo "usage: full_compile [-h] FILE"
+    echo "usage: compile-x86 [-h] FILE"
     echo ""
     echo "Compile a Micro Objective-C source file to an ELF x86-32 executable"
     echo ""

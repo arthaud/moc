@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [[ $# -lt 1 ]]; then
+    echo "usage: compile-craps [-h] FILE"
+    echo "error: too few arguments"
+    exit 1
+elif [[ -z "$1" ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
+    echo "usage: compile-craps [-h] FILE"
+    echo ""
+    echo "Compile a Micro Objective-C source file to a CRAPS asm file"
+    echo ""
+    echo "optional arguments:"
+    echo "  -h, --help  show this help message and exit"
+else
+    rm -f /tmp/p.moc /tmp/p.asm "${1%.*}.asm" &&
+    ./preprocessor.py "$1" /tmp/p.moc &&
+    ./mocc -m craps /tmp/p.moc &&
+    cp /tmp/p.asm "${1%.*}.asm"
+fi

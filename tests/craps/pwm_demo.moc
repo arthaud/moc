@@ -1,0 +1,55 @@
+asm("
+    ba start
+    // interrupt table
+    .word pwm_handler
+    .word pwm_handler
+    .word null_handler
+    .word null_handler
+    null_handler: reti
+    pwm_count: .word 0
+    pwm_count_: .word 0
+    start:
+    set 0x200, %sp
+    ba f_init
+")
+
+asm("
+    pwm_handler:
+
+    push %r1
+
+    ld [pwm_count], %r1
+    inccc %r1
+
+    cmp %r1, 100
+    bl pwm_handler_end
+
+    xor %r1, %r1, %r1 // set to 0
+
+    push %r2
+    push %r3
+    ld [pwm_count_], %r2
+    inccc %r2
+    set 0xA0000000, %r3
+    st %r2, [%r3]
+    st %r2, [pwm_count_]
+    set 0xA0000001, %r3
+    set 15, %r2
+    st %r2, [%r3]
+    pop %r3
+    pop %r2
+
+    pwm_handler_end:
+    st %r1, [pwm_count]
+    pop %r1
+    reti
+")
+
+int init() {
+    // un front montant du PWM toutes les millisecondes
+    *((int*)0xC0000000) = 195; // P
+    *((int*)0xC0000001) = 98; // N
+
+    while(true) {}
+    int a = 5;
+}

@@ -1,3 +1,5 @@
+#include "lib/craps.moc"
+
 void wait() {
     int wait = 100000;
     while(wait > 0) {

@@ -1,0 +1,65 @@
+#include "lib/craps.moc"
+
+void sleep(int time){
+    int wait = 20000 * time;
+    while(wait != 0){
+        wait = wait - 1;
+    }
+}
+
+//int length(int nb){
+//    int l = 1;
+//    while(nb > 9){
+//        nb = nb >> 4;
+//        l = l + 1;
+//    }
+//    return l;
+//}
+
+
+int main(){
+    int *ssegs = (int*) 0xA0000000; // adresse des 7 segs
+    int tmp_ssegs = 0;
+    int *anodes =  ssegs + 1;
+    int tmp_anodes = 0;
+    *ssegs = tmp_ssegs;
+    *anodes = tmp_anodes;
+    int masq_ssegs = 0xFFFF;
+    int masq_anodes = 0b1111;
+
+    //int l_data = 2;
+    //int *data = (int*) 0x201; // tableau
+    //*data = 0x1234;
+    //*data = 0x5678;
+
+    //int *it = data; // iterateur
+
+    int affichage = 0x0000;
+    int n = 0;
+    *anodes = 0;
+        while(true){
+        int l = 1;//length(n);
+        int i = 0;
+        while(i < l){
+            tmp_ssegs = (tmp_ssegs * 16 + n);// & masq_ssegs;
+            tmp_anodes = (tmp_anodes * 2 + 1);// & masq_anodes;
+            *ssegs = tmp_ssegs;
+            *anodes = tmp_anodes;
+            i = i + 1;
+            sleep(3);
+        } // i == l && *anodes = 0b011..1 (avec l 1)
+
+        // ajout du séparateur
+        tmp_ssegs = (tmp_ssegs * 16);// & masq_ssegs;
+        tmp_anodes = (tmp_anodes * 2);// & masq_anodes;
+        *ssegs = tmp_ssegs;
+        *anodes = tmp_anodes;
+        sleep(3);
+
+        n = n + 1;
+        if(n >= 16){
+            n = 0;
+        }
+    }
+}
+
