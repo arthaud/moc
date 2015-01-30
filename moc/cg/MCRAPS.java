@@ -55,17 +55,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public MCRAPS() {
-        initCode = "\tba start\n"
-                 + "\t// interrupt table\n"
-                 + "\t.word null_handler\n"
-                 + "\t.word null_handler\n"
-                 + "\t.word null_handler\n"
-                 + "\t.word null_handler\n"
-                 + "\n"
-                 + "null_handler: reti\n"
-                 + "start:\n"
-                 + "\tset 0x200, %sp\n"
-                 + "\tba f_main";
+        initCode = "";
     }
 
     public String getName() {
