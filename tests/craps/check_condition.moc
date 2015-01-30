@@ -1,0 +1,24 @@
+int main() {
+    int* ssegs = (int*) 0xA0000000;
+    int x = 0;
+    *(ssegs + 1) = 0b1111;
+
+    if(1 <= 2) {
+        x = x * 16 + 1;
+    }
+
+    if(1 < 2) {
+        x = x * 16 + 1;
+    }
+
+    if(2 >= 1) {
+        x = x * 16 + 1;
+    }
+
+    if(2 > 1) {
+        x = x * 16 + 1;
+    }
+
+    *ssegs = x;
+    while(true) {}
+}

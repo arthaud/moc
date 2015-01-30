@@ -76,6 +76,7 @@ public class MCRAPS extends AbstractMachine {
         return "asm";
     }
 
+    @Override
     public String asmVariablePattern() {
         return "\\$([a-z][_0-9A-Za-z]*)";
     }
@@ -97,6 +98,7 @@ public class MCRAPS extends AbstractMachine {
         return 1;
     }
 
+    @Override
     public String genComment(String comm) {
         return "// " + comm;
     }
@@ -161,7 +163,7 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         Location l = allocator.pop();
-        c = genVal(c, l, new TBOOL(1));
+        c = genVal(c, l, new TBOOL(getBoolSize()));
 
         int num_cond = getLabelNum();
         falseBloc.appendAsm("ba cond_end_" + num_cond);
@@ -252,44 +254,36 @@ public class MCRAPS extends AbstractMachine {
             case "%":
                 throw new UnsupportedOperationException("CRAPS");
             case "&&":
+                // TODO
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "||":
+                // TODO
                 leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "==":
             case "!=":
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation)); // normalization
                 if (operator.equals("!="))
                     leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case "<":
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                // N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                break;
             case ">=":
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                // not N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                if(operator.equals(">="))
+                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case ">":
-                leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                // N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                break;
             case "<=":
                 leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                // not N
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                if(operator.equals("<="))
+                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
