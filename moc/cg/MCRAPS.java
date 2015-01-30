@@ -245,6 +245,12 @@ public class MCRAPS extends AbstractMachine {
             case "/":
             case "%":
                 throw new UnsupportedOperationException("CRAPS");
+            case "&":
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                break;
+            case "|":
+                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                break;
             case "&&":
                 // "and" in craps is a bitwise operator.
                 // 0b10 and 0b100 = 0, too bad..

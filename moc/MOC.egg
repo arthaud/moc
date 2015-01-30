@@ -72,6 +72,8 @@ sugar plus       is  "\+" ;
 sugar minus      is  "\-" ;
 sugar or         is  "\|\|" ;
 sugar and        is  "\&\&" ;
+sugar bit_or     is  "\|" ;
+sugar bit_and    is  "\&" ;
 sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
@@ -607,6 +609,12 @@ OPMUL -> mod #name ;
 
 OPMUL -> and #name ;
 #name { OPMUL^name = "&&"; }
+
+OPMUL -> bit_and #name ;
+#name { OPMUL^name = "&"; }
+
+OPMUL -> bit_or #name ;
+#name { OPMUL^name = "|"; }
 
 -- base expressions
 F -> integer #gen ;
