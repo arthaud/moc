@@ -1,3 +1,5 @@
+#include "lib/craps.moc"
+
 int main() {
     int* switches = (int*) 0x90000000;
     int* ssegs = (int*) 0xA0000000;

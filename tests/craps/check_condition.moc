@@ -1,3 +1,5 @@
+#include "lib/craps.moc"
+
 int main() {
     int* ssegs = (int*) 0xA0000000;
     int x = 0;
