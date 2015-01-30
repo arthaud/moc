@@ -244,16 +244,29 @@ public class MCRAPS extends AbstractMachine {
             case "%":
                 throw new UnsupportedOperationException("CRAPS");
             case "&&":
-                // TODO
+                // "and" in craps is a bitwise operator.
+                // 0b10 and 0b100 = 0, too bad..
+                leftOperand.appendAsm(genComment("operator " + operator));
+
+                // leftLocation > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(leftLocation) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+
+                // rightLocation > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(rightLocation) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(rightLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(rightLocation) + ", 7, " + genLocation(rightLocation)); // normalization
+
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "||":
-                // TODO
                 leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "==":
             case "!=":
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm(genComment("operator " + operator));
+                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
                 leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
                 leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation)); // normalization
                 if (operator.equals("!="))
@@ -261,6 +274,7 @@ public class MCRAPS extends AbstractMachine {
                 break;
             case "<":
             case ">=":
+                leftOperand.appendAsm(genComment("operator " + operator));
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
                 leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
                 leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
@@ -269,8 +283,9 @@ public class MCRAPS extends AbstractMachine {
                 break;
             case ">":
             case "<=":
+                leftOperand.appendAsm(genComment("operator " + operator));
                 leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
                 leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
                 if(operator.equals("<="))
                     leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
@@ -292,7 +307,10 @@ public class MCRAPS extends AbstractMachine {
                 operand.appendAsm("negcc " + genLocation(l));
                 break;
             case "!":
-                operand.appendAsm("sub " + genLocation(l) + ", 1, " + genLocation(l));
+                operand.appendAsm(genComment("operator " + operator));
+                operand.appendAsm("subcc " + genLocation(l) + ", %r0, %r0");
+                operand.appendAsm("and %r25, 64, " + genLocation(l)); // 64 -> mask for Z
+                operand.appendAsm("srl " + genLocation(l) + ", 6, " + genLocation(l)); // normalization
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
