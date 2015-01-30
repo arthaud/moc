@@ -1,0 +1,39 @@
+void wait() {
+    int wait = 100000;
+    while(wait > 0) {
+        wait = wait - 1;
+    }
+}
+
+int main() {
+    int *ssegs = (int*) 0xA0000000; // 7 segs
+    int *anodes = ssegs + 1;
+    *ssegs = 0;
+    *anodes = 0b0000;
+
+    while(true) {
+        *anodes = 0b0000;
+        wait();
+
+        *anodes = 0b0001;
+        wait();
+
+        *anodes = 0b0011;
+        wait();
+
+        *anodes = 0b0111;
+        wait();
+
+        *anodes = 0b1111;
+        wait();
+
+        *anodes = 0b1110;
+        wait();
+
+        *anodes = 0b1100;
+        wait();
+
+        *anodes = 0b1000;
+        wait();
+    }
+}
