@@ -30,11 +30,11 @@ syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
-syn code : Code for 
+syn code : Code for
          ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F;
-inh hcode : Code for 
+inh hcode : Code for
          EX, AX, RX, TX , ARGSX;
 
 -- to check subprogram call
@@ -763,6 +763,7 @@ F -> mult F #gen ;
         }
     }
 }
+
 F -> ident osbra A csbra #gen ;
 #gen {
     INFO i = F^st.globalSearch(ident^txt);
@@ -778,24 +779,22 @@ F -> ident osbra A csbra #gen ;
                 INFOVAR info = i;
                 varType = info.getType();
                 varCode = F^machine.genVariable(info);
-             match(varType){
-                    case TPOINTER{
-                        TPOINTER type=varType;
-                        match(A^type){
-                            case TINTEGER{
-                                F^type = type.getType();
+                match (varType) {
+                    case TPOINTER {
+                        match (A^type) {
+                            case TINTEGER {
+                                F^type = varType.getType();
                                 F^code = F^machine.genArrayAcces(varCode,varType,A^code,A^type);
                             }
-                            default{
+                            default {
                                 error(TYPE_not_integer,A^type);
                             }
                         }
                     }
-                    default{
+                    default {
                         error(TYPE_not_pointer,varType);
                     }
                 }
-
             }
             default {
                 error(INFO_not_var, ident^txt);
@@ -803,11 +802,12 @@ F -> ident osbra A csbra #gen ;
         }
     }
 }
+
 -- subprogram call arguments
 ARGS -> #gen ;
 #gen {
     -- check number of parameters
-    if(ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
+    if (ARGS^types.size() < ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGS^function.getName());
     }
 
@@ -821,7 +821,7 @@ ARGS -> E #trans ARGSX #gen;
     ARGSX^hcode = ARGS^machine.genArg(E^code, E^type);
 
     -- check number of parameters
-    if(ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
+    if (ARGS^types.size() > ARGS^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGS^function.getName());
     }
     else {
@@ -838,7 +838,7 @@ ARGS -> E #trans ARGSX #gen;
 
 ARGSX -> #gen ;
 #gen {
-    if(ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
+    if (ARGSX^types.size() < ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_few_arguments, ARGSX^function.getName());
     }
 
@@ -851,7 +851,7 @@ ARGSX -> comma E #trans ARGSX #gen ;
     ARGSX1^types = ARGSX^types;
 
     -- check number of parameters
-    if(ARGSX^types.size() > ARGSX^function.getParameterTypes().size()) {
+    if (ARGSX^types.size() > ARGSX^function.getParameterTypes().size()) {
         error(ARGS_too_many_arguments, ARGSX^function.getName());
     }
     else {
@@ -863,7 +863,7 @@ ARGSX -> comma E #trans ARGSX #gen ;
 
     Code c = ARGSX^machine.genArg(E^code, E^type);
     c.appendAsm(ARGSX^hcode.getAsm());
-    ARGSX1^hcode = c;    
+    ARGSX1^hcode = c;
 }
 
 #gen {
