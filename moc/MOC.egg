@@ -41,7 +41,8 @@ inh hcode : Code for
 inh function : TFUNCTION for ARGS, ARGSX;
 
 space separator  is  "[\r\n\t ]+" ;
-space comm       is  "\/\/[^\n]*\n" ;
+comment comm     is  "\/\/[^\n]*\n" ;
+comment ml_comm  is  "\/\*([^\*]|(\*+[^\*\/]))*\*+\/" ;
 sugar opar       is  "\(" ;
 sugar cpar       is  "\)" ;
 sugar ocbra      is  "\{" ;
