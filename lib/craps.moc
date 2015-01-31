@@ -11,3 +11,107 @@ start:
     set 0x200, %sp
     ba f_main
 ")
+
+void div_mod(int a, int b, int *quotient, int *mod) {
+    int q = 0;
+
+    while (a >= 0) {
+        q = q+1;
+        a = a-b;
+    }
+
+    *quotient = q;
+    *mod = a;
+}
+
+/* {{{ This would be a better implementation if we had the & operator
+int div(int a, int b) {
+    int quotient;
+    int mod;
+    div_mod(a, b, &quotient, &mod);
+    return quotient;
+}
+
+int mod(int a, int b) {
+    int quotient;
+    int mod;
+    div_mod(a, b, &quotient, &mod);
+    return mod;
+}
+}}} */
+
+// {{{
+int div(int a, int b) {
+    int result = 0;
+
+    while (a >= 0) {
+        result = result+1;
+        a = a-b;
+    }
+
+    return result-1;
+}
+
+int mod(int a, int b) {
+    return a-b*div(a, b);
+}
+// }}}
+
+void ssegs_hex(int number) {
+    int *ssegs  = (int*) 0xA0000000; // 7-segs address
+    int *anodes = (int*) 0xA0000001; // whether to activate a 7-seg
+
+    if (number <= 0xf) {
+        *anodes = 0b0001;
+    }
+    else {
+        if (number <= 0xff) {
+            *anodes = 0b0011;
+        }
+        else {
+            if (number <= 0xfff) {
+                *anodes = 0b0111;
+            }
+            else {
+                *anodes = 0b1111;
+            }
+        }
+    }
+
+    *ssegs = number;
+}
+
+void ssegs_dec(int number) {
+    int *ssegs  = (int*) 0xA0000000; // 7-segs address
+    int *anodes = (int*) 0xA0000001; // whether to activate a 7-seg
+
+    if (number <= 9) {
+        *anodes = 0b0001;
+    }
+    else {
+        if (number <= 99) {
+            *anodes = 0b0011;
+        }
+        else {
+            if (number <= 999) {
+                *anodes = 0b0111;
+            }
+            else {
+                *anodes = 0b1111;
+            }
+        }
+    }
+
+    int to_display = 0;
+
+    to_display =                     mod(number, 10);
+    number = div(number, 10);
+    to_display = to_display + 0x0010*mod(number, 10);
+    number = div(number, 10);
+    to_display = to_display + 0x0100*mod(number, 10);
+    number = div(number, 10);
+    to_display = to_display + 0x1000*mod(number, 10);
+
+    *ssegs = to_display;
+}
+
