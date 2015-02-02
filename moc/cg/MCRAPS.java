@@ -1,6 +1,8 @@
 package moc.cg;
 
 import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Collections;
 
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
@@ -57,7 +59,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public MCRAPS() {
-        initCode = "";
+        endCode = "\n" + genComment("### static section #############") + "\n";
     }
 
     public String getName() {
@@ -392,18 +394,9 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a global variable
     public Code genDeclGlobal(INFOVAR info) {
-        Code c = new Code("glob_" + info.getLocation().getOffset() + ":");
-
-        StringBuilder decl = new StringBuilder();
-        for(int i = 0; i < info.getSize(); i++) {
-            if(decl.length() == 0)
-                decl.append("0");
-            else
-                decl.append(", 0");
-        }
-
-        c.appendAsm("\t.word " + decl);
-        return c;
+        endCode += "glob_" + info.getLocation().getOffset() + ": "
+                + genBytes(Collections.nCopies(info.getSize(), 0)) + "\n";
+        return new Code("");
     }
 
     // expression instruction
@@ -450,7 +443,9 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genVariable(INFOVAR i) {
-        assert(i.getLocation().getType() == Location.LocationType.STACKFRAME);
+        Location.LocationType loc_type = i.getLocation().getType();
+        assert(loc_type == Location.LocationType.STACKFRAME ||
+               loc_type == Location.LocationType.ABSOLUTE);
         Location l = allocator.get();
         allocator.push(l);
 
@@ -471,11 +466,10 @@ public class MCRAPS extends AbstractMachine {
         int offset = stringOffset;
         stringOffset++;
 
-        txt = txt.replace("\\n", "\",10,\"").replace("\\r", "\",13,\"").replace("\\t", "\",9,\""); // fix for nasm..
-        initCode += "\tstr_" + offset + ": db " + txt + ", 0\n";
+        endCode += "str_" + offset + ": " + genBytes(getArrayFromString(txt)) + "\n";
         Location l = allocator.get();
         allocator.push(l);
-        return new Code("mov str_" + offset + ", " + genLocation(l));
+        return new Code("set str_" + offset + ", " + genLocation(l));
     }
 
     public Code genNull() {
@@ -491,17 +485,7 @@ public class MCRAPS extends AbstractMachine {
     public Code genChar(String c) {
         Location l = allocator.get();
         allocator.push(l);
-
-        if(c.equals("'\\0'"))
-            return new Code("set 0, " + genLocation(l));
-        else if(c.equals("'\\n'"))
-            return new Code("set 10, " + genLocation(l));
-        else if(c.equals("'\\r'"))
-            return new Code("set 13, " + genLocation(l));
-        else if(c.equals("'\\t'"))
-            return new Code("set 9, " + genLocation(l));
-        else
-            return new Code("set " + c + ", " + genLocation(l));
+        return new Code("set " + getCharFromString(c) + ", " + genLocation(l));
     }
 
     /**
@@ -540,5 +524,23 @@ public class MCRAPS extends AbstractMachine {
      */
     private String genMovMemToReg(String left, String right, int size) {
         return "ld " + right + ", " + left;
+    }
+
+    /**
+     * Generate a list of bytes
+     *
+     * ex: genBytes({1, 2, 3}) = ".word 1, 2, 3"
+     */
+    private String genBytes(List<Integer> bytes) {
+        StringBuilder s = new StringBuilder();
+
+        for(Integer b : bytes) {
+            if(s.length() == 0)
+                s.append("" + b);
+            else
+                s.append(", " + b);
+        }
+
+        return ".word " + s;
     }
 }

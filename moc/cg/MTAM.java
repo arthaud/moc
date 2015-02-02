@@ -1,5 +1,7 @@
 package moc.cg;
 
+import java.util.List;
+
 import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TBOOL;
@@ -306,24 +308,13 @@ public class MTAM extends AbstractMachine {
         Code retCode = new Code("LOADL " + initOffset + " " + genComment("string " + txt));
         retCode.setIsAddress(false);
 
-        txt = txt.substring(1, txt.length() - 1); // remove the ""
         initCode += genComment(txt) + "\n";
-        for (int i = 0; i < txt.length(); i++) {
-            if(txt.charAt(i) == '\\' && i + 1 < txt.length()) { // special characters
-                i++;
-                if(txt.charAt(i) == '0')
-                    initCode += "LOADL 0\n";
-                else
-                    initCode += "LOADL '\\" + txt.charAt(i) + "'\n";
-            }
-            else
-                initCode += "LOADL '" + txt.charAt(i) + "'\n";
+        List<Integer> bytes = getArrayFromString(txt);
 
+        for(Integer b : bytes) {
+            initCode += "LOADL " + b + "\n";
             initOffset++;
         }
-
-        initCode += "LOADL 0\n";
-        initOffset++;
 
         return retCode;
     }
@@ -337,10 +328,7 @@ public class MTAM extends AbstractMachine {
     }
 
     public Code genChar(String c) {
-        if(c.equals("'\\0'"))
-            return new Code("LOADL 0");
-        else
-            return new Code("LOADL " + c);
+        return new Code("LOADL " + getCharFromString(c));
     }
 
     /**

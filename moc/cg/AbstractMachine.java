@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.List;
+import java.util.ArrayList;
 
 import moc.compiler.MOCException;
 import moc.st.ST;
@@ -31,6 +33,7 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     protected String initCode = "";
+    protected String endCode = "";
 
     /**
      * Writes the code in a file from the name of the source file and the suffix
@@ -48,6 +51,7 @@ public abstract class AbstractMachine implements IMachine {
             pw.print(genComment("Do not modify by hand\n"));
             pw.print(initCode);
             pw.print(code);
+            pw.print(endCode);
             pw.close();
         } catch (FileNotFoundException e) {
             throw new MOCException(e.getMessage());
@@ -93,5 +97,48 @@ public abstract class AbstractMachine implements IMachine {
         matcher.appendTail(sb);
 
         return new Code(sb.toString());
+    }
+
+    /**
+     * Parse a string and returns the corresponding array of ASCII codes,
+     * with a trailing zero
+     *
+     * ex: getStringAsArray("\"toto\"") = {116, 111, 116, 111, 0}
+     */
+    public List<Integer> getArrayFromString(String txt) {
+        txt = txt.substring(1, txt.length() - 1); // remove the ""
+        List<Integer> str = new ArrayList<Integer>(txt.length());
+        boolean escaped = false;
+
+        for(int i = 0; i < txt.length(); i++) {
+            if(escaped) {
+                if(txt.charAt(i) == 'n') str.add(10);
+                else if(txt.charAt(i) == 'r') str.add(13);
+                else if(txt.charAt(i) == 't') str.add(9);
+                else str.add((int) txt.charAt(i));
+
+                escaped = false;
+            }
+            else if(txt.charAt(i) == '\\')
+                escaped = true;
+            else
+                str.add((int) txt.charAt(i));
+        }
+
+        str.add(0);
+        return str;
+    }
+
+    /**
+     * Parse a string and returns the char
+     *
+     * ex: getStringAsChar("'t'") = 116
+     */
+    public int getCharFromString(String c) {
+        if(c.equals("'\\0'")) return 0;
+        else if(c.equals("'\\n'")) return 10;
+        else if(c.equals("'\\r'")) return 13;
+        else if(c.equals("'\\t'")) return 9;
+        else return (int) c.charAt(1);
     }
 }

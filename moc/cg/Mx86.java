@@ -491,17 +491,7 @@ public class Mx86 extends AbstractMachine {
     public Code genChar(String c) {
         Location l = allocator.get();
         allocator.push(l);
-
-        if(c.equals("'\\0'"))
-            return new Code("mov " + genLocation(l) + ", 0");
-        else if(c.equals("'\\n'"))
-            return new Code("mov " + genLocation(l) + ", 10");
-        else if(c.equals("'\\r'"))
-            return new Code("mov " + genLocation(l) + ", 13");
-        else if(c.equals("'\\t'"))
-            return new Code("mov " + genLocation(l) + ", 9");
-        else
-            return new Code("mov " + genLocation(l) + ", " + c);
+        return new Code("mov " + genLocation(l) + ", " + getCharFromString(c));
     }
 
     /**
