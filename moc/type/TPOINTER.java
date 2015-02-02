@@ -1,8 +1,8 @@
 package moc.type;
 
 public class TPOINTER implements TTYPE {
-    private TTYPE type;
-    private int size;
+    protected TTYPE type;
+    protected int size;
 
     public TPOINTER(TTYPE type, int size) {
         this.type = type;

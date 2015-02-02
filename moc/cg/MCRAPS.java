@@ -7,6 +7,8 @@ import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.type.TTYPE;
 import moc.type.TVOID;
+import moc.type.TARRAY;
+import moc.type.TPOINTER;
 
 /**
  * The CRAPS machine and its generation functions
@@ -66,6 +68,7 @@ public class MCRAPS extends AbstractMachine {
         return "asm";
     }
 
+    @Override
     public String asmVariablePattern() {
         return "\\$([a-z][_0-9A-Za-z]*)";
     }
@@ -87,6 +90,7 @@ public class MCRAPS extends AbstractMachine {
         return 1;
     }
 
+    @Override
     public String genComment(String comm) {
         return "// " + comm;
     }
@@ -127,7 +131,7 @@ public class MCRAPS extends AbstractMachine {
                 return "[%fp - " + (-l.getOffset()) + "]";
         }
         else {
-            return "" + l.getOffset();
+            return "[glob_" + l.getOffset() + "]";
         }
     }
 
@@ -151,7 +155,7 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         Location l = allocator.pop();
-        c = genVal(c, l, new TBOOL(1));
+        c = genVal(c, l, new TBOOL(getBoolSize()));
 
         int num_cond = getLabelNum();
         falseBloc.appendAsm("ba cond_end_" + num_cond);
@@ -241,7 +245,27 @@ public class MCRAPS extends AbstractMachine {
             case "/":
             case "%":
                 throw new UnsupportedOperationException("CRAPS");
+            case "&":
+                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                break;
+            case "|":
+                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                break;
             case "&&":
+                // "and" in craps is a bitwise operator.
+                // 0b10 and 0b100 = 0, too bad..
+                leftOperand.appendAsm(genComment("operator " + operator));
+
+                // leftLocation > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(leftLocation) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+
+                // rightLocation > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(rightLocation) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(rightLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(rightLocation) + ", 7, " + genLocation(rightLocation)); // normalization
+
                 leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
                 break;
             case "||":
@@ -249,37 +273,30 @@ public class MCRAPS extends AbstractMachine {
                 break;
             case "==":
             case "!=":
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm(genComment("operator " + operator));
+                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
                 leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation));
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation)); // normalization
                 if (operator.equals("!="))
                     leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case "<":
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                // N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                break;
             case ">=":
+                leftOperand.appendAsm(genComment("operator " + operator));
                 leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                // not N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                if(operator.equals(">="))
+                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             case ">":
-                leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                // N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                break;
             case "<=":
+                leftOperand.appendAsm(genComment("operator " + operator));
                 leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                // not N
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation));
-                leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                if(operator.equals("<="))
+                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
@@ -298,7 +315,10 @@ public class MCRAPS extends AbstractMachine {
                 operand.appendAsm("negcc " + genLocation(l));
                 break;
             case "!":
-                operand.appendAsm("sub " + genLocation(l) + ", 1, " + genLocation(l));
+                operand.appendAsm(genComment("operator " + operator));
+                operand.appendAsm("subcc " + genLocation(l) + ", %r0, %r0");
+                operand.appendAsm("and %r25, 64, " + genLocation(l)); // 64 -> mask for Z
+                operand.appendAsm("srl " + genLocation(l) + ", 6, " + genLocation(l)); // normalization
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
@@ -353,7 +373,13 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-        return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
+    int size;
+    if(info.getType() instanceof TARRAY){
+        size=((TARRAY)info.getType()).getStackSize();
+    }
+    else
+        size=info.getType().getSize();
+        return new Code("sub %sp, " + size + ", %sp");
     }
 
     // declare a variable with an initial value
@@ -362,6 +388,22 @@ public class MCRAPS extends AbstractMachine {
         value = genVal(value, l, info.getType());
         value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
+    }
+
+    // declare a global variable
+    public Code genDeclGlobal(INFOVAR info) {
+        Code c = new Code("glob_" + info.getLocation().getOffset() + ":");
+
+        StringBuilder decl = new StringBuilder();
+        for(int i = 0; i < info.getSize(); i++) {
+            if(decl.length() == 0)
+                decl.append("0");
+            else
+                decl.append(", 0");
+        }
+
+        c.appendAsm("\t.word " + decl);
+        return c;
     }
 
     // expression instruction
@@ -391,6 +433,10 @@ public class MCRAPS extends AbstractMachine {
         pointerCode.setLocation(null);
         allocator.push(d);
         return pointerCode;
+    }
+    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+        Code sum = genBinary(pointerCode,pointerType,posCode,posType,"+");
+        return genAcces(sum,((TPOINTER)pointerType).getType());
     }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {

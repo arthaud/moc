@@ -53,6 +53,9 @@ public interface IMachine {
     // declare a variable with an initial value
     Code genDecl(INFOVAR info, Code value);
 
+    // declare a global variable
+    Code genDeclGlobal(INFOVAR info);
+
     // expression instruction
     Code genInst(TTYPE type, Code value);
 
@@ -60,8 +63,12 @@ public interface IMachine {
 
     Code genAcces(Code pointerCode, TTYPE pointedType);
 
+    Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType);
+
     // removes local variables after instCode
     Code genBloc(Code instsCode, VariableLocator vloc);
+
+    Location genGlobalLocation();
 
     ParametersLocator getParametersLocator();
 

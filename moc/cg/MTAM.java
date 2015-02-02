@@ -248,6 +248,11 @@ public class MTAM extends AbstractMachine {
     public Code genDecl(INFOVAR info, Code value) {
         return genVal(value, info.getType());
     }
+
+    // declare a global variable
+    public Code genDeclGlobal(INFOVAR info) {
+        throw new UnsupportedOperationException();
+    }
     
     public Code genArg(Code argument, TTYPE type) {
         return genVal(argument, type);
@@ -271,6 +276,10 @@ public class MTAM extends AbstractMachine {
         pointerCode.setLocation(null);
         return pointerCode;
     }
+    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType){
+        throw new UnsupportedOperationException();
+    }
+
 
     public Code genBloc(Code c, VariableLocator vloc) {
         TamVariableLocator vl = (TamVariableLocator) vloc;

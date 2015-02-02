@@ -400,6 +400,11 @@ public class Mx86 extends AbstractMachine {
         return value;
     }
 
+    // declare a global variable
+    public Code genDeclGlobal(INFOVAR info) {
+        throw new UnsupportedOperationException();
+    }
+
     // expression instruction
     public Code genInst(TTYPE type, Code value) {
         if(!(type instanceof TVOID))
@@ -427,6 +432,9 @@ public class Mx86 extends AbstractMachine {
         pointerCode.setLocation(null);
         allocator.push(d);
         return pointerCode;
+    }
+    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+        throw new UnsupportedOperationException();
     }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {
