@@ -131,7 +131,7 @@ public class MCRAPS extends AbstractMachine {
                 return "[%fp - " + (-l.getOffset()) + "]";
         }
         else {
-            return "" + l.getOffset();
+            return "[glob_" + l.getOffset() + "]";
         }
     }
 
@@ -388,6 +388,22 @@ public class MCRAPS extends AbstractMachine {
         value = genVal(value, l, info.getType());
         value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
+    }
+
+    // declare a global variable
+    public Code genDeclGlobal(INFOVAR info) {
+        Code c = new Code("glob_" + info.getLocation().getOffset() + ":");
+
+        StringBuilder decl = new StringBuilder();
+        for(int i = 0; i < info.getSize(); i++) {
+            if(decl.length() == 0)
+                decl.append("0");
+            else
+                decl.append(", 0");
+        }
+
+        c.appendAsm("\t.word " + decl);
+        return c;
     }
 
     // expression instruction

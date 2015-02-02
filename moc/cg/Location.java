@@ -7,7 +7,7 @@ public class Location {
     public enum LocationType {
         REGISTER, STACKFRAME, ABSOLUTE
     }
-    
+
     private int memoryOffset;
     private LocationType memoryType;
 
@@ -28,7 +28,7 @@ public class Location {
         this.memoryOffset = memoryOffset;
         this.memoryType = memoryType;
     }
-    
+
     @Override
     public boolean equals(Object other)
     {

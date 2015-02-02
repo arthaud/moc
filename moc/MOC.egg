@@ -7,16 +7,16 @@ option version = 0.0.1;
 option k = 2;
 
 inh source : MOCSourceFile for
-         PROGRAM, ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         PROGRAM, ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F;
 inh machine : IMachine for
-         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE, REFS,
          E, EX, A, AX, R, RX, T, TX, F;
 inh st : ST for
-         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE,
          E, EX, A, AX, R, RX, T, TX, F;
@@ -24,14 +24,15 @@ inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
          TYPE, STYPE, REFS, FUNC_PARAMETER,
          E, EX, A, AX, R, RX, T, TX, F;
-inh htype : TTYPE for REFS, EX, AX, RX, TX, AFF;
+inh htype : TTYPE for GLOBAL_DECL, REFS, EX, AX, RX, TX, AFF;
+inh hident : STRING for GLOBAL_DECL;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
 inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for
-         ENTITIES, FUNCTION, INST, BLOC, INSTS, ELSE,
+         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F;
 inh hcode : Code for
@@ -126,50 +127,64 @@ ENTITIES -> asm opar string cpar ENTITIES #gen ;
     ENTITIES^code = entCode;
 }
 
-ENTITIES -> FUNCTION ENTITIES #gen ;
-#gen {
-    Code entCode = new Code(FUNCTION^code.getAsm());
-    entCode.appendAsm(ENTITIES1^code.getAsm());
-    ENTITIES^code = entCode;
-}
-
-
--- functions
-FUNCTION -> TYPE ident opar #trans FUNC_PARAMETERS cpar #st BLOC #gen ;
-global LTYPES param_types;
-    TFUNCTION fun;
-
+-- global declaration (variable, function)
+ENTITIES -> TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
 #trans {
-    -- symbols table for parameters
-    ST st = new ST(FUNCTION^st);
-    FUNC_PARAMETERS^st = st;
-    BLOC^st = st;
-
-    -- variable locator
-    BLOC^vlocator = FUNCTION^machine.getVariableLocator();
-
-    -- management of parameters
-    param_types = new LTYPES();
-    FUNC_PARAMETERS^types = param_types;
-    FUNC_PARAMETERS^plocator = FUNCTION^machine.getParametersLocator();
-}
-
-#st {
-    INFO i = FUNCTION^st.localSearch(ident^txt);
+    -- check if the variable already exists
+    INFO i = ENTITIES^st.localSearch(ident^txt);
 
     if (i != null) {
         error(VAR_exists, ident^txt);
     }
     else {
-        fun = new TFUNCTION(ident^txt, TYPE^type, param_types);
-        FUNCTION^st.insert(ident^txt, new INFOFUN(fun));
-        FUNCTION^st.setCurrentFunction(fun);
+        GLOBAL_DECL^htype = TYPE^type;
+        GLOBAL_DECL^hident = ident^txt;
     }
 }
 
 #gen {
-    FUNCTION^code = FUNCTION^machine.genFunction(fun, BLOC^code);
-    FUNCTION^st.setCurrentFunction(null);
+    Code entCode = new Code(GLOBAL_DECL^code.getAsm());
+    entCode.appendAsm(ENTITIES1^code.getAsm());
+    ENTITIES^code = entCode;
+}
+
+-- global vars
+GLOBAL_DECL -> semicolon #gen ;
+#gen {
+    INFOVAR info = new INFOVAR(GLOBAL_DECL^htype, GLOBAL_DECL^machine.genGlobalLocation());
+    GLOBAL_DECL^st.insert(GLOBAL_DECL^hident, info);
+    GLOBAL_DECL^code = GLOBAL_DECL^machine.genDeclGlobal(info);
+}
+
+-- functions
+GLOBAL_DECL -> opar #trans FUNC_PARAMETERS cpar #st BLOC #gen ;
+global LTYPES param_types;
+    TFUNCTION fun;
+
+#trans {
+    -- symbols table for parameters
+    ST st = new ST(GLOBAL_DECL^st);
+    FUNC_PARAMETERS^st = st;
+    BLOC^st = st;
+
+    -- variable locator
+    BLOC^vlocator = GLOBAL_DECL^machine.getVariableLocator();
+
+    -- management of parameters
+    param_types = new LTYPES();
+    FUNC_PARAMETERS^types = param_types;
+    FUNC_PARAMETERS^plocator = GLOBAL_DECL^machine.getParametersLocator();
+}
+
+#st {
+    fun = new TFUNCTION(GLOBAL_DECL^hident, GLOBAL_DECL^htype, param_types);
+    GLOBAL_DECL^st.insert(GLOBAL_DECL^hident, new INFOFUN(fun));
+    GLOBAL_DECL^st.setCurrentFunction(fun);
+}
+
+#gen {
+    GLOBAL_DECL^code = GLOBAL_DECL^machine.genFunction(fun, BLOC^code);
+    GLOBAL_DECL^st.setCurrentFunction(null);
 }
 
 -- functions parameters

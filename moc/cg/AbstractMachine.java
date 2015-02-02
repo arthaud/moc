@@ -23,6 +23,13 @@ public abstract class AbstractMachine implements IMachine {
         return labelNum - 1;
     }
 
+    protected int globalNum = 0;
+
+    protected int getGlobalNum() {
+        globalNum++;
+        return globalNum - 1;
+    }
+
     protected String initCode = "";
 
     /**
@@ -45,6 +52,10 @@ public abstract class AbstractMachine implements IMachine {
         } catch (FileNotFoundException e) {
             throw new MOCException(e.getMessage());
         }
+    }
+
+    public Location genGlobalLocation() {
+        return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());
     }
 
     public String genComment(String comm) {
