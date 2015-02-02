@@ -1,0 +1,180 @@
+asm("
+    ba start
+    // interrupt table
+    .word pwm_handler
+    .word pwm_handler
+    .word null_handler
+    .word null_handler
+    null_handler: reti
+    start:
+    set 0x200, %sp
+    ba f_init
+")
+
+int pwm_count;
+int process_table;
+int malloc_start;
+
+asm("
+    pwm_handler:
+
+    push %r1
+
+    ld $pwm_count, %r1
+    inccc %r1
+
+    cmp %r1, 100
+    bl pwm_handler_end
+
+    xor %r1, %r1, %r1 // set to 0
+
+    // context switch
+    /////////////////
+    
+    push %r2
+    push %r3
+    push %r4
+    push %r5
+    push %r6
+    push %r7
+    push %r8
+    push %r9
+    ld $process_table, %r2
+    ld [%r2], %r3 // %r3: nb_tasks
+    ld [%r2+1], %r4 // %r4: current_task
+    mul %r4, 14, %r5
+    add %r5, %r2, %r5 // %r5: current task entry
+    
+    // %r9
+    pop %r6
+    st %r6, [%r5+8]
+    // %r8
+    pop %r6
+    st %r6, [%r5+7]
+    // %r7
+    pop %r6
+    st %r6, [%r5+6]
+    // %r6
+    pop %r6
+    st %r6, [%r5+5]
+    // %r5
+    pop %r6
+    st %r6, [%r5+4]
+    // %r4
+    pop %r6
+    st %r6, [%r5+3]
+    // %r3
+    pop %r6
+    st %r6, [%r5+2]
+    // %r2
+    pop %r6
+    st %r6, [%r5+1]
+    // %r1
+    pop %r6
+    st %r6, [%r5]
+
+    // before %r1 we have psr and then pc to also set
+    pop %r6
+    st %r6, [%r5+9]
+
+    // pc
+    pop %r6
+    st %r6, [%r5+13]
+
+    st %sp, [%r5+12]
+    st %fp, [%r5+10]
+    st %ret, [r5+11]
+    
+    // now it is stored, we can load the other task
+
+    // current_task = (current_task + 1) mod nb_tasks
+    inccc %r4
+    cmp %r4, %r3
+    bl pwm_handler_afterreset
+    xor %r4, %r4, %r4 // %r4 <- 0
+    pwm_handler_afterreset:
+
+    mul %r4, 14, %r5
+    add %r5, %r2, %r5 // %r5: current task entry
+
+    // load the registers
+    
+    // TODO
+
+    /////////////////////
+    // end context switch
+
+    pwm_handler_end:
+    st %r1, $pwm_count
+    pop %r1
+    reti
+")
+
+int syscall_malloc(int size)
+{
+    // implémentation du célèbre « Maxime Arthaud's malloc »
+    int old_malloc_start = malloc_start;
+    malloc_start = malloc_start + size;
+    return old_malloc_start;
+}
+
+// int nb_tasks;
+// int current_task;
+// {
+//   int r1;
+//   int r2;
+//   int r3;
+//   int r4;
+//   int r5;
+//   int r6;
+//   int r7;
+//   int r8;
+//   int r9;
+//   int fpr; // %r25
+//   int fp;
+//   int ret;
+//   int sp;
+//   int pc;
+// }
+
+int init() {
+    pwm_count = 0;
+    malloc_start = 4000;
+
+    // alloc the process table
+    process_table = syscall_malloc(2 + 14*2);
+
+    // zfill the registers
+    int i = 0;
+    while(i < 14*2)
+    {
+        *((int*)process_table + 2 + i) = 0;
+        i = i + 1;
+    }
+
+    // nb_tasks and current_task
+    *((int*)process_table) = 2;
+    *((int*)process_table+1) = 0;
+
+    // pc
+    *((int*)process_table+2+13) = task1;
+    *((int*)process_table+2+14+13) = task2;
+
+    // sp
+    *((int*)process_table+2+12) = syscall_malloc(256);
+    *((int*)process_table+2+14+12) = syscall_malloc(256);
+
+    // un front montant du PWM toutes les millisecondes
+    *((int*)0xC0000000) = 195; // P
+    *((int*)0xC0000001) = 98; // N
+
+    asm("ba task1")
+}
+
+int task1()
+{
+}
+
+int task2()
+{
+}
