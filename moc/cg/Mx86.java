@@ -433,7 +433,8 @@ public class Mx86 extends AbstractMachine {
         allocator.push(d);
         return pointerCode;
     }
-    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+
+    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType) {
         throw new UnsupportedOperationException();
     }
 

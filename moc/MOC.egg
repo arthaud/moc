@@ -264,7 +264,7 @@ REFS -> mult #trans REFS #type ;
     REFS^type = REFS1^type;
 }
 
---arrays
+-- arrays
 REFS -> osbra integer csbra #trans REFS #type ;
 #trans {
     REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(),
@@ -277,7 +277,7 @@ REFS -> osbra integer csbra #trans REFS #type ;
 
 REFS -> osbra csbra #trans REFS #type ;
 #trans {
-    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(),null);
+    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(), null);
 }
 
 #type {
@@ -799,15 +799,15 @@ F -> ident osbra A csbra #gen ;
                         match (A^type) {
                             case TINTEGER {
                                 F^type = varType.getType();
-                                F^code = F^machine.genArrayAcces(varCode,varType,A^code,A^type);
+                                F^code = F^machine.genArrayAcces(varCode, varType, A^code, A^type);
                             }
                             default {
-                                error(TYPE_not_integer,A^type);
+                                error(TYPE_not_integer, A^type);
                             }
                         }
                     }
                     default {
-                        error(TYPE_not_pointer,varType);
+                        error(TYPE_not_pointer, varType);
                     }
                 }
             }

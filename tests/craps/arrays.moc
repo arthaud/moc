@@ -1,10 +1,11 @@
+#include "lib/craps.moc"
 
-int lolo(int[] arg1){
-    return arg1[2];
+int lolo(int[] arg) {
+    return arg[2];
 }
-int main() {
-         int[50] lol;
-        lol[2]=5;
-        int a= lolo(lol);
 
+int main() {
+    int[50] lol;
+    lol[2] = 5;
+    int a = lolo(lol);
 }

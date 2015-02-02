@@ -375,12 +375,13 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-    int size;
-    if(info.getType() instanceof TARRAY){
-        size=((TARRAY)info.getType()).getStackSize();
-    }
-    else
-        size=info.getType().getSize();
+        int size;
+
+        if(info.getType() instanceof TARRAY)
+            size = ((TARRAY) info.getType()).getStackSize();
+        else
+            size = info.getType().getSize();
+
         return new Code("sub %sp, " + size + ", %sp");
     }
 
@@ -427,9 +428,10 @@ public class MCRAPS extends AbstractMachine {
         allocator.push(d);
         return pointerCode;
     }
-    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
-        Code sum = genBinary(pointerCode,pointerType,posCode,posType,"+");
-        return genAcces(sum,((TPOINTER)pointerType).getType());
+
+    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType) {
+        Code sum = genBinary(pointerCode, pointerType, posCode, posType, "+");
+        return genAcces(sum, ((TPOINTER) pointerType).getType());
     }
 
     public Code genBloc(Code instsCode , VariableLocator vloc) {
