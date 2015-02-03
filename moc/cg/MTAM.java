@@ -124,7 +124,7 @@ public class MTAM extends AbstractMachine {
         return retCode;
     }
 
-    public Code genLoop(Code condition, Code bloc) {
+    public Code genWhileLoop(Code condition, Code bloc) {
         int num = getLabelNum();
         Code retCode = genVal(condition, new TBOOL(1));
         retCode.prependAsm(genComment("loop condition :"));
@@ -134,6 +134,10 @@ public class MTAM extends AbstractMachine {
         retCode.appendAsm("JUMP loop_" + num);
         retCode.appendAsm("end_loop_" + num + ":");
         return retCode;
+    }
+
+    public Code genForLoop(Code init, Code condition, Code incr, Code bloc) {
+        throw new UnsupportedOperationException();
     }
 
     public Code genFunctionReturn(Code returnVal, TFUNCTION fun) {

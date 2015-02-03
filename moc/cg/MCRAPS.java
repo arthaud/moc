@@ -179,7 +179,7 @@ public class MCRAPS extends AbstractMachine {
         return c;
     }
 
-    public Code genLoop(Code condition, Code c) {
+    public Code genWhileLoop(Code condition, Code c) {
         Location regCond = allocator.pop();
         condition = forceValue(condition, regCond, new TBOOL(1));
 
@@ -190,6 +190,25 @@ public class MCRAPS extends AbstractMachine {
         c.prependAsm(condition.getAsm());
         c.prependAsm(genComment("loop condition :"));
         c.prependAsm("loop_" + num + ":");
+        c.appendAsm("ba loop_" + num);
+        c.appendAsm("end_loop_" + num + ":");
+        return c;
+    }
+
+    public Code genForLoop(Code init, Code condition, Code incr, Code c) {
+        Location regCond = allocator.pop();
+        condition = forceValue(condition, regCond, new TBOOL(1));
+
+        int num = getLabelNum();
+        condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
+        condition.appendAsm("be end_loop_" + num);
+
+        c.prependAsm(condition.getAsm());
+        c.prependAsm(genComment("loop condition :"));
+        c.prependAsm("loop_" + num + ":");
+        c.prependAsm(init.getAsm());
+
+        c.appendAsm(incr.getAsm());
         c.appendAsm("ba loop_" + num);
         c.appendAsm("end_loop_" + num + ":");
         return c;

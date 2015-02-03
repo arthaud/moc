@@ -56,6 +56,7 @@ sugar affect     is  "=" ;
 sugar if         is  "if" ;
 sugar else       is  "else" ;
 sugar while      is  "while" ;
+sugar t_for      is  "for" ;
 sugar void       is  "void" ;
 sugar asm        is  "asm" ;
 sugar int        is  "int" ;
@@ -418,7 +419,7 @@ ELSE -> #gen ;
     ELSE^code = new Code("");
 }
 
--- loop
+-- while loop
 INST -> while opar E cpar #trans BLOC #gen ;
 #trans {
     if (!E^type.testable()) {
@@ -429,7 +430,27 @@ INST -> while opar E cpar #trans BLOC #gen ;
 }
 
 #gen {
-    INST^code = INST^machine.genLoop(E^code, BLOC^code);
+    INST^code = INST^machine.genWhileLoop(E^code, BLOC^code);
+}
+
+-- for loop
+INST -> t_for opar E semicolon A semicolon E cpar #trans BLOC #gen ;
+#trans {
+    if (!A^type.testable()) {
+        error(TYPE_not_bool, A^type);
+    }
+    if (!instanceof(E^type, TVOID)) {
+        error(TYPE_not_assignment, E^type);
+    }
+    if (!instanceof(E1^type, TVOID)) {
+        error(TYPE_not_assignment, E1^type);
+    }
+
+    BLOC^vlocator = INST^vlocator.getChild();
+}
+
+#gen {
+    INST^code = INST^machine.genForLoop(E^code, A^code, E1^code, BLOC^code);
 }
 
 -- function return

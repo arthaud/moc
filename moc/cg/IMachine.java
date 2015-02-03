@@ -31,7 +31,9 @@ public interface IMachine {
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
-    Code genLoop(Code condition, Code Bloc);
+    Code genWhileLoop(Code condition, Code bloc);
+
+    Code genForLoop(Code init, Code condition, Code incr, Code bloc);
 
     Code genFunctionReturn(Code returnVal, TFUNCTION fun);
 

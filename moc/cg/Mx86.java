@@ -157,7 +157,7 @@ public class Mx86 extends AbstractMachine {
         return c;
     }
 
-    public Code genLoop(Code condition, Code c) {
+    public Code genWhileLoop(Code condition, Code c) {
         Location l = allocator.pop();
         condition = genVal(condition, l, new TBOOL(1));
 
@@ -170,6 +170,10 @@ public class Mx86 extends AbstractMachine {
         c.appendAsm("jmp loop_" + num);
         c.appendAsm("end_loop_" + num + ":");
         return c;
+    }
+
+    public Code genForLoop(Code init, Code condition, Code incr, Code c) {
+        throw new UnsupportedOperationException();
     }
 
     private Code genReturn(String label, TTYPE returnType, Code returnVal) {
