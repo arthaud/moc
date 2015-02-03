@@ -7,7 +7,7 @@ asm("
     .word null_handler
     null_handler: reti
     start:
-    set 0x200, %sp
+    set 0x180, %sp
     ba f_init
 ")
 
@@ -42,7 +42,8 @@ asm("
     ld $process_table, %r2
     ld [%r2], %r3 // %r3: nb_tasks
     ld [%r2+1], %r4 // %r4: current_task
-    mul %r4, 14, %r5
+    umulcc %r4, 14, %r5
+    add %r5, 2, %r5
     add %r5, %r2, %r5 // %r5: current task entry
     
     // %r9
@@ -85,7 +86,7 @@ asm("
 
     st %sp, [%r5+12]
     st %fp, [%r5+10]
-    st %ret, [r5+11]
+    st %r28, [%r5+11]
     
     // now it is stored, we can load the other task
 
@@ -96,7 +97,8 @@ asm("
     xor %r4, %r4, %r4 // %r4 <- 0
     pwm_handler_afterreset:
 
-    mul %r4, 14, %r5
+    umulcc %r4, 14, %r5
+    add %r5, 2, %r5
     add %r5, %r2, %r5 // %r5: current task entry
 
     // don't forget to store the incremented counter
@@ -107,7 +109,7 @@ asm("
     // We switch the stack now that everything is pop'ed
     ld [%r5+12], %sp
     ld [%r5+10], %fp
-    ld [%r5+11], %ret
+    ld [%r5+11], %r28
 
     // psr
     ld [%r5+9], %r6
@@ -165,9 +167,29 @@ int syscall_malloc(int size)
 //   int pc;
 // }
 
+int task1()
+{
+    int* ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b1111;
+        *ssegs = 0x4321;
+    }
+}
+
+int task2()
+{
+    int* ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b1111;
+        *ssegs = 0x1234;
+    }
+}
+
 int init() {
     pwm_count = 0;
-    malloc_start = 4000;
+    malloc_start = 0x185;
 
     // alloc the process table
     process_table = syscall_malloc(2 + 14*2);
@@ -185,8 +207,13 @@ int init() {
     *((int*)process_table+1) = 0;
 
     // pc
-    *((int*)process_table+2+13) = task1;
-    *((int*)process_table+2+14+13) = task2;
+    int task;
+    asm("set f_task1, %r9
+    st %r9, $task");
+    *((int*)process_table+2+13) = task;
+    asm("set f_task2, %r9
+    st %r9, $task");
+    *((int*)process_table+2+14+13) = task;
 
     // sp
     *((int*)process_table+2+12) = syscall_malloc(256);
@@ -201,32 +228,15 @@ int init() {
     ld $process_table, %r2
     ld [%r2], %r3 // %r3: nb_tasks
     ld [%r2+1], %r4 // %r4: current_task
-    mul %r4, 14, %r5
-    ld [%r5+12], %sp
+    umulcc %r4, 14, %r5
+    add %r5, 2, %r5
     add %r5, %r2, %r5 // %r5: current task entry
+    ld [%r5+12], %sp
 
     // jump to the task
-    ld [%r5+13], %r6
-    ba %r6
-    ")
+    //ld [%r5+13], %r6
+    //mov %r6, %pc
+    ba f_task1
+    ");
 }
 
-int task1()
-{
-    int* ssegs = (int*) 0xA0000000;
-    while(true)
-    {
-        *(ssegs + 1) = 0b1111;
-        *ssegs = 0x0000;
-    }
-}
-
-int task2()
-{
-    int* ssegs = (int*) 0xA0000000;
-    while(true)
-    {
-        *(ssegs + 1) = 0b1111;
-        *ssegs = 0x1234;
-    }
-}
