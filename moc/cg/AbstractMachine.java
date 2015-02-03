@@ -103,7 +103,7 @@ public abstract class AbstractMachine implements IMachine {
 
             list.addAll(newCallers);
         }
-        while (newCallers.isEmpty());
+        while (!newCallers.isEmpty());
 
         return list;
     }
