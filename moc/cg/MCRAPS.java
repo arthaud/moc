@@ -429,15 +429,14 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genAccess(Code pointerCode, TTYPE pointedType) {
         Location pointerReg = allocator.pop();
-        Location valueReg = allocator.getFreeReg();
 
         if(pointerCode.getIsAddress()) {
-            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(pointerReg) + "]", genLocation(valueReg)));
+            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(pointerReg) + "]", genLocation(pointerReg)));
         }
 
         pointerCode.setIsAddress(true);
         pointerCode.setLocation(null);
-        allocator.push(valueReg);
+        allocator.push(pointerReg);
         return pointerCode;
     }
 
