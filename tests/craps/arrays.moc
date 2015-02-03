@@ -1,10 +1,23 @@
+#include "lib/craps.moc"
 
-int lolo(int[] arg1){
-    return arg1[2];
+void set(int[] t, int k, int v) {
+    t[k] = v;
 }
-int main() {
-         int[50] lol;
-        lol[2]=5;
-        int a= lolo(lol);
 
+int main() {
+    int[4] tab;
+
+    // write
+    tab[0] = 0xA;
+    tab[1] = 0xB;
+    tab[2] = 0xC;
+    set(tab, 3, 0xD);
+
+    // read
+    int v = 0;
+    int i = 0;
+    while(i < 4) {
+        v = v * 16 + tab[i];
+        i = i + 1;
+    }
 }

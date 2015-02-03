@@ -30,8 +30,7 @@ public class Location {
     }
 
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if(other == null || ! (other instanceof Location))
             return false;
         Location o = (Location) other;

@@ -393,9 +393,9 @@ public class Mx86 extends AbstractMachine {
     }
 
     // declare a variable with an initial value
-    public Code genDecl(INFOVAR info, Code value) {
+    public Code genDecl(INFOVAR info, Code value, TTYPE type) {
         Location l = allocator.pop();
-        value = genVal(value, l, info.getType());
+        value = genVal(value, l, type);
         value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
     }
@@ -433,7 +433,12 @@ public class Mx86 extends AbstractMachine {
         allocator.push(d);
         return pointerCode;
     }
-    public Code genArrayAcces(Code pointerCode,TTYPE pointerType, Code posCode, TTYPE posType){
+
+    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 
@@ -491,17 +496,7 @@ public class Mx86 extends AbstractMachine {
     public Code genChar(String c) {
         Location l = allocator.get();
         allocator.push(l);
-
-        if(c.equals("'\\0'"))
-            return new Code("mov " + genLocation(l) + ", 0");
-        else if(c.equals("'\\n'"))
-            return new Code("mov " + genLocation(l) + ", 10");
-        else if(c.equals("'\\r'"))
-            return new Code("mov " + genLocation(l) + ", 13");
-        else if(c.equals("'\\t'"))
-            return new Code("mov " + genLocation(l) + ", 9");
-        else
-            return new Code("mov " + genLocation(l) + ", " + c);
+        return new Code("mov " + genLocation(l) + ", " + getCharFromString(c));
     }
 
     /**
