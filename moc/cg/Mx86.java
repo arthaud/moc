@@ -379,7 +379,7 @@ public class Mx86 extends AbstractMachine {
         return arguments;
     }
 
-    public Code genFunctionCall(TFUNCTION f, Code arguments) {
+    public Code genFunctionCallImpl(TFUNCTION f, Code arguments) {
         return genCall("f_" + f.getName(),
                         f.getReturnType(),
                         f.getParameterTypes().getSize(),

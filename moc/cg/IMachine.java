@@ -47,7 +47,7 @@ public interface IMachine {
 
     Code genCast(TTYPE newType, TTYPE oldType, Code castedCode);
 
-    Code genFunctionCall(TFUNCTION func, Code arguments);
+    Code genFunctionCall(String currentFunc, TFUNCTION func, Code arguments);
 
     Code genArg(Code argument, TTYPE type);
 

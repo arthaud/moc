@@ -7,11 +7,15 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.HashSet;
 
 import moc.compiler.MOCException;
 import moc.st.ST;
 import moc.st.INFO;
 import moc.st.INFOVAR;
+import moc.type.TFUNCTION;
 
 /**
  * This class describes a target machine
@@ -35,11 +39,15 @@ public abstract class AbstractMachine implements IMachine {
     protected String initCode = "";
     protected String endCode = "";
 
+    private HashMap<String, HashSet<String>> callTree = new HashMap<>();
+
     /**
      * Writes the code in a file from the name of the source file and the suffix
      */
     @Override
     public void writeCode(String fname, EntityList entities) throws MOCException {
+        usedFunctions();
+
         try {
             // pre-checked at startup
             int pt = fname.lastIndexOf('.');
@@ -50,15 +58,68 @@ public abstract class AbstractMachine implements IMachine {
             pw.print(genComment("Generated code for " + fname + "\n"));
             pw.print(genComment("Do not modify by hand\n"));
             pw.print(initCode);
-            for (EntityCode cg : entities.getList()) {
-                pw.print(cg.getAsm());
+
+            HashSet<String> usedFunctions = usedFunctions();
+            for (EntityCode entity : entities.getList()) {
+                if (shouldInclude(entity, usedFunctions)) {
+                    pw.print(entity.getAsm());
+                }
             }
+
             pw.print(endCode);
             pw.close();
         } catch (FileNotFoundException e) {
             throw new MOCException(e.getMessage());
         }
     }
+
+    /**
+     * Returns whether the given entity should be included in the final code.
+     */
+    protected boolean shouldInclude(EntityCode entity, HashSet<String> usedFunctions) {
+        return !(entity instanceof FunctionCode)
+            || usedFunctions.contains(((FunctionCode)entity).getName());
+    }
+
+    /**
+     * Return the list of functions to include.
+     */
+    protected HashSet<String> usedFunctions() {
+        HashSet<String> list = new HashSet<>();
+
+        list.add("main");
+
+        HashSet<String> newCallers = new HashSet<>();
+        do {
+            newCallers.clear();
+
+            for (String caller : list) {
+                if (callTree.containsKey(caller)) {
+                    for (String callee : callTree.get(caller)) {
+                        if (!list.contains(callee)) {
+                            newCallers.add(callee);
+                        }
+                    }
+                }
+            }
+
+            list.addAll(newCallers);
+        }
+        while (newCallers.isEmpty());
+
+        return list;
+    }
+
+    public Code genFunctionCall(String currentFunc, TFUNCTION f, Code arguments) {
+        if (!callTree.containsKey(currentFunc)) {
+            callTree.put(currentFunc, new HashSet<String>());
+        }
+        callTree.get(currentFunc).add(f.getName());
+
+        return genFunctionCallImpl(f, arguments);
+    }
+
+    protected abstract Code genFunctionCallImpl(TFUNCTION f, Code arguments);
 
     public Location genGlobalLocation() {
         return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());

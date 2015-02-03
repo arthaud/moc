@@ -740,7 +740,10 @@ global LTYPES args_types; TFUNCTION fun;
 }
 
 #gen {
-    F^code = F^machine.genFunctionCall(fun, ARGS^code);
+    F^code = F^machine.genFunctionCall(
+        F^st.getCurrentFunction().getName(),
+        fun, ARGS^code
+    );
 }
 
 F -> ident #gen ;
