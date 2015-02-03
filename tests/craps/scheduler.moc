@@ -74,12 +74,14 @@ asm("
     st %r6, [%r5]
 
     // before %r1 we have psr and then pc to also set
-    pop %r6
-    st %r6, [%r5+9]
-
+    
     // pc
     pop %r6
     st %r6, [%r5+13]
+
+    // psr
+    pop %r6
+    st %r6, [%r5+9]
 
     st %sp, [%r5+12]
     st %fp, [%r5+10]
@@ -97,9 +99,35 @@ asm("
     mul %r4, 14, %r5
     add %r5, %r2, %r5 // %r5: current task entry
 
+    // don't forget to store the incremented counter
+    st %r1, $pwm_count
+
     // load the registers
+
+    // We switch the stack now that everything is pop'ed
+    ld [%r5+12], %sp
+    ld [%r5+10], %fp
+    ld [%r5+11], %ret
+
+    // psr
+    ld [%r5+9], %r6
+    push %r6
+    // pc
+    ld [%r5+13], %r6
+    push %r6
     
-    // TODO
+    // load all the registers !
+    ld [%r5+8], %r9
+    ld [%r5+7], %r8
+    ld [%r5+6], %r7
+    ld [%r5+5], %r6
+    ld [%r5+4], %r5
+    ld [%r5+3], %r4
+    ld [%r5+2], %r3
+    ld [%r5+1], %r2
+    ld [%r5], %r1
+    
+    reti
 
     /////////////////////
     // end context switch
@@ -121,18 +149,18 @@ int syscall_malloc(int size)
 // int nb_tasks;
 // int current_task;
 // {
-//   int r1;
-//   int r2;
-//   int r3;
-//   int r4;
-//   int r5;
-//   int r6;
-//   int r7;
-//   int r8;
-//   int r9;
+//   int r1; // 0
+//   int r2; // 1
+//   int r3; // 2
+//   int r4; // 3
+//   int r5; // 4
+//   int r6; // 5
+//   int r7; // 6
+//   int r8; // 7
+//   int r9; // 8
 //   int fpr; // %r25
-//   int fp;
-//   int ret;
+//   int fp; // 10
+//   int ret; // 11
 //   int sp;
 //   int pc;
 // }
