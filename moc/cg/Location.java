@@ -31,8 +31,9 @@ public class Location {
 
     @Override
     public boolean equals(Object other) {
-        if(other == null || ! (other instanceof Location))
+        if(other == null || !(other instanceof Location))
             return false;
+
         Location o = (Location) other;
         return this.memoryType == o.memoryType && this.memoryOffset == o.memoryOffset;
     }

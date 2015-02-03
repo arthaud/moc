@@ -269,7 +269,7 @@ public class MTAM extends AbstractMachine {
     }
 
     /** the generated code puts the address of the pointed var on the top of the stack */
-    public Code genAcces(Code pointerCode, TTYPE pointedType) {
+    public Code genAccess(Code pointerCode, TTYPE pointedType) {
         if (pointerCode.getIsAddress()) {
             pointerCode.appendAsm("LOADI (" + pointedType.getSize() + ")");
         }
@@ -279,15 +279,15 @@ public class MTAM extends AbstractMachine {
         return pointerCode;
     }
 
-    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+    public Code genStackArrayAccess(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 
-    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
+    public Code genPointerArrayAccess(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 
-    public Code genBloc(Code c, VariableLocator vloc) {
+    public Code genBlock(Code c, VariableLocator vloc) {
         TamVariableLocator vl = (TamVariableLocator) vloc;
 
         if (vl.getLocalOffset() > 0) {

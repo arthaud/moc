@@ -38,7 +38,6 @@ public abstract class AbstractMachine implements IMachine {
     /**
      * Writes the code in a file from the name of the source file and the suffix
      */
-    @Override
     public void writeCode(String fname, String code) throws MOCException {
         try {
             // pre-checked at startup
@@ -58,15 +57,21 @@ public abstract class AbstractMachine implements IMachine {
         }
     }
 
+    /**
+     * Generate a new location for a global variable
+     */
     public Location genGlobalLocation() {
         return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());
     }
 
+    /**
+     * Print a comment in assembler
+     */
     public String genComment(String comm) {
         return "; " + comm;
     }
 
-    public String asmVariablePattern() {
+    protected String asmVariablePattern() {
         return "%([a-z][_0-9A-Za-z]*)";
     }
 

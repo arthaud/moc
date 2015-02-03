@@ -314,7 +314,7 @@ global ST st;
 }
 
 #gen {
-    BLOC^code = BLOC^machine.genBloc(INSTS^code, BLOC^vlocator);
+    BLOC^code = BLOC^machine.genBlock(INSTS^code, BLOC^vlocator);
 
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {
@@ -770,7 +770,7 @@ F -> mult F #gen ;
         case TPOINTER {
             TPOINTER p = F1^type;
             F^type = p.getType();
-            F^code = F^machine.genAcces(F1^code, p.getType());
+            F^code = F^machine.genAccess(F1^code, p.getType());
         }
         default {
             error(TYPE_not_pointer, F1^type);
@@ -798,12 +798,12 @@ F -> ident osbra A csbra #gen ;
                             case TARRAY {
                                 TARRAY type = varType;
                                 F^type = type.getElementsType();
-                                F^code = F^machine.genStackArrayAcces(info, A^code);
+                                F^code = F^machine.genStackArrayAccess(info, A^code);
                             }
                             case TPOINTER {
                                 TPOINTER type = varType;
                                 F^type = type.getType();
-                                F^code = F^machine.genPointerArrayAcces(info, A^code);
+                                F^code = F^machine.genPointerArrayAccess(info, A^code);
                             }
                             default {
                                 error(TYPE_not_array, varType);
