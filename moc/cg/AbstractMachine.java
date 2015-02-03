@@ -121,15 +121,21 @@ public abstract class AbstractMachine implements IMachine {
 
     protected abstract Code genFunctionCallImpl(TFUNCTION f, Code arguments);
 
+    /*
+     * Generate a new location for a global variable
+     */
     public Location genGlobalLocation() {
         return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());
     }
 
+    /**
+     * Print a comment in assembler
+     */
     public String genComment(String comm) {
         return "; " + comm;
     }
 
-    public String asmVariablePattern() {
+    protected String asmVariablePattern() {
         return "%([a-z][_0-9A-Za-z]*)";
     }
 

@@ -78,6 +78,8 @@ sugar or         is  "\|\|" ;
 sugar and        is  "\&\&" ;
 sugar bit_or     is  "\|" ;
 sugar bit_and    is  "\&" ;
+sugar lshift     is  "\<\<" ;
+sugar rshift     is  "\>\>" ;
 sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
@@ -316,7 +318,7 @@ global ST st;
 }
 
 #gen {
-    BLOC^code = BLOC^machine.genBloc(INSTS^code, BLOC^vlocator);
+    BLOC^code = BLOC^machine.genBlock(INSTS^code, BLOC^vlocator);
 
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {
@@ -633,6 +635,12 @@ OPMUL -> bit_and #name ;
 OPMUL -> bit_or #name ;
 #name { OPMUL^name = "|"; }
 
+OPMUL -> lshift #name ;
+#name { OPMUL^name = "<<"; }
+
+OPMUL -> rshift #name ;
+#name { OPMUL^name = ">>"; }
+
 -- base expressions
 F -> integer #gen ;
 #gen {
@@ -775,7 +783,7 @@ F -> mult F #gen ;
         case TPOINTER {
             TPOINTER p = F1^type;
             F^type = p.getType();
-            F^code = F^machine.genAcces(F1^code, p.getType());
+            F^code = F^machine.genAccess(F1^code, p.getType());
         }
         default {
             error(TYPE_not_pointer, F1^type);
@@ -803,12 +811,12 @@ F -> ident osbra A csbra #gen ;
                             case TARRAY {
                                 TARRAY type = varType;
                                 F^type = type.getElementsType();
-                                F^code = F^machine.genStackArrayAcces(info, A^code);
+                                F^code = F^machine.genStackArrayAccess(info, A^code);
                             }
                             case TPOINTER {
                                 TPOINTER type = varType;
                                 F^type = type.getType();
-                                F^code = F^machine.genPointerArrayAcces(info, A^code);
+                                F^code = F^machine.genPointerArrayAccess(info, A^code);
                             }
                             default {
                                 error(TYPE_not_array, varType);

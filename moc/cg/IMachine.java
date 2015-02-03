@@ -51,48 +51,82 @@ public interface IMachine {
 
     Code genArg(Code argument, TTYPE type);
 
-    // declare a variable
+    /**
+     * Declare a variable
+     */
     Code genDecl(INFOVAR info);
 
-    // declare a variable with an initial value
+    /**
+     * Declare a variable with an initial value
+     *
+     * @param value The code for the initial value
+     */
     Code genDecl(INFOVAR info, Code value, TTYPE type);
 
-    // declare a global variable
+    /**
+     * Declare a global variable
+     */
     GlobalCode genDeclGlobal(INFOVAR info);
 
-    // expression instruction
+    /**
+     * Expression instruction
+     *
+     * @param value The code for the expression
+     */
     Code genInst(TTYPE type, Code value);
 
+    /**
+     * Print a comment in assembler
+     */
     String genComment(String comm);
 
-    Code genAcces(Code pointerCode, TTYPE pointedType);
+    /**
+     * Generate a dereferencing of a pointer
+     */
+    Code genAccess(Code pointerCode, TTYPE pointedType);
 
     /**
      * Generate the code for tab[pos] where tab is an array on
      * the stack (TARRAY)
      */
-    Code genStackArrayAcces(INFOVAR info, Code posCode);
+    Code genStackArrayAccess(INFOVAR info, Code posCode);
 
     /**
      * Generate the code for tab[pos] where tab is a pointer (TPOINTER)
      */
-    Code genPointerArrayAcces(INFOVAR info, Code posCode);
+    Code genPointerArrayAccess(INFOVAR info, Code posCode);
 
-    // removes local variables after instCode
-    Code genBloc(Code instsCode, VariableLocator vloc);
+    /**
+     * Generate a block { }, removing local variables at the end
+     */
+    Code genBlock(Code instsCode, VariableLocator vloc);
 
+    /**
+     * Generate a new location for a global variable
+     */
     Location genGlobalLocation();
 
+    /**
+     * Returns a ParametersLocator, responsible for managing the location of
+     * parameters
+     */
     ParametersLocator getParametersLocator();
 
+    /**
+     * Returns a VariableLocator, responsible for managing the location of
+     * local variables
+     */
     VariableLocator getVariableLocator();
 
-    // converts a location to its representation in asm
+    /**
+     * Converts a location to its representation in assembler
+     */
     String genLocation(Location loc);
 
     /**
      * Terminal cases, to load variable, constants...
     */
+
     Code genVariable(INFOVAR i);
 
     Code genInt(String cst);

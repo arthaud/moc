@@ -419,7 +419,7 @@ public class Mx86 extends AbstractMachine {
         return e;
     }
 
-    public Code genAcces(Code pointerCode, TTYPE pointedType) {
+    public Code genAccess(Code pointerCode, TTYPE pointedType) {
         Location l = allocator.pop();
         Location d = allocator.get();
 
@@ -433,15 +433,15 @@ public class Mx86 extends AbstractMachine {
         return pointerCode;
     }
 
-    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+    public Code genStackArrayAccess(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 
-    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
+    public Code genPointerArrayAccess(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 
-    public Code genBloc(Code instsCode , VariableLocator vloc) {
+    public Code genBlock(Code instsCode , VariableLocator vloc) {
         X86VariableLocator vl = (X86VariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
