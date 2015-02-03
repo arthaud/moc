@@ -88,7 +88,7 @@ public class MTAM extends AbstractMachine {
         return "" + loc.getOffset();
     }
 
-    public Code genFunction(TFUNCTION function, Code code) {
+    public FunctionCode genFunction(TFUNCTION function, Code code) {
         code.prependAsm("f_" + function.getName() + ":");
         code.prependAsm("\n" + genComment("### " + function + " #############"));
 
@@ -96,7 +96,7 @@ public class MTAM extends AbstractMachine {
             code.appendAsm("RETURN (0) " + function.getParameterTypes().getSize());
         }
 
-        return code;
+        return new FunctionCode(function.getName(), code.getAsm());
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
@@ -252,10 +252,10 @@ public class MTAM extends AbstractMachine {
     }
 
     // declare a global variable
-    public Code genDeclGlobal(INFOVAR info) {
+    public GlobalCode genDeclGlobal(INFOVAR info) {
         throw new UnsupportedOperationException();
     }
-    
+
     public Code genArg(Code argument, TTYPE type) {
         return genVal(argument, type);
     }

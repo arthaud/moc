@@ -25,9 +25,9 @@ public interface IMachine {
     /**
      * Writes the code in a file from the source file name and the suffix
      */
-    void writeCode(String fileName, String code) throws MOCException;
+    void writeCode(String fileName, EntityList entities) throws MOCException;
 
-    Code genFunction(TFUNCTION function, Code code);
+    FunctionCode genFunction(TFUNCTION function, Code code);
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
@@ -35,7 +35,9 @@ public interface IMachine {
 
     Code genFunctionReturn(Code returnVal, TFUNCTION fun);
 
-    Code includeAsm(String asmCode, ST symbolsTable);
+    Code genAsm(String asmCode, ST symbolsTable);
+
+    AsmCode genGlobalAsm(String asmCode, ST symbolsTable);
 
     Code genAffectation(Code address, Code affectedVal, TTYPE type);
 
@@ -56,7 +58,7 @@ public interface IMachine {
     Code genDecl(INFOVAR info, Code value, TTYPE type);
 
     // declare a global variable
-    Code genDeclGlobal(INFOVAR info);
+    GlobalCode genDeclGlobal(INFOVAR info);
 
     // expression instruction
     Code genInst(TTYPE type, Code value);

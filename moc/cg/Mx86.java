@@ -123,22 +123,21 @@ public class Mx86 extends AbstractMachine {
         }
     }
 
-    private Code genFunction(String label, String comment, Code code) {
-        Code c = new Code(code.getAsm());
-        c.prependAsm("mov ebp, esp");
-        c.prependAsm("push ebp");
-        c.prependAsm(label + ":");
-        c.prependAsm("\n" + genComment("### " + comment + " #############"));
+    public FunctionCode genFunction(TFUNCTION function, Code code) {
+        String label = "f_" + function.getName();
+        String comment = function.toString();
 
-        c.appendAsm(label + "_end:");
-        c.appendAsm("mov esp, ebp");
-        c.appendAsm("pop ebp");
-        c.appendAsm("ret");
-        return c;
-    }
+        code.prependAsm("mov ebp, esp");
+        code.prependAsm("push ebp");
+        code.prependAsm(label + ":");
+        code.prependAsm("\n" + genComment("### " + comment + " #############"));
 
-    public Code genFunction(TFUNCTION function, Code code) {
-        return genFunction("f_" + function.getName(), function.toString(), code);
+        code.appendAsm(label + "_end:");
+        code.appendAsm("mov esp, ebp");
+        code.appendAsm("pop ebp");
+        code.appendAsm("ret");
+
+        return new FunctionCode(function.getName(), code.getAsm());
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
@@ -401,7 +400,7 @@ public class Mx86 extends AbstractMachine {
     }
 
     // declare a global variable
-    public Code genDeclGlobal(INFOVAR info) {
+    public GlobalCode genDeclGlobal(INFOVAR info) {
         throw new UnsupportedOperationException();
     }
 

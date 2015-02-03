@@ -137,22 +137,21 @@ public class MCRAPS extends AbstractMachine {
         }
     }
 
-    private Code genFunction(String label, String comment, Code code) {
-        Code c = new Code(code.getAsm());
-        c.prependAsm("mov %sp, %fp");
-        c.prependAsm("push %fp");
-        c.prependAsm(label + ":");
-        c.prependAsm("\n" + genComment("### " + comment + " #############"));
+    public FunctionCode genFunction(TFUNCTION function, Code code) {
+        String label = "f_" + function.getName();
+        String comment = function.toString();
 
-        c.appendAsm(label + "_end:");
-        c.appendAsm("mov %fp, %sp");
-        c.appendAsm("pop %fp");
-        c.appendAsm("ret");
-        return c;
-    }
+        code.prependAsm("mov %sp, %fp");
+        code.prependAsm("push %fp");
+        code.prependAsm(label + ":");
+        code.prependAsm("\n" + genComment("### " + comment + " #############"));
 
-    public Code genFunction(TFUNCTION function, Code code) {
-        return genFunction("f_" + function.getName(), function.toString(), code);
+        code.appendAsm(label + "_end:");
+        code.appendAsm("mov %fp, %sp");
+        code.appendAsm("pop %fp");
+        code.appendAsm("ret");
+
+        return new FunctionCode(function.getName(), code.getAsm());
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
@@ -387,10 +386,11 @@ public class MCRAPS extends AbstractMachine {
     }
 
     // declare a global variable
-    public Code genDeclGlobal(INFOVAR info) {
-        endCode += "glob_" + info.getLocation().getOffset() + ": "
-                + genBytes(Collections.nCopies(info.getSize(), 0)) + "\n";
-        return new Code("");
+    public GlobalCode genDeclGlobal(INFOVAR info) {
+        return new GlobalCode(
+            "glob_" + info.getLocation().getOffset() + ": "
+            + genBytes(Collections.nCopies(info.getSize(), 0)) + "\n"
+        );
     }
 
     // expression instruction

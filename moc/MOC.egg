@@ -32,9 +32,11 @@ inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for
-         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
          E, EX, A, AX, R, RX, T, TX, F;
+syn globalCode : EntityCode for GLOBAL_DECL;
+syn eCodes : EntityList for ENTITIES;
 inh hcode : Code for
          EX, AX, RX, TX , ARGSX;
 
@@ -112,19 +114,20 @@ global
     }
 
     -- write in a file
-    machine.writeCode(PROGRAM^source.getFileName(), ENTITIES^code.getAsm());
+    machine.writeCode(PROGRAM^source.getFileName(), ENTITIES^eCodes);
 }
 
 ENTITIES -> #gen ;
 #gen {
-    ENTITIES^code = new Code("");
+    ENTITIES^eCodes = new EntityList();
 }
 
 ENTITIES -> asm opar string cpar ENTITIES #gen ;
 #gen {
-    Code entCode = ENTITIES^machine.includeAsm(string^txt, ENTITIES^st);
-    entCode.appendAsm(ENTITIES1^code.getAsm());
-    ENTITIES^code = entCode;
+    ENTITIES1^eCodes.prepend(
+        ENTITIES^machine.genGlobalAsm(string^txt, ENTITIES^st)
+    );
+    ENTITIES^eCodes = ENTITIES1^eCodes;
 }
 
 -- global declaration (variable, function)
@@ -143,9 +146,8 @@ ENTITIES -> TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
 }
 
 #gen {
-    Code entCode = new Code(GLOBAL_DECL^code.getAsm());
-    entCode.appendAsm(ENTITIES1^code.getAsm());
-    ENTITIES^code = entCode;
+    ENTITIES1^eCodes.prepend(GLOBAL_DECL^globalCode);
+    ENTITIES^eCodes = ENTITIES1^eCodes;
 }
 
 -- global vars
@@ -153,7 +155,7 @@ GLOBAL_DECL -> semicolon #gen ;
 #gen {
     INFOVAR info = new INFOVAR(GLOBAL_DECL^htype, GLOBAL_DECL^machine.genGlobalLocation());
     GLOBAL_DECL^st.insert(GLOBAL_DECL^hident, info);
-    GLOBAL_DECL^code = GLOBAL_DECL^machine.genDeclGlobal(info);
+    GLOBAL_DECL^globalCode = GLOBAL_DECL^machine.genDeclGlobal(info);
 }
 
 -- functions
@@ -183,7 +185,7 @@ global LTYPES param_types;
 }
 
 #gen {
-    GLOBAL_DECL^code = GLOBAL_DECL^machine.genFunction(fun, BLOC^code);
+    GLOBAL_DECL^globalCode = GLOBAL_DECL^machine.genFunction(fun, BLOC^code);
     GLOBAL_DECL^st.setCurrentFunction(null);
 }
 
@@ -445,7 +447,7 @@ INST -> return E semicolon #gen ;
 -- inline asm
 INST -> asm opar string cpar semicolon #gen ;
 #gen {
-    INST^code = INST^machine.includeAsm(string^txt, INST^st);
+    INST^code = INST^machine.genAsm(string^txt, INST^st);
 }
 
 -- expressions
@@ -821,7 +823,6 @@ F -> ident osbra A csbra #gen ;
         }
     }
 }
-
 -- subprogram call arguments
 ARGS -> #gen ;
 #gen {

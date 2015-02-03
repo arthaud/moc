@@ -39,7 +39,7 @@ public abstract class AbstractMachine implements IMachine {
      * Writes the code in a file from the name of the source file and the suffix
      */
     @Override
-    public void writeCode(String fname, String code) throws MOCException {
+    public void writeCode(String fname, EntityList entities) throws MOCException {
         try {
             // pre-checked at startup
             int pt = fname.lastIndexOf('.');
@@ -50,7 +50,9 @@ public abstract class AbstractMachine implements IMachine {
             pw.print(genComment("Generated code for " + fname + "\n"));
             pw.print(genComment("Do not modify by hand\n"));
             pw.print(initCode);
-            pw.print(code);
+            for (EntityCode cg : entities.getList()) {
+                pw.print(cg.getAsm());
+            }
             pw.print(endCode);
             pw.close();
         } catch (FileNotFoundException e) {
@@ -70,7 +72,7 @@ public abstract class AbstractMachine implements IMachine {
         return "%([a-z][_0-9A-Za-z]*)";
     }
 
-    public Code includeAsm(String asmCode, ST symbolsTable) {
+    private String genAsmImpl(String asmCode, ST symbolsTable) {
         String asm = asmCode.substring(1, asmCode.length() - 1); // remove the ""
         StringBuffer sb = new StringBuffer();
 
@@ -96,7 +98,15 @@ public abstract class AbstractMachine implements IMachine {
         }
         matcher.appendTail(sb);
 
-        return new Code(sb.toString());
+        return sb.toString();
+    }
+
+    public Code genAsm(String asmCode, ST symbolsTable) {
+        return new Code(genAsmImpl(asmCode, symbolsTable));
+    }
+
+    public AsmCode genGlobalAsm(String asmCode, ST symbolsTable) {
+        return new AsmCode(genAsmImpl(asmCode, symbolsTable));
     }
 
     /**
