@@ -348,23 +348,24 @@ public class MCRAPS extends AbstractMachine {
         return castedCode;
     }
 
-    private Code genCall(String label, TTYPE returnType, int parametersSize, Code arguments) {
+    @Override
+    protected Code genFunctionCallImpl(TFUNCTION fun, Code arguments) {
         Location resultReg = allocator.getFreeReg();
 
         arguments.prependAsm(genComment("push parameters :"));
 
         arguments.appendAsm("push %r28");
-        arguments.appendAsm("call " + label);
+        arguments.appendAsm("call f_" + fun.getName());
         arguments.appendAsm("pop %r28");
 
         // put the result in resultReg (if it's not a void)
-        if (!(returnType instanceof TVOID) && resultReg.getOffset() != 0) {
+        if (!(fun.getReturnType() instanceof TVOID) && resultReg.getOffset() != 0) {
             arguments.appendAsm("mov %r1, " + genLocation(resultReg));
         }
 
         // remove parameters from the stack
-        if (parametersSize > 0) {
-            arguments.appendAsm("add %sp, " + parametersSize + ", %sp " + genComment("removing parameters"));
+        if (fun.getParameterTypes().getSize() > 0) {
+            arguments.appendAsm("add %sp, " + fun.getParameterTypes().getSize() + ", %sp " + genComment("removing parameters"));
         }
 
         // calling convention : the caller saves all registers
@@ -374,18 +375,10 @@ public class MCRAPS extends AbstractMachine {
         }
 
         // need to be done here and not before (not to disturb the backup registers)
-        if(!(returnType instanceof TVOID))
+        if(!(fun.getReturnType() instanceof TVOID))
             allocator.push(resultReg);
 
         return arguments;
-    }
-
-    @Override
-    protected Code genFunctionCallImpl(TFUNCTION f, Code arguments) {
-        return genCall("f_" + f.getName(),
-                        f.getReturnType(),
-                        f.getParameterTypes().getSize(),
-                        arguments);
     }
 
     /**
