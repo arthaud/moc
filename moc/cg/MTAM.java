@@ -247,8 +247,8 @@ public class MTAM extends AbstractMachine {
     }
 
     // declare a variable with an initial value
-    public Code genDecl(INFOVAR info, Code value) {
-        return genVal(value, info.getType());
+    public Code genDecl(INFOVAR info, Code value, TTYPE type) {
+        return genVal(value, type);
     }
 
     // declare a global variable
@@ -279,7 +279,11 @@ public class MTAM extends AbstractMachine {
         return pointerCode;
     }
 
-    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType) {
+    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 

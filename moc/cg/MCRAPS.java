@@ -375,20 +375,13 @@ public class MCRAPS extends AbstractMachine {
 
     // declare a variable
     public Code genDecl(INFOVAR info) {
-        int size;
-
-        if(info.getType() instanceof TARRAY)
-            size = ((TARRAY) info.getType()).getStackSize();
-        else
-            size = info.getType().getSize();
-
-        return new Code("sub %sp, " + size + ", %sp");
+        return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
     }
 
     // declare a variable with an initial value
-    public Code genDecl(INFOVAR info, Code value) {
+    public Code genDecl(INFOVAR info, Code value, TTYPE type) {
         Location l = allocator.pop();
-        value = genVal(value, l, info.getType());
+        value = genVal(value, l, type);
         value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
     }
@@ -429,12 +422,40 @@ public class MCRAPS extends AbstractMachine {
         return pointerCode;
     }
 
-    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType) {
-        Code sum = genBinary(pointerCode, pointerType, posCode, posType, "+");
-        return genAcces(sum, ((TPOINTER) pointerType).getType());
+    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+        TARRAY type = (TARRAY) info.getType();
+        Location pos = allocator.pop();
+
+        posCode.appendAsm(genComment("stack array access :"));
+        if(type.getElementsType().getSize() != 1)
+            posCode.appendAsm("umulcc " + genLocation(pos) + ", " + type.getElementsType().getSize() + ", " + genLocation(pos));
+        posCode.appendAsm("add " + genLocation(pos) + ", %fp, " + genLocation(pos));
+        posCode.appendAsm("sub " + genLocation(pos) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(pos));
+        posCode.setIsAddress(true);
+        posCode.setLocation(null);
+
+        allocator.push(pos);
+        return posCode;
     }
 
-    public Code genBloc(Code instsCode , VariableLocator vloc) {
+    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
+        TPOINTER type = (TPOINTER) info.getType();
+        Location pos = allocator.pop();
+        allocator.push(pos);
+        Location array = allocator.get();
+
+        posCode.appendAsm(genComment("pointer array access :"));
+        if(type.getType().getSize() != 1)
+            posCode.appendAsm("umulcc " + genLocation(pos) + ", " + type.getType().getSize() + ", " + genLocation(pos));
+        posCode.appendAsm(genMovMemToReg(genLocation(array), genLocation(info.getLocation()), getPointerSize()));
+        posCode.appendAsm("add " + genLocation(array) + ", " + genLocation(pos) + ", " + genLocation(pos));
+        posCode.setIsAddress(true);
+        posCode.setLocation(null);
+
+        return posCode;
+    }
+
+    public Code genBloc(Code instsCode, VariableLocator vloc) {
         SPARCVariableLocator vl = (SPARCVariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
@@ -450,6 +471,12 @@ public class MCRAPS extends AbstractMachine {
                loc_type == Location.LocationType.ABSOLUTE);
         Location l = allocator.get();
         allocator.push(l);
+
+        if(i.getType() instanceof TARRAY) { // special case for arrays : generate the address
+            Code c = new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(l));
+            c.setIsAddress(false);
+            return c;
+        }
 
         Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
         c.setIsAddress(false);
@@ -494,6 +521,9 @@ public class MCRAPS extends AbstractMachine {
      * Ensures the Code gives a value
      */
     private Code genVal(Code operand, Location l, TTYPE type) {
+        if(type instanceof TARRAY) // special case for arrays : no dereferencing
+            return operand;
+
         if(operand.getLocation() != null) {
             return new Code(genMovMemToReg(genLocation(l), genLocation(operand.getLocation()), type.getSize()));
         }

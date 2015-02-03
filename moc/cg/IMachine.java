@@ -1,5 +1,7 @@
 package moc.cg;
 
+import java.util.List;
+
 import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
@@ -51,7 +53,7 @@ public interface IMachine {
     Code genDecl(INFOVAR info);
 
     // declare a variable with an initial value
-    Code genDecl(INFOVAR info, Code value);
+    Code genDecl(INFOVAR info, Code value, TTYPE type);
 
     // declare a global variable
     Code genDeclGlobal(INFOVAR info);
@@ -63,7 +65,16 @@ public interface IMachine {
 
     Code genAcces(Code pointerCode, TTYPE pointedType);
 
-    Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType);
+    /**
+     * Generate the code for tab[pos] where tab is an array on
+     * the stack (TARRAY)
+     */
+    Code genStackArrayAcces(INFOVAR info, Code posCode);
+
+    /**
+     * Generate the code for tab[pos] where tab is a pointer (TPOINTER)
+     */
+    Code genPointerArrayAcces(INFOVAR info, Code posCode);
 
     // removes local variables after instCode
     Code genBloc(Code instsCode, VariableLocator vloc);
@@ -103,4 +114,14 @@ public interface IMachine {
     int getBoolSize();
 
     int getPointerSize();
+
+    /**
+     * Parse methods
+     */
+
+    List<Integer> getArrayFromString(String txt);
+
+    int getCharFromString(String c);
+
+    int getIntFromString(String c);
 }

@@ -267,8 +267,7 @@ REFS -> mult #trans REFS #type ;
 -- arrays
 REFS -> osbra integer csbra #trans REFS #type ;
 #trans {
-    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(),
-                               integer^txt);
+    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getIntFromString(integer^txt));
 }
 
 #type {
@@ -277,7 +276,7 @@ REFS -> osbra integer csbra #trans REFS #type ;
 
 REFS -> osbra csbra #trans REFS #type ;
 #trans {
-    REFS1^htype = new TARRAY(REFS^htype, REFS^machine.getPointerSize(), null);
+    REFS1^htype = new TPOINTER(REFS^htype, REFS^machine.getPointerSize());
 }
 
 #type {
@@ -366,7 +365,7 @@ AFF -> affect A #gen ;
         error(TYPES_incompatible, AFF^htype, A^type);
     }
 
-    AFF^code = AFF^machine.genDecl(AFF^hinfo, A^code);
+    AFF^code = AFF^machine.genDecl(AFF^hinfo, A^code, A^type);
 }
 
 AFF -> #gen ;
@@ -781,9 +780,8 @@ F -> mult F #gen ;
 
 F -> ident osbra A csbra #gen ;
 #gen {
+    -- search for ident in the symbols table
     INFO i = F^st.globalSearch(ident^txt);
-    TTYPE varType;
-    Code varCode;
 
     if (i == null) {
         error(VAR_undefined, ident^txt);
@@ -792,22 +790,28 @@ F -> ident osbra A csbra #gen ;
         match (i) {
             case INFOVAR {
                 INFOVAR info = i;
-                varType = info.getType();
-                varCode = F^machine.genVariable(info);
-                match (varType) {
-                    case TPOINTER {
-                        match (A^type) {
-                            case TINTEGER {
-                                F^type = varType.getType();
-                                F^code = F^machine.genArrayAcces(varCode, varType, A^code, A^type);
+                TTYPE varType = info.getType();
+
+                match (A^type) {
+                    case TINTEGER {
+                        match (varType) {
+                            case TARRAY {
+                                TARRAY type = varType;
+                                F^type = type.getElementsType();
+                                F^code = F^machine.genStackArrayAcces(info, A^code);
+                            }
+                            case TPOINTER {
+                                TPOINTER type = varType;
+                                F^type = type.getType();
+                                F^code = F^machine.genPointerArrayAcces(info, A^code);
                             }
                             default {
-                                error(TYPE_not_integer, A^type);
+                                error(TYPE_not_array, varType);
                             }
                         }
                     }
                     default {
-                        error(TYPE_not_pointer, varType);
+                        error(TYPE_not_integer, A^type);
                     }
                 }
             }

@@ -393,9 +393,9 @@ public class Mx86 extends AbstractMachine {
     }
 
     // declare a variable with an initial value
-    public Code genDecl(INFOVAR info, Code value) {
+    public Code genDecl(INFOVAR info, Code value, TTYPE type) {
         Location l = allocator.pop();
-        value = genVal(value, l, info.getType());
+        value = genVal(value, l, type);
         value.appendAsm(genPush(l, info.getType().getSize()));
         return value;
     }
@@ -434,7 +434,11 @@ public class Mx86 extends AbstractMachine {
         return pointerCode;
     }
 
-    public Code genArrayAcces(Code pointerCode, TTYPE pointerType, Code posCode, TTYPE posType) {
+    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
         throw new UnsupportedOperationException();
     }
 

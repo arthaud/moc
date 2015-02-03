@@ -141,4 +141,16 @@ public abstract class AbstractMachine implements IMachine {
         else if(c.equals("'\\t'")) return 9;
         else return (int) c.charAt(1);
     }
+
+    /**
+     * Parse a string and returns an integer
+     */
+    public int getIntFromString(String c) {
+        if(c.startsWith("0x"))
+            return Integer.parseInt(c.substring(2), 16);
+        else if(c.startsWith("0b"))
+            return Integer.parseInt(c.substring(2), 2);
+        else
+            return Integer.parseInt(c);
+    }
 }

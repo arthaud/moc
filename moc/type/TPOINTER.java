@@ -18,7 +18,10 @@ public class TPOINTER implements TTYPE {
     }
 
     public boolean constructFrom(TTYPE other) {
-        return equals(other) || other instanceof TNULL;
+        return equals(other)
+            || other instanceof TNULL
+            || (other instanceof TARRAY
+                    && ((TARRAY) other).getElementsType().equals(type));
     }
 
     public boolean comparableWith(TTYPE other, String op) {
