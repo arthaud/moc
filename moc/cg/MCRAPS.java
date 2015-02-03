@@ -211,12 +211,12 @@ public class MCRAPS extends AbstractMachine {
         affectedVal.prependAsm(genComment("affected value :"));
 
         if (address.getLocation() != null) {
-            affectedVal.appendAsm(genMovRegToMem(genLocation(address.getLocation()), v, type.getSize()));
+            affectedVal.appendAsm(genMovRegToMem(v, genLocation(address.getLocation())));
             return affectedVal;
         } else {
             address.prependAsm(genComment("affected address :"));
             address.appendAsm(affectedVal.getAsm());
-            address.appendAsm(genMovRegToMem("[" + genLocation(a) + "]", v, type.getSize()));
+            address.appendAsm(genMovRegToMem(v, "[" + genLocation(a) + "]"));
             return address;
         }
     }
@@ -413,7 +413,7 @@ public class MCRAPS extends AbstractMachine {
         Location d = allocator.get();
 
         if(pointerCode.getIsAddress()) {
-            pointerCode.appendAsm(genMovMemToReg(genLocation(d), "[" + genLocation(l) + "]", pointedType.getSize()));
+            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(l) + "]", genLocation(d)));
         }
 
         pointerCode.setIsAddress(true);
@@ -447,7 +447,7 @@ public class MCRAPS extends AbstractMachine {
         posCode.appendAsm(genComment("pointer array access :"));
         if(type.getType().getSize() != 1)
             posCode.appendAsm("umulcc " + genLocation(pos) + ", " + type.getType().getSize() + ", " + genLocation(pos));
-        posCode.appendAsm(genMovMemToReg(genLocation(array), genLocation(info.getLocation()), getPointerSize()));
+        posCode.appendAsm(genMovMemToReg(genLocation(info.getLocation()), genLocation(array)));
         posCode.appendAsm("add " + genLocation(array) + ", " + genLocation(pos) + ", " + genLocation(pos));
         posCode.setIsAddress(true);
         posCode.setLocation(null);
@@ -478,7 +478,7 @@ public class MCRAPS extends AbstractMachine {
             return c;
         }
 
-        Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
+        Code c = new Code(genMovMemToReg(genLocation(i.getLocation()), genLocation(l)));
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
 
@@ -525,10 +525,10 @@ public class MCRAPS extends AbstractMachine {
             return operand;
 
         if(operand.getLocation() != null) {
-            return new Code(genMovMemToReg(genLocation(l), genLocation(operand.getLocation()), type.getSize()));
+            return new Code(genMovMemToReg(genLocation(operand.getLocation()), genLocation(l)));
         }
         else if(operand.getIsAddress()) {
-            operand.appendAsm(genMovMemToReg(genLocation(l), "[" + genLocation(l) + "]", type.getSize()));
+            operand.appendAsm(genMovMemToReg("[" + genLocation(l) + "]", genLocation(l)));
             operand.setIsAddress(false);
         }
 
@@ -545,17 +545,16 @@ public class MCRAPS extends AbstractMachine {
     /**
      * Generate a mov from registers to memory
      */
-    private String genMovRegToMem(String left, Location right, int size) {
-        assert(right.getType() == Location.LocationType.REGISTER);
-
-        return "st " + genLocation(right) + ", " + left;
+    private String genMovRegToMem(Location reg, String mem) {
+        assert(reg.getType() == Location.LocationType.REGISTER);
+        return "st " + genLocation(reg) + ", " + mem;
     }
 
     /**
      * Generate a mov from memory to a register
      */
-    private String genMovMemToReg(String left, String right, int size) {
-        return "ld " + right + ", " + left;
+    private String genMovMemToReg(String mem, String reg) {
+        return "ld " + mem + ", " + reg;
     }
 
     /**
