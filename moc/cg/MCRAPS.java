@@ -17,30 +17,30 @@ import moc.type.TPOINTER;
  */
 public class MCRAPS extends AbstractMachine {
 
-    private int stringOffset = 0;
-
     public static final String[] registerNames = {
         "%r1", "%r2", "%r3", "%r4", "%r5", "%r6", "%r7", "%r8", "%r9"
     };
 
     private Allocator allocator = new Allocator();
 
+    /**
+     * An allocator is a stack of used registers
+     */
     private class Allocator extends ArrayDeque<Location> {
         private static final long serialVersionUID = 1L;
 
-        /* returns a new unused location */
-        public Location get() {
+        /**
+         * Returns a new unused register
+         */
+        public Location getFreeReg() {
             for(int i = 0; i < registerNames.length; i++) {
                 Location l = new Location(Location.LocationType.REGISTER, i);
-                if(! this.contains(l))
+
+                if(!this.contains(l))
                     return l;
             }
 
             throw new RuntimeException("No more unused registers !");
-        }
-
-        public boolean containsRegister(int i) {
-            return contains(new Location(Location.LocationType.REGISTER, i));
         }
 
         public String toString() {
@@ -59,6 +59,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public MCRAPS() {
+        // We will put static data at the end of the code
         endCode = "\n" + genComment("### static section #############") + "\n";
     }
 
@@ -71,33 +72,31 @@ public class MCRAPS extends AbstractMachine {
     }
 
     @Override
-    public String asmVariablePattern() {
+    protected String asmVariablePattern() {
         return "\\$([a-z][_0-9A-Za-z]*)";
     }
 
     /* warning: the memory is word addressed! */
-    public int getIntSize() {
-        return 1;
-    }
+    public int getIntSize() { return 1; }
 
-    public int getCharSize() {
-        return 1;
-    }
+    public int getCharSize() { return 1; }
 
-    public int getBoolSize() {
-        return 1;
-    }
+    public int getBoolSize() { return 1; }
 
-    public int getPointerSize() {
-        return 1;
-    }
+    public int getPointerSize() { return 1; }
 
     @Override
     public String genComment(String comm) {
         return "// " + comm;
     }
 
+    /**
+     * Returns a ParametersLocator, responsible for managing the location of
+     * parameters
+     */
     public ParametersLocator getParametersLocator() {
+        /* it will generate [%fp + 2, %fp + 2 + size of first parameter,
+         *                   %fp + 2 + size of the first two parameters, …] */
         return new DefaultParametersLocator(2);
     }
 
@@ -118,10 +117,19 @@ public class MCRAPS extends AbstractMachine {
         }
     }
 
+    /**
+     * Returns a VariableLocator, responsible for managing the location of
+     * local variables
+     */
     public VariableLocator getVariableLocator() {
+        /* it will generate [%fp - size of first parameter,
+         *                   %fp - size of the first two parameters, …] */
         return new SPARCVariableLocator(0);
     }
 
+    /**
+     * Converts a location to its representation in assembler
+     */
     public String genLocation(Location l) {
         if(l.getType() == Location.LocationType.REGISTER) {
             return registerNames[l.getOffset()];
@@ -137,48 +145,47 @@ public class MCRAPS extends AbstractMachine {
         }
     }
 
-    private Code genFunction(String label, String comment, Code code) {
+    public Code genFunction(TFUNCTION function, Code code) {
         Code c = new Code(code.getAsm());
+
+        // preambule to manage %fp (in reverse order because of the prepend!)
         c.prependAsm("mov %sp, %fp");
         c.prependAsm("push %fp");
-        c.prependAsm(label + ":");
-        c.prependAsm("\n" + genComment("### " + comment + " #############"));
+        c.prependAsm("f_" + function.getName() + ":");
+        c.prependAsm("\n" + genComment("### " + function + " #############"));
 
-        c.appendAsm(label + "_end:");
+        c.appendAsm("f_" + function.getName() + "_end:");
         c.appendAsm("mov %fp, %sp");
         c.appendAsm("pop %fp");
         c.appendAsm("ret");
         return c;
     }
 
-    public Code genFunction(TFUNCTION function, Code code) {
-        return genFunction("f_" + function.getName(), function.toString(), code);
-    }
+    public Code genConditional(Code codeCond, Code trueBloc, Code falseBloc) {
+        Location regCond = allocator.pop();
+        Code c = forceValue(codeCond, regCond, new TBOOL(getBoolSize()));
 
-    public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
-        Location l = allocator.pop();
-        c = genVal(c, l, new TBOOL(getBoolSize()));
-
-        int num_cond = getLabelNum();
-        falseBloc.appendAsm("ba cond_end_" + num_cond);
-        trueBloc.prependAsm("cond_then_" + num_cond + ":");
-        trueBloc.appendAsm("cond_end_" + num_cond + ":");
+        int num = getLabelNum();
+        falseBloc.appendAsm("ba cond_end_" + num);
+        trueBloc.prependAsm("cond_then_" + num + ":");
+        trueBloc.appendAsm("cond_end_" + num + ":");
 
         c.prependAsm(genComment("if condition :"));
-        c.appendAsm("cmp " + genLocation(l) + ", %r0");
-        c.appendAsm("bne cond_then_" + num_cond);
+        c.appendAsm("cmp " + genLocation(regCond) + ", %r0");
+        c.appendAsm("bne cond_then_" + num);
         c.appendAsm(falseBloc.getAsm());
         c.appendAsm(trueBloc.getAsm());
         return c;
     }
 
     public Code genLoop(Code condition, Code c) {
-        Location l = allocator.pop();
-        condition = genVal(condition, l, new TBOOL(1));
+        Location regCond = allocator.pop();
+        condition = forceValue(condition, regCond, new TBOOL(1));
 
         int num = getLabelNum();
-        condition.appendAsm("cmp " + genLocation(l) + ", %r0");
+        condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
         condition.appendAsm("be end_loop_" + num);
+
         c.prependAsm(condition.getAsm());
         c.prependAsm(genComment("loop condition :"));
         c.prependAsm("loop_" + num + ":");
@@ -187,214 +194,226 @@ public class MCRAPS extends AbstractMachine {
         return c;
     }
 
-    private Code genReturn(String label, TTYPE returnType, Code returnVal) {
-        Location l = allocator.pop();
-        returnVal = genVal(returnVal, l, returnType);
+    public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
+        Location valueReg = allocator.pop();
+        returnVal = forceValue(returnVal, valueReg, function.getReturnType());
 
-        if(! genLocation(l).equals("%r1")) {
-            returnVal.appendAsm("mov " + genLocation(l) + ", %r1");
+        if(!genLocation(valueReg).equals("%r1")) {
+            returnVal.appendAsm("mov " + genLocation(valueReg) + ", %r1");
         }
 
-        returnVal.appendAsm("ba " + label + "_end");
+        returnVal.appendAsm("ba f_" + function.getName() + "_end");
         return returnVal;
     }
 
-    public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
-        return genReturn("f_" + function.getName(), function.getReturnType(), returnVal);
-    }
-
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        Location v = allocator.pop();
-        Location a = allocator.pop();
+        Location valueReg = allocator.pop();
+        Location addrReg = allocator.pop();
 
-        affectedVal = genVal(affectedVal, v, type);
+        affectedVal = forceValue(affectedVal, valueReg, type);
         affectedVal.prependAsm(genComment("affected value :"));
 
         if (address.getLocation() != null) {
-            affectedVal.appendAsm(genMovRegToMem(v, genLocation(address.getLocation())));
+            affectedVal.appendAsm(genMovRegToMem(valueReg, genLocation(address.getLocation())));
             return affectedVal;
         } else {
             address.prependAsm(genComment("affected address :"));
             address.appendAsm(affectedVal.getAsm());
-            address.appendAsm(genMovRegToMem(v, "[" + genLocation(a) + "]"));
+            address.appendAsm(genMovRegToMem(valueReg, "[" + genLocation(addrReg) + "]"));
             return address;
         }
     }
 
     public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
         // Warning : Don't forget the order is important here...
-        Location rightLocation = allocator.pop();
-        Location leftLocation = allocator.pop();
+        Location rightReg = allocator.pop();
+        Location leftReg = allocator.pop();
 
-        leftOperand = genVal(leftOperand, leftLocation, leftType);
-        rightOperand = genVal(rightOperand, rightLocation, rightType);
+        leftOperand = forceValue(leftOperand, leftReg, leftType);
+        rightOperand = forceValue(rightOperand, rightReg, rightType);
 
         leftOperand.prependAsm(genComment("left operand :"));
         rightOperand.prependAsm(genComment("right operand :"));
 
+        // the result will be in leftReg
         leftOperand.appendAsm(rightOperand.getAsm());
 
         switch(operator) {
             case "+":
-                leftOperand.appendAsm("add " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("add " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "-":
-                leftOperand.appendAsm("sub " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("sub " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "*":
-                leftOperand.appendAsm("umulcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("umulcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "/":
             case "%":
                 throw new UnsupportedOperationException("CRAPS");
             case "&":
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "|":
-                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
+            case "<<":
+                leftOperand.appendAsm("sll " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
+            case ">>":
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "&&":
                 // "and" in craps is a bitwise operator.
                 // 0b10 and 0b100 = 0, too bad..
                 leftOperand.appendAsm(genComment("operator " + operator));
 
-                // leftLocation > 0
-                leftOperand.appendAsm("subcc %r0, " + genLocation(leftLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                // leftReg > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(leftReg) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
 
-                // rightLocation > 0
-                leftOperand.appendAsm("subcc %r0, " + genLocation(rightLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(rightLocation)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(rightLocation) + ", 7, " + genLocation(rightLocation)); // normalization
+                // rightReg > 0
+                leftOperand.appendAsm("subcc %r0, " + genLocation(rightReg) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(rightReg)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(rightReg) + ", 7, " + genLocation(rightReg)); // normalization
 
-                leftOperand.appendAsm("and " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("and " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "||":
-                leftOperand.appendAsm("or " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", " + genLocation(leftLocation));
+                leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
             case "==":
             case "!=":
                 leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 64, " + genLocation(leftLocation)); // 64 -> mask for Z
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 6, " + genLocation(leftLocation)); // normalization
+                leftOperand.appendAsm("subcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", %r0");
+                leftOperand.appendAsm("and %r25, 64, " + genLocation(leftReg)); // 64 -> mask for Z
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 6, " + genLocation(leftReg)); // normalization
                 if (operator.equals("!="))
-                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
                 break;
             case "<":
             case ">=":
                 leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(leftLocation) + ", " + genLocation(rightLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                leftOperand.appendAsm("subcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
                 if(operator.equals(">="))
-                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
                 break;
             case ">":
             case "<=":
                 leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(rightLocation) + ", " + genLocation(leftLocation) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftLocation)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftLocation) + ", 7, " + genLocation(leftLocation)); // normalization
+                leftOperand.appendAsm("subcc " + genLocation(rightReg) + ", " + genLocation(leftReg) + ", %r0");
+                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
                 if(operator.equals("<="))
-                    leftOperand.appendAsm("xor " + genLocation(leftLocation) + ", 1, " + genLocation(leftLocation));
+                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
         }
 
-        allocator.push(leftLocation);
+        allocator.push(leftReg);
         return leftOperand;
     }
 
     public Code genUnary(Code operand, TTYPE type, String operator) {
-        Location l = allocator.pop();
-        operand = genVal(operand, l, type);
+        Location reg = allocator.pop();
+        operand = forceValue(operand, reg, type);
 
         switch(operator) {
             case "-":
-                operand.appendAsm("negcc " + genLocation(l));
+                operand.appendAsm("negcc " + genLocation(reg));
                 break;
             case "!":
                 operand.appendAsm(genComment("operator " + operator));
-                operand.appendAsm("subcc " + genLocation(l) + ", %r0, %r0");
-                operand.appendAsm("and %r25, 64, " + genLocation(l)); // 64 -> mask for Z
-                operand.appendAsm("srl " + genLocation(l) + ", 6, " + genLocation(l)); // normalization
+                operand.appendAsm("subcc " + genLocation(reg) + ", %r0, %r0");
+                operand.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
+                operand.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
         }
 
-        allocator.push(l);
+        allocator.push(reg);
         return operand;
     }
 
     public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
-        Location l = allocator.pop();
-        castedCode = genVal(castedCode, l, oldType);
-        allocator.push(l);
+        Location reg = allocator.pop();
+        castedCode = forceValue(castedCode, reg, oldType);
+        allocator.push(reg);
         return castedCode;
     }
 
-    private Code genCall(String label, TTYPE returnType, int parametersSize, Code arguments) {
-        Location l = allocator.get();
+    public Code genFunctionCall(TFUNCTION fun, Code arguments) {
+        Location resultReg = allocator.getFreeReg();
 
         arguments.prependAsm(genComment("push parameters :"));
+
         arguments.appendAsm("push %r28");
-        arguments.appendAsm("call " + label);
+        arguments.appendAsm("call f_" + fun.getName());
         arguments.appendAsm("pop %r28");
 
-        if (!(returnType instanceof TVOID) && l.getOffset() != 0) {
-            arguments.appendAsm("mov %r1, " + genLocation(l));
+        // put the result in resultReg (if it's not a void)
+        if (!(fun.getReturnType() instanceof TVOID) && resultReg.getOffset() != 0) {
+            arguments.appendAsm("mov %r1, " + genLocation(resultReg));
         }
 
-        if (parametersSize > 0) {
-            arguments.appendAsm("add %sp, " + parametersSize + ", %sp " + genComment("removing parameters"));
+        // remove parameters from the stack
+        if (fun.getParameterTypes().getSize() > 0) {
+            arguments.appendAsm("add %sp, " + fun.getParameterTypes().getSize() + ", %sp " + genComment("removing parameters"));
         }
 
-        // push registers
-        for (Location loc : allocator) {
-            arguments.prependAsm("push " + genLocation(loc));
-            arguments.appendAsm("pop " + genLocation(loc));
+        // calling convention : the caller saves all registers
+        for (Location reg : allocator) {
+            arguments.prependAsm("push " + genLocation(reg));
+            arguments.appendAsm("pop " + genLocation(reg));
         }
 
         // need to be done here and not before (not to disturb the backup registers)
-        if(!(returnType instanceof TVOID))
-            allocator.push(l);
+        if(!(fun.getReturnType() instanceof TVOID))
+            allocator.push(resultReg);
 
         return arguments;
     }
 
-    public Code genFunctionCall(TFUNCTION f, Code arguments) {
-        return genCall("f_" + f.getName(),
-                        f.getReturnType(),
-                        f.getParameterTypes().getSize(),
-                        arguments);
-    }
-
-    // declare a variable
+    /**
+     * Declare a variable
+     */
     public Code genDecl(INFOVAR info) {
         return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
     }
 
-    // declare a variable with an initial value
+    /**
+     * Declare a variable with an initial value
+     *
+     * @param value The code for the initial value
+     */
     public Code genDecl(INFOVAR info, Code value, TTYPE type) {
-        Location l = allocator.pop();
-        value = genVal(value, l, type);
-        value.appendAsm(genPush(l, info.getType().getSize()));
+        Location valueReg = allocator.pop();
+        value = forceValue(value, valueReg, type);
+        value.appendAsm(genPush(valueReg));
         return value;
     }
 
-    // declare a global variable
+    /**
+     * Declare a global variable
+     */
     public Code genDeclGlobal(INFOVAR info) {
         endCode += "glob_" + info.getLocation().getOffset() + ": "
                 + genBytes(Collections.nCopies(info.getSize(), 0)) + "\n";
         return new Code("");
     }
 
-    // expression instruction
+    /**
+     * Expression instruction
+     *
+     * @param value The code for the expression
+     */
     public Code genInst(TTYPE type, Code value) {
+        // if it's an expression of type void, no register are used
         if(!(type instanceof TVOID))
             allocator.pop();
 
@@ -402,60 +421,66 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genArg(Code e, TTYPE type) {
-        Location l = allocator.pop();
-        e = genVal(e, l, type);
-        e.appendAsm(genPush(l, type.getSize()));
+        Location argReg = allocator.pop();
+        e = forceValue(e, argReg, type);
+        e.appendAsm(genPush(argReg));
         return e;
     }
 
-    public Code genAcces(Code pointerCode, TTYPE pointedType) {
-        Location l = allocator.pop();
-        Location d = allocator.get();
+    public Code genAccess(Code pointerCode, TTYPE pointedType) {
+        Location pointerReg = allocator.pop();
+        Location valueReg = allocator.getFreeReg();
 
         if(pointerCode.getIsAddress()) {
-            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(l) + "]", genLocation(d)));
+            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(pointerReg) + "]", genLocation(valueReg)));
         }
 
         pointerCode.setIsAddress(true);
         pointerCode.setLocation(null);
-        allocator.push(d);
+        allocator.push(valueReg);
         return pointerCode;
     }
 
-    public Code genStackArrayAcces(INFOVAR info, Code posCode) {
+    public Code genStackArrayAccess(INFOVAR info, Code posCode) {
         TARRAY type = (TARRAY) info.getType();
-        Location pos = allocator.pop();
+        Location posReg = allocator.pop();
 
         posCode.appendAsm(genComment("stack array access :"));
+        // compute %fp - tab.offset + index * elementsType.size in posReg
+
         if(type.getElementsType().getSize() != 1)
-            posCode.appendAsm("umulcc " + genLocation(pos) + ", " + type.getElementsType().getSize() + ", " + genLocation(pos));
-        posCode.appendAsm("add " + genLocation(pos) + ", %fp, " + genLocation(pos));
-        posCode.appendAsm("sub " + genLocation(pos) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(pos));
+            posCode.appendAsm("umulcc " + genLocation(posReg) + ", " + type.getElementsType().getSize() + ", " + genLocation(posReg));
+
+        posCode.appendAsm("add " + genLocation(posReg) + ", %fp, " + genLocation(posReg));
+        posCode.appendAsm("sub " + genLocation(posReg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(posReg));
         posCode.setIsAddress(true);
         posCode.setLocation(null);
 
-        allocator.push(pos);
+        allocator.push(posReg);
         return posCode;
     }
 
-    public Code genPointerArrayAcces(INFOVAR info, Code posCode) {
+    public Code genPointerArrayAccess(INFOVAR info, Code posCode) {
         TPOINTER type = (TPOINTER) info.getType();
-        Location pos = allocator.pop();
-        allocator.push(pos);
-        Location array = allocator.get();
+        Location posReg = allocator.pop();
+        allocator.push(posReg);
+        Location arrayReg = allocator.getFreeReg();
 
         posCode.appendAsm(genComment("pointer array access :"));
+        // compute %fp - tab.offset + index * elementsType.size in posReg
+
         if(type.getType().getSize() != 1)
-            posCode.appendAsm("umulcc " + genLocation(pos) + ", " + type.getType().getSize() + ", " + genLocation(pos));
-        posCode.appendAsm(genMovMemToReg(genLocation(info.getLocation()), genLocation(array)));
-        posCode.appendAsm("add " + genLocation(array) + ", " + genLocation(pos) + ", " + genLocation(pos));
+            posCode.appendAsm("umulcc " + genLocation(posReg) + ", " + type.getType().getSize() + ", " + genLocation(posReg));
+
+        posCode.appendAsm(genMovMemToReg(genLocation(info.getLocation()), genLocation(arrayReg)));
+        posCode.appendAsm("add " + genLocation(arrayReg) + ", " + genLocation(posReg) + ", " + genLocation(posReg));
         posCode.setIsAddress(true);
         posCode.setLocation(null);
 
         return posCode;
     }
 
-    public Code genBloc(Code instsCode, VariableLocator vloc) {
+    public Code genBlock(Code instsCode, VariableLocator vloc) {
         SPARCVariableLocator vl = (SPARCVariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
@@ -466,19 +491,20 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genVariable(INFOVAR i) {
-        Location.LocationType loc_type = i.getLocation().getType();
-        assert(loc_type == Location.LocationType.STACKFRAME ||
-               loc_type == Location.LocationType.ABSOLUTE);
-        Location l = allocator.get();
-        allocator.push(l);
+        Location.LocationType locType = i.getLocation().getType();
+        assert(locType == Location.LocationType.STACKFRAME ||
+               locType == Location.LocationType.ABSOLUTE);
+
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
 
         if(i.getType() instanceof TARRAY) { // special case for arrays : generate the address
-            Code c = new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(l));
+            Code c = new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
             c.setIsAddress(false);
             return c;
         }
 
-        Code c = new Code(genMovMemToReg(genLocation(i.getLocation()), genLocation(l)));
+        Code c = new Code(genMovMemToReg(genLocation(i.getLocation()), genLocation(reg)));
         c.setIsAddress(false);
         c.setLocation(i.getLocation());
 
@@ -486,19 +512,21 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genInt(String cst) {
-        Location l = allocator.get();
-        allocator.push(l);
-        return new Code("set " + cst + ", " + genLocation(l));
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set " + cst + ", " + genLocation(reg));
     }
+
+    private int stringOffset = 0;
 
     public Code genString(String txt) {
         int offset = stringOffset;
         stringOffset++;
 
         endCode += "str_" + offset + ": " + genBytes(getArrayFromString(txt)) + "\n";
-        Location l = allocator.get();
-        allocator.push(l);
-        return new Code("set str_" + offset + ", " + genLocation(l));
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set str_" + offset + ", " + genLocation(reg));
     }
 
     public Code genNull() {
@@ -506,29 +534,33 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genBool(int b) {
-        Location l = allocator.get();
-        allocator.push(l);
-        return new Code("set " + b + ", " + genLocation(l));
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set " + b + ", " + genLocation(reg));
     }
 
     public Code genChar(String c) {
-        Location l = allocator.get();
-        allocator.push(l);
-        return new Code("set " + getCharFromString(c) + ", " + genLocation(l));
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set " + getCharFromString(c) + ", " + genLocation(reg));
     }
 
     /**
      * Ensures the Code gives a value
+     *
+     * @param operand The code
+     * @param valueReg Where to store the value
+     * @param type The type of the value
      */
-    private Code genVal(Code operand, Location l, TTYPE type) {
+    private Code forceValue(Code operand, Location valueReg, TTYPE type) {
         if(type instanceof TARRAY) // special case for arrays : no dereferencing
             return operand;
 
         if(operand.getLocation() != null) {
-            return new Code(genMovMemToReg(genLocation(operand.getLocation()), genLocation(l)));
+            return new Code(genMovMemToReg(genLocation(operand.getLocation()), genLocation(valueReg)));
         }
         else if(operand.getIsAddress()) {
-            operand.appendAsm(genMovMemToReg("[" + genLocation(l) + "]", genLocation(l)));
+            operand.appendAsm(genMovMemToReg("[" + genLocation(valueReg) + "]", genLocation(valueReg)));
             operand.setIsAddress(false);
         }
 
@@ -538,7 +570,7 @@ public class MCRAPS extends AbstractMachine {
     /**
      * Generate a push
      */
-    private String genPush(Location operand, int size) {
+    private String genPush(Location operand) {
         return "push " + genLocation(operand);
     }
 
