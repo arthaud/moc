@@ -46,8 +46,6 @@ public abstract class AbstractMachine implements IMachine {
      */
     @Override
     public void writeCode(String fname, EntityList entities) throws MOCException {
-        usedFunctions();
-
         try {
             // pre-checked at startup
             int pt = fname.lastIndexOf('.');
