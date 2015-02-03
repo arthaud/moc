@@ -257,6 +257,12 @@ public class MCRAPS extends AbstractMachine {
             case "|":
                 leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
+            case "<<":
+                leftOperand.appendAsm("sll " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
+            case ">>":
+                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
             case "&&":
                 // "and" in craps is a bitwise operator.
                 // 0b10 and 0b100 = 0, too bad..

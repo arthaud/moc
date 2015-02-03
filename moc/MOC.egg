@@ -76,6 +76,8 @@ sugar or         is  "\|\|" ;
 sugar and        is  "\&\&" ;
 sugar bit_or     is  "\|" ;
 sugar bit_and    is  "\&" ;
+sugar lshift     is  "\<\<" ;
+sugar rshift     is  "\>\>" ;
 sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
@@ -630,6 +632,12 @@ OPMUL -> bit_and #name ;
 
 OPMUL -> bit_or #name ;
 #name { OPMUL^name = "|"; }
+
+OPMUL -> lshift #name ;
+#name { OPMUL^name = "<<"; }
+
+OPMUL -> rshift #name ;
+#name { OPMUL^name = ">>"; }
 
 -- base expressions
 F -> integer #gen ;
