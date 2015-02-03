@@ -196,13 +196,37 @@ int init() {
     *((int*)0xC0000000) = 195; // P
     *((int*)0xC0000001) = 98; // N
 
-    asm("ba task1")
+    asm("
+    // load %sp
+    ld $process_table, %r2
+    ld [%r2], %r3 // %r3: nb_tasks
+    ld [%r2+1], %r4 // %r4: current_task
+    mul %r4, 14, %r5
+    ld [%r5+12], %sp
+    add %r5, %r2, %r5 // %r5: current task entry
+
+    // jump to the task
+    ld [%r5+13], %r6
+    ba %r6
+    ")
 }
 
 int task1()
 {
+    int* ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b1111;
+        *ssegs = 0x0000;
+    }
 }
 
 int task2()
 {
+    int* ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b1111;
+        *ssegs = 0x1234;
+    }
 }
