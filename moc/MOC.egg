@@ -4,27 +4,27 @@
 
 option auto = true;
 option version = 0.0.1;
-option k = 2;
+option k = 3;
 
 inh source : MOCSourceFile for
-         PROGRAM, ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         PROGRAM, ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F;
+         E, EX, A, AX, R, RX, T, TX, D, DX, F;
 inh machine : IMachine for
-         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE, REFS,
-         E, EX, A, AX, R, RX, T, TX, F;
+         E, EX, A, AX, R, RX, T, TX, D, DX, F;
 inh st : ST for
-         ENTITIES, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE,
-         E, EX, A, AX, R, RX, T, TX, F;
+         E, EX, A, AX, R, RX, T, TX, D, DX, F;
 inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
          TYPE, STYPE, REFS, FUNC_PARAMETER,
-         E, EX, A, AX, R, RX, T, TX, F;
-inh htype : TTYPE for GLOBAL_DECL, REFS, EX, AX, RX, TX, AFF;
+         E, EX, A, AX, R, RX, T, TX, D, DX, F;
+inh htype : TTYPE for GLOBAL_DECL, REFS, EX, AX, RX, TX, DX, AFF;
 inh hident : STRING for GLOBAL_DECL;
 inh hinfo : INFOVAR for AFF;
 syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
@@ -34,14 +34,15 @@ inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 syn code : Code for
          INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, F;
+         E, EX, A, AX, R, RX, T, TX, D, DX, F;
 syn globalCode : EntityCode for GLOBAL_DECL;
 syn eCodes : EntityList for ENTITIES;
 inh hcode : Code for
-         EX, AX, RX, TX , ARGSX;
+         EX, AX, RX, TX, DX, ARGSX;
 
 syn exported : boolean for EXPORT;
 inh hExported : boolean for GLOBAL_DECL;
+inh hstruct : TSTRUCT for STRUCT_FIELDS;
 
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
@@ -61,6 +62,7 @@ sugar if         is  "if" ;
 sugar else       is  "else" ;
 sugar while      is  "while" ;
 sugar t_for      is  "for" ;
+sugar struct     is  "struct" ;
 sugar void       is  "void" ;
 sugar asm        is  "asm" ;
 sugar int        is  "int" ;
@@ -70,6 +72,8 @@ sugar true       is  "true" ;
 sugar false      is  "false" ;
 sugar return     is  "return" ;
 sugar null       is  "NULL" ;
+sugar dot        is  "\." ;
+sugar arrow      is  "\-\>" ;
 sugar inf        is  "\<" ;
 sugar infeq      is  "\<=" ;
 sugar sup        is  "\>" ;
@@ -134,6 +138,42 @@ ENTITIES -> asm opar string cpar ENTITIES #gen ;
         ENTITIES^machine.genGlobalAsm(string^txt, ENTITIES^st)
     );
     ENTITIES^eCodes = ENTITIES1^eCodes;
+}
+
+-- structure declaration
+ENTITIES -> struct ident ocbra #trans STRUCT_FIELDS ccbra semicolon #st ENTITIES #gen ;
+global TSTRUCT struct;
+
+#trans {
+    -- check if the variable already exists
+    INFO i = ENTITIES^st.localSearch(ident^txt);
+
+    if (i != null) {
+        error(VAR_exists, ident^txt);
+    }
+    else {
+        struct = new TSTRUCT();
+        STRUCT_FIELDS^hstruct = struct;
+    }
+}
+
+#st {
+    ENTITIES^st.insert(ident^txt, new INFOSTRUCT(struct));
+}
+
+#gen {
+    ENTITIES^eCodes = ENTITIES1^eCodes;
+}
+
+STRUCT_FIELDS -> ;
+
+STRUCT_FIELDS -> TYPE ident semicolon #st STRUCT_FIELDS ;
+#st {
+    if(STRUCT_FIELDS^hstruct.hasField(ident^txt)) {
+        error(FIELD_exists, ident^txt);
+    }
+
+    STRUCT_FIELDS^hstruct.addField(ident^txt, TYPE^type);
 }
 
 -- global declaration (variable, function)
@@ -325,6 +365,26 @@ STYPE -> bool #type ;
     STYPE^type = new TBOOL(STYPE^machine.getBoolSize());
 }
 
+STYPE -> struct ident #type ;
+#type {
+    INFO i = STYPE^st.globalSearch(ident^txt);
+
+    if (i == null) {
+        error(STRUCT_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOSTRUCT {
+                INFOSTRUCT info = i;
+                STYPE^type = info.getType();
+            }
+            default {
+                error(STRUCT_undefined, ident^txt);
+            }
+        }
+    }
+}
+
 -- instructions blocks
 BLOC -> ocbra #trans INSTS ccbra #gen ;
 global ST st;
@@ -495,6 +555,7 @@ INST -> asm opar string cpar semicolon #gen ;
 -- A = expression figuring in an affectation
 -- R = expression figuring in a relational expression
 -- T = expression figuring in an additive expression (TERME)
+-- D = dotted expression
 -- F = expression figuring in a multiplicative expression (FACTOR)
 -----------------------------------------------------------------------
 
@@ -621,10 +682,10 @@ OPADD -> or #name ;
 #name { OPADD^name = "||"; }
 
 -- multiplications
-T -> F #trans TX #gen ;
+T -> D #trans TX #gen ;
 #trans {
-    TX^htype = F^type;
-    TX^hcode = F^code;
+    TX^htype = D^type;
+    TX^hcode = D^code;
 }
 
 #gen {
@@ -632,14 +693,14 @@ T -> F #trans TX #gen ;
     T^code = TX^code;
 }
 
-TX -> OPMUL F #trans TX #gen ;
+TX -> OPMUL D #trans TX #gen ;
 #trans {
-    if (!TX^htype.binaryUsable(F^type, OPMUL^name)) {
-        error(TYPES_binary_unusable, TX^htype, F^type, OPMUL^name);
+    if (!TX^htype.binaryUsable(D^type, OPMUL^name)) {
+        error(TYPES_binary_unusable, TX^htype, D^type, OPMUL^name);
     }
 
     TX1^htype = TX^htype;
-    TX1^hcode = TX^machine.genBinary(TX^hcode, TX^htype, F^code, F^type, OPMUL^name);
+    TX1^hcode = TX^machine.genBinary(TX^hcode, TX^htype, D^code, D^type, OPMUL^name);
 }
 
 #gen {
@@ -677,6 +738,86 @@ OPMUL -> lshift #name ;
 
 OPMUL -> rshift #name ;
 #name { OPMUL^name = ">>"; }
+
+-- dotted expression
+D -> F #trans DX #gen ;
+#trans {
+    DX^htype = F^type;
+    DX^hcode = F^code;
+}
+
+#gen {
+    D^type = DX^type;
+    D^code = DX^code;
+}
+
+DX -> dot ident #trans DX #gen ;
+#trans {
+    match (DX^htype) {
+        case TSTRUCT {
+            TSTRUCT type = DX^htype;
+
+            if(!type.hasField(ident^txt)) {
+                error(STRUCT_no_field, type, ident^txt);
+            }
+            else {
+                FIELD field = type.getField(ident^txt);
+                DX1^htype = field.getType();
+                DX1^hcode = DX^machine.genFieldAccess(type, field, DX^hcode);
+            }
+        }
+        default {
+            error(TYPE_not_struct, DX^htype);
+        }
+    }
+}
+
+#gen {
+    DX^type = DX1^type;
+    DX^code = DX1^code;
+}
+
+DX -> arrow ident #trans DX #gen ;
+#trans {
+    match (DX^htype) {
+        case TPOINTER {
+            TPOINTER pointerType = DX^htype;
+            TTYPE pointedType = pointerType.getType();
+
+            match (pointedType) {
+                case TSTRUCT {
+                        TSTRUCT type = pointedType;
+
+                        if(!type.hasField(ident^txt)) {
+                            error(STRUCT_no_field, type, ident^txt);
+                        }
+                        else {
+                            FIELD field = type.getField(ident^txt);
+                            DX1^htype = field.getType();
+                            DX1^hcode = DX^machine.genPointerFieldAccess(type, field, DX^hcode);
+                        }
+                }
+                default {
+                    error(TYPE_not_struct_pointer, DX^htype);
+                }
+            }
+        }
+        default {
+            error(TYPE_not_struct_pointer, DX^htype);
+        }
+    }
+}
+
+#gen {
+    DX^type = DX1^type;
+    DX^code = DX1^code;
+}
+
+DX -> #gen ;
+#gen {
+    DX^type = DX^htype;
+    DX^code = DX^hcode;
+}
 
 -- base expressions
 F -> integer #gen ;
@@ -895,6 +1036,7 @@ F -> ident osbra A csbra #gen ;
         }
     }
 }
+
 -- subprogram call arguments
 ARGS -> #gen ;
 #gen {
