@@ -1,6 +1,7 @@
 package moc.cg;
 
 import java.util.ArrayDeque;
+import java.util.HashSet;
 
 import moc.type.TTYPE;
 import moc.type.TVOID;
@@ -64,6 +65,17 @@ public class Mx86 extends AbstractMachine {
 
     public String getSuffix() {
         return "x86";
+    }
+
+    /**
+     * Returns the list of default functions to include.
+     */
+    protected HashSet<String> defaultIncludedFunctions() {
+        HashSet<String> list = new HashSet<String>();
+        list.add("main");
+        list.add("libx86_init");
+        list.add("exit");
+        return list;
     }
 
     public int getIntSize() {

@@ -13,7 +13,7 @@ elif [[ -z "$1" ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
     echo "  -h, --help  show this help message and exit"
 else
     rm -f /tmp/p.moc /tmp/p.asm "${1%.*}.asm" &&
-    ./preprocessor.py "$1" /tmp/p.moc &&
+    cpp -traditional-cpp -nostdinc -Wall -I. -C -P "$1" /tmp/p.moc &&
     ./mocc -m craps /tmp/p.moc &&
     cp /tmp/p.asm "${1%.*}.asm"
 fi
