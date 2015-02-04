@@ -277,6 +277,9 @@ public class MCRAPS extends AbstractMachine {
             case "|":
                 leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
+            case "^":
+                leftOperand.appendAsm("xor " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
             case "<<":
                 leftOperand.appendAsm("sll " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;

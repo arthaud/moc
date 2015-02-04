@@ -81,6 +81,7 @@ sugar minus      is  "\-" ;
 sugar or         is  "\|\|" ;
 sugar and        is  "\&\&" ;
 sugar bit_or     is  "\|" ;
+sugar bit_xor    is  "\^" ;
 sugar bit_and    is  "\&" ;
 sugar lshift     is  "\<\<" ;
 sugar rshift     is  "\>\>" ;
@@ -671,6 +672,9 @@ OPMUL -> bit_and #name ;
 
 OPMUL -> bit_or #name ;
 #name { OPMUL^name = "|"; }
+
+OPMUL -> bit_xor #name ;
+#name { OPMUL^name = "^"; }
 
 OPMUL -> lshift #name ;
 #name { OPMUL^name = "<<"; }
