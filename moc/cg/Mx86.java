@@ -135,7 +135,7 @@ public class Mx86 extends AbstractMachine {
         }
     }
 
-    public FunctionCode genFunction(TFUNCTION function, Code code) {
+    public FunctionCode genFunction(TFUNCTION function, Code code, boolean exported) {
         String label = "f_" + function.getName();
         String comment = function.toString();
 
@@ -149,7 +149,7 @@ public class Mx86 extends AbstractMachine {
         code.appendAsm("pop ebp");
         code.appendAsm("ret");
 
-        return new FunctionCode(function.getName(), code.getAsm());
+        return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {

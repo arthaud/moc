@@ -6,10 +6,12 @@ package moc.cg;
 public class FunctionCode implements EntityCode {
     protected String name;
     protected String asm;
+    protected boolean exported;
 
-    public FunctionCode(String name, String asm) {
+    public FunctionCode(String name, String asm, boolean exported) {
         this.name = name;
         this.asm = asm;
+        this.exported = exported;
     }
 
     public String getName() {
@@ -18,6 +20,10 @@ public class FunctionCode implements EntityCode {
 
     public String getAsm() {
         return asm;
+    }
+
+    public boolean isExported() {
+        return exported;
     }
 }
 

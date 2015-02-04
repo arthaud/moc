@@ -88,7 +88,7 @@ public class MTAM extends AbstractMachine {
         return "" + loc.getOffset();
     }
 
-    public FunctionCode genFunction(TFUNCTION function, Code code) {
+    public FunctionCode genFunction(TFUNCTION function, Code code, boolean exported) {
         code.prependAsm("f_" + function.getName() + ":");
         code.prependAsm("\n" + genComment("### " + function + " #############"));
 
@@ -96,7 +96,7 @@ public class MTAM extends AbstractMachine {
             code.appendAsm("RETURN (0) " + function.getParameterTypes().getSize());
         }
 
-        return new FunctionCode(function.getName(), code.getAsm());
+        return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {

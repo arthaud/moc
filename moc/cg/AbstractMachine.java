@@ -75,8 +75,15 @@ public abstract class AbstractMachine implements IMachine {
      * Returns whether the given entity should be included in the final code.
      */
     protected boolean shouldInclude(EntityCode entity, HashSet<String> usedFunctions) {
-        return !(entity instanceof FunctionCode)
-            || usedFunctions.contains(((FunctionCode)entity).getName());
+        if (entity instanceof FunctionCode) {
+            FunctionCode fc = (FunctionCode)entity;
+
+            return fc.isExported() || usedFunctions.contains(fc.getName());
+        }
+        else {
+            return true;
+        }
+
     }
 
     /**

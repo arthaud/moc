@@ -40,6 +40,9 @@ syn eCodes : EntityList for ENTITIES;
 inh hcode : Code for
          EX, AX, RX, TX , ARGSX;
 
+syn exported : boolean for EXPORT;
+inh hExported : boolean for GLOBAL_DECL;
+
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
 
@@ -53,6 +56,7 @@ sugar ccbra      is  "\}" ;
 sugar comma      is  "," ;
 sugar semicolon  is  "\;" ;
 sugar affect     is  "=" ;
+sugar export     is  "export" ;
 sugar if         is  "if" ;
 sugar else       is  "else" ;
 sugar while      is  "while" ;
@@ -133,8 +137,10 @@ ENTITIES -> asm opar string cpar ENTITIES #gen ;
 }
 
 -- global declaration (variable, function)
-ENTITIES -> TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
+ENTITIES -> EXPORT TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
 #trans {
+    GLOBAL_DECL^hExported = EXPORT^exported;
+
     -- check if the variable already exists
     INFO i = ENTITIES^st.localSearch(ident^txt);
 
@@ -150,6 +156,16 @@ ENTITIES -> TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
 #gen {
     ENTITIES1^eCodes.prepend(GLOBAL_DECL^globalCode);
     ENTITIES^eCodes = ENTITIES1^eCodes;
+}
+
+EXPORT -> #gen ;
+#gen {
+    EXPORT^exported = false;
+}
+
+EXPORT -> export #gen ;
+#gen {
+    EXPORT^exported = true;
 }
 
 -- global vars
@@ -187,7 +203,9 @@ global LTYPES param_types;
 }
 
 #gen {
-    GLOBAL_DECL^globalCode = GLOBAL_DECL^machine.genFunction(fun, BLOC^code);
+    GLOBAL_DECL^globalCode = GLOBAL_DECL^machine.genFunction(
+        fun, BLOC^code, GLOBAL_DECL^hExported
+    );
     GLOBAL_DECL^st.setCurrentFunction(null);
 }
 

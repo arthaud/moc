@@ -27,7 +27,7 @@ public interface IMachine {
      */
     void writeCode(String fileName, EntityList entities) throws MOCException;
 
-    FunctionCode genFunction(TFUNCTION function, Code code);
+    FunctionCode genFunction(TFUNCTION function, Code code, boolean exported);
 
     Code genConditional(Code condition, Code trueBloc, Code falseBloc);
 
