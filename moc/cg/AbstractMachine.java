@@ -83,23 +83,14 @@ public abstract class AbstractMachine implements IMachine {
         else {
             return true;
         }
-
-    }
-
-    /**
-     * Returns the list of default functions to include.
-     */
-    protected HashSet<String> defaultIncludedFunctions() {
-        HashSet<String> list = new HashSet<String>();
-        list.add("main");
-        return list;
     }
 
     /**
      * Returns the list of functions to include.
      */
     protected HashSet<String> usedFunctions() {
-        HashSet<String> list = defaultIncludedFunctions();
+        HashSet<String> list = new HashSet<>();
+        list.add("main");
 
         HashSet<String> newCallers = new HashSet<>();
         do {

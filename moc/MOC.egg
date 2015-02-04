@@ -139,8 +139,6 @@ ENTITIES -> asm opar string cpar ENTITIES #gen ;
 -- global declaration (variable, function)
 ENTITIES -> EXPORT TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
 #trans {
-    GLOBAL_DECL^hExported = EXPORT^exported;
-
     -- check if the variable already exists
     INFO i = ENTITIES^st.localSearch(ident^txt);
 
@@ -150,6 +148,7 @@ ENTITIES -> EXPORT TYPE ident #trans GLOBAL_DECL ENTITIES #gen ;
     else {
         GLOBAL_DECL^htype = TYPE^type;
         GLOBAL_DECL^hident = ident^txt;
+        GLOBAL_DECL^hExported = EXPORT^exported;
     }
 }
 
