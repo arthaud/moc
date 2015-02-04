@@ -355,6 +355,9 @@ public class MCRAPS extends AbstractMachine {
                 operand.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
                 operand.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
                 break;
+            case "~":
+                operand.appendAsm("xor " + genLocation(reg) + ", %r19, " + genLocation(reg));
+                break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
         }
