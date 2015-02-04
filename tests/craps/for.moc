@@ -1,0 +1,15 @@
+#include "lib/craps.moc"
+
+int main() {
+    int *ssegs = (int*) 0xA0000000; // 7 segs
+    int *anodes = ssegs + 1;
+    int i = 0;
+    int v = 1;
+
+    for(i=0; i < 10; i=i+1) {
+        v = 2 * v;
+    }
+
+    *anodes = 0b1111;
+    *ssegs = v;
+}
