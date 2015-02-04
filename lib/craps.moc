@@ -20,11 +20,10 @@ void div_mod(int a, int b, int *quotient, int *mod) {
         a = a-b;
     }
 
-    *quotient = q;
-    *mod = a;
+    *quotient = q-1;
+    *mod = a+b;
 }
 
-/* {{{ This would be a better implementation if we had the & operator
 int div(int a, int b) {
     int quotient;
     int mod;
@@ -38,24 +37,6 @@ int mod(int a, int b) {
     div_mod(a, b, &quotient, &mod);
     return mod;
 }
-}}} */
-
-// {{{
-int div(int a, int b) {
-    int result = 0;
-
-    while (a >= 0) {
-        result = result+1;
-        a = a-b;
-    }
-
-    return result-1;
-}
-
-int mod(int a, int b) {
-    return a-b*div(a, b);
-}
-// }}}
 
 void ssegs_hex(int number) {
     int *ssegs  = (int*) 0xA0000000; // 7-segs address
@@ -85,33 +66,40 @@ void ssegs_dec(int number) {
     int *ssegs  = (int*) 0xA0000000; // 7-segs address
     int *anodes = (int*) 0xA0000001; // whether to activate a 7-seg
 
+    // set it at the end so it does not display "0000" then the value
+    int anodes_to_activate;
     if (number <= 9) {
-        *anodes = 0b0001;
+        anodes_to_activate = 0b0001;
     }
     else {
         if (number <= 99) {
-            *anodes = 0b0011;
+            anodes_to_activate = 0b0011;
         }
         else {
             if (number <= 999) {
-                *anodes = 0b0111;
+                anodes_to_activate = 0b0111;
             }
             else {
-                *anodes = 0b1111;
+                anodes_to_activate = 0b1111;
             }
         }
     }
 
-    int to_display = 0;
+    int mod_;
 
-    to_display =                     mod(number, 10);
-    number = div(number, 10);
-    to_display = to_display + 0x0010*mod(number, 10);
-    number = div(number, 10);
-    to_display = to_display + 0x0100*mod(number, 10);
-    number = div(number, 10);
-    to_display = to_display + 0x1000*mod(number, 10);
+    div_mod(number, 10, &number, &mod_);
+    int to_display =                 mod_;
+
+    div_mod(number, 10, &number, &mod_);
+    to_display = to_display + 0x0010*mod_;
+
+    div_mod(number, 10, &number, &mod_);
+    to_display = to_display + 0x0100*mod_;
+
+    div_mod(number, 10, &number, &mod_);
+    to_display = to_display + 0x1000*mod_;
 
     *ssegs = to_display;
+    *anodes = anodes_to_activate;
 }
 
