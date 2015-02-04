@@ -8,7 +8,7 @@ asm("
     null_handler: reti
     start:
     set 0x180, %sp
-    ba f_init
+    ba f_main
 ")
 
 int pwm_count;
@@ -74,15 +74,15 @@ asm("
     pop %r6
     st %r6, [%r5]
 
-    // before %r1 we have psr and then pc to also set
-    
-    // pc
-    pop %r6
-    st %r6, [%r5+13]
-
+    // before %r1 we have pc and then psr to also set
+   
     // psr
     pop %r6
     st %r6, [%r5+9]
+ 
+    // pc
+    pop %r6
+    st %r6, [%r5+13]
 
     st %sp, [%r5+12]
     st %fp, [%r5+10]
@@ -111,11 +111,12 @@ asm("
     ld [%r5+10], %fp
     ld [%r5+11], %r28
 
-    // psr
-    ld [%r5+9], %r6
-    push %r6
     // pc
     ld [%r5+13], %r6
+    push %r6
+
+    // psr
+    ld [%r5+9], %r6
     push %r6
     
     // load all the registers !
@@ -160,14 +161,14 @@ int syscall_malloc(int size)
 //   int r7; // 6
 //   int r8; // 7
 //   int r9; // 8
-//   int fpr; // %r25
+//   int psr; // %r25
 //   int fp; // 10
 //   int ret; // 11
 //   int sp;
 //   int pc;
 // }
 
-int task1()
+export int task1()
 {
     int* ssegs = (int*) 0xA0000000;
     while(true)
@@ -177,7 +178,7 @@ int task1()
     }
 }
 
-int task2()
+export int task2()
 {
     int* ssegs = (int*) 0xA0000000;
     while(true)
@@ -187,7 +188,7 @@ int task2()
     }
 }
 
-int init() {
+int main() {
     pwm_count = 0;
     malloc_start = 0x185;
 
@@ -216,8 +217,8 @@ int init() {
     *((int*)process_table+2+14+13) = task;
 
     // sp
-    *((int*)process_table+2+12) = syscall_malloc(256);
-    *((int*)process_table+2+14+12) = syscall_malloc(256);
+    *((int*)process_table+2+12) = syscall_malloc(256) + 255;
+    *((int*)process_table+2+14+12) = syscall_malloc(256) + 255;
 
     // un front montant du PWM toutes les millisecondes
     *((int*)0xC0000000) = 195; // P
