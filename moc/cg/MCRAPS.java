@@ -520,16 +520,29 @@ public class MCRAPS extends AbstractMachine {
         allocator.push(reg);
 
         if(i.getType() instanceof TARRAY) { // special case for arrays : generate the address
-            Code c = new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
-            c.setIsAddress(false);
-            return c;
+            return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
 
         Code c = new Code(genMovMemToReg(genLocation(i.getLocation()), genLocation(reg)));
-        c.setIsAddress(false);
         c.setLocation(i.getLocation());
 
         return c;
+    }
+
+    public Code genAddress(INFOVAR i) {
+        Location.LocationType locType = i.getLocation().getType();
+        assert(locType == Location.LocationType.STACKFRAME ||
+               locType == Location.LocationType.ABSOLUTE);
+
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+
+        if(locType == Location.LocationType.STACKFRAME) {
+            return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
+        }
+        else { // locType == Location.LocationType.ABSOLUTE
+            return new Code("set glob_" + i.getLocation().getOffset() + ", " + genLocation(reg));
+        }
     }
 
     public Code genInt(String cst) {

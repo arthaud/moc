@@ -308,6 +308,10 @@ public class MTAM extends AbstractMachine {
         return retCode;
     }
 
+    public Code genAddress(INFOVAR i) {
+        throw new UnsupportedOperationException();
+    }
+
     public Code genInt(String cst) {
         return new Code("LOADL " + cst);
     }

@@ -797,6 +797,29 @@ F -> ident #gen ;
     }
 }
 
+-- address
+F -> bit_and ident #gen ;
+#gen {
+    -- search for ident in the symbols table
+    INFO i = F^st.globalSearch(ident^txt);
+
+    if (i == null) {
+        error(VAR_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOVAR {
+                INFOVAR info = i;
+                F^type = new TPOINTER(info.getType(), F^machine.getPointerSize());
+                F^code = F^machine.genAddress(info);
+            }
+            default {
+                error(INFO_not_var, ident^txt);
+            }
+        }
+    }
+}
+
 -- pointed-to memory access
 F -> mult F #gen ;
 #gen {
@@ -812,6 +835,7 @@ F -> mult F #gen ;
     }
 }
 
+-- array access
 F -> ident osbra A csbra #gen ;
 #gen {
     -- search for ident in the symbols table

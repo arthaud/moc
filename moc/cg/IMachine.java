@@ -131,6 +131,8 @@ public interface IMachine {
 
     Code genVariable(INFOVAR i);
 
+    Code genAddress(INFOVAR i);
+
     Code genInt(String cst);
 
     Code genString(String txt);

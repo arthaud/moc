@@ -467,6 +467,10 @@ public class Mx86 extends AbstractMachine {
         return c;
     }
 
+    public Code genAddress(INFOVAR i) {
+        throw new UnsupportedOperationException();
+    }
+
     public Code genInt(String cst) {
         Location l = allocator.get();
         allocator.push(l);
