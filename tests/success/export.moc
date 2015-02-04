@@ -1,0 +1,24 @@
+// f should not be included in generated code
+// g, h, i, j and main must be included in generated code
+
+void f() {
+}
+
+export void g() {
+}
+
+void h() {
+}
+
+export void i() {
+    h();
+}
+
+void j() {
+}
+
+int main() {
+    j();
+    return 42;
+}
+

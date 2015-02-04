@@ -29,7 +29,7 @@ _start:
 // See this page for doing system calls :
 // http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html
 
-void exit(int return_code) {
+export void exit(int return_code) {
     asm("
         ; exit syscall
         mov eax, 1
@@ -111,7 +111,7 @@ int sys_break(void* addr) {
     ");
 }
 
-void libx86_init() {
+export void libx86_init() {
     void* heap = (void*) sys_break(NULL); // the beginning of the heap
     sys_break(heap + 4096); // ask for 4096 bytes
 

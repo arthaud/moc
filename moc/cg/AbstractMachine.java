@@ -57,7 +57,7 @@ public abstract class AbstractMachine implements IMachine {
             pw.print(genComment("Do not modify by hand\n"));
             pw.print(initCode);
 
-            HashSet<String> usedFunctions = usedFunctions();
+            HashSet<String> usedFunctions = usedFunctions(entities);
             for (EntityCode entity : entities.getList()) {
                 if (shouldInclude(entity, usedFunctions)) {
                     pw.print(entity.getAsm());
@@ -83,23 +83,21 @@ public abstract class AbstractMachine implements IMachine {
         else {
             return true;
         }
-
-    }
-
-    /**
-     * Returns the list of default functions to include.
-     */
-    protected HashSet<String> defaultIncludedFunctions() {
-        HashSet<String> list = new HashSet<String>();
-        list.add("main");
-        return list;
     }
 
     /**
      * Returns the list of functions to include.
      */
-    protected HashSet<String> usedFunctions() {
-        HashSet<String> list = defaultIncludedFunctions();
+    protected HashSet<String> usedFunctions(EntityList entities) {
+        HashSet<String> list = new HashSet<>();
+        list.add("main");
+
+        for (EntityCode entity : entities.getList()) {
+            if (entity instanceof FunctionCode
+            && ((FunctionCode)entity).isExported()) {
+                list.add(((FunctionCode)entity).getName());
+            }
+        }
 
         HashSet<String> newCallers = new HashSet<>();
         do {
