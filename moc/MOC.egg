@@ -89,6 +89,7 @@ sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
 sugar not        is  "\!" ;
+sugar bit_not    is  "~" ;
 sugar colon      is  "\:" ;
 sugar osbra      is  "\[" ;
 sugar csbra      is  "\]" ;
@@ -738,6 +739,9 @@ OPUN -> minus #name ;
 
 OPUN -> not #name ;
 #name { OPUN^name = "!"; }
+
+OPUN -> bit_not #name ;
+#name { OPUN^name = "~"; }
 
 -- parenthesised expression
 F -> opar E cpar #gen ;
