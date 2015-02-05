@@ -5,6 +5,8 @@ import java.util.List;
 import moc.compiler.MOCException;
 import moc.type.TTYPE;
 import moc.type.TFUNCTION;
+import moc.type.TSTRUCT;
+import moc.type.FIELD;
 import moc.st.INFOVAR;
 import moc.st.ST;
 
@@ -97,6 +99,16 @@ public interface IMachine {
      * Generate the code for tab[pos] where tab is a pointer (TPOINTER)
      */
     Code genPointerArrayAccess(INFOVAR info, Code posCode);
+
+    /**
+     * Generate the code for accessing a field of a structure
+     */
+    Code genFieldAccess(TSTRUCT struct, FIELD field, Code c);
+
+    /**
+     * Generate the code for accessing a field of a structure through a pointer
+     */
+    Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code c);
 
     /**
      * Generate a block { }, removing local variables at the end
