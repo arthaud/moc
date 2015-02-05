@@ -9,36 +9,50 @@ option k = 3;
 inh source : MOCSourceFile for
          PROGRAM, ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, D, DX, F;
+         E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
+         COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
+         UNARY, DOTTED, DOTTEDX, F;
 inh machine : IMachine for
          ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE, REFS,
-         E, EX, A, AX, R, RX, T, TX, D, DX, F;
+         E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
+         COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
+         UNARY, DOTTED, DOTTEDX, F;
 inh st : ST for
          ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE,
-         E, EX, A, AX, R, RX, T, TX, D, DX, F;
+         E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
+         COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
+         UNARY, DOTTED, DOTTEDX, F;
 inh types : LTYPES for FUNC_PARAMETERS, FUNC_PARAMETERSX, ARGS, ARGSX;
 syn type : TTYPE for
          TYPE, STYPE, REFS, FUNC_PARAMETER,
-         E, EX, A, AX, R, RX, T, TX, D, DX, F;
-inh htype : TTYPE for GLOBAL_DECL, REFS, EX, AX, RX, TX, DX, AFF;
+         E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
+         COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
+         UNARY, DOTTED, DOTTEDX, F;
+inh htype : TTYPE for GLOBAL_DECL, REFS, AFF,
+         EX, AX, ANDX, BIT_ORX, XORX, BIT_ANDX, COMPEQX, COMPX, SHIFTX, ADDX,
+         MULTX, DOTTEDX;
 inh hident : STRING for GLOBAL_DECL;
 inh hinfo : INFOVAR for AFF;
-syn name : STRING for OPREL, OPADD, OPMUL, OPUN, FUNC_PARAMETER;
+syn name : STRING for COMPEQ_OP, COMP_OP, SHIFT_OP, ADD_OP, MULT_OP, UNARY_OP,
+                      FUNC_PARAMETER;
 inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
 inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
 
 syn code : Code for
          INST, BLOC, INSTS, ELSE,
          ARGS, ARGSX, AFF,
-         E, EX, A, AX, R, RX, T, TX, D, DX, F;
+         E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
+         COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
+         UNARY, DOTTED, DOTTEDX, F;
 syn globalCode : EntityCode for GLOBAL_DECL;
 syn eCodes : EntityList for ENTITIES;
 inh hcode : Code for
-         EX, AX, RX, TX, DX, ARGSX;
+         EX, AX, ANDX, BIT_ORX, XORX, BIT_ANDX, COMPEQX, COMPX, SHIFTX, ADDX,
+         MULTX, DOTTEDX, ARGSX;
 
 syn exported : boolean for EXPORT;
 inh hExported : boolean for GLOBAL_DECL;
@@ -553,15 +567,25 @@ INST -> asm opar string cpar semicolon #gen ;
 
 -- expressions
 -----------------------------------------------------------------------
--- E = expression (including affectation)
--- A = expression figuring in an affectation
--- R = expression figuring in a relational expression
--- T = expression figuring in an additive expression (TERME)
--- D = dotted expression
--- F = expression figuring in a multiplicative expression (FACTOR)
+-- E -> ( A = A ) | A
+-- A -> AND ( || AND )*
+-- AND -> BIT_OR ( && BIT_OR )*
+-- BIT_OR -> XOR ( | BIT_OR )*
+-- XOR -> BIT_AND ( ^ BIT_AND )*
+-- BIT_AND -> COMPEQ ( & COMPEQ )*
+-- COMPEQ -> COMP ( { == | != } COMP )*
+-- COMP -> SHIFT ( { < | <= | > | >= } SHIFT )*
+-- SHIFT -> ADD ( { << | >> } ADD)*
+-- ADD -> MULT ( { + | - } MULT )*
+-- MULT -> UNARY ( { * | / | % } UNARY )*
+-- UNARY -> ( { + | - | ! | ~ | * | & | (TYPE) } UNARY ) | DOTTED
+-- DOTTED -> F { .ident | ->ident }*
+-- F -> integer | string | character | null | true | false | ident
+--     | (E) | f(ARGS) | ident[A]
 -----------------------------------------------------------------------
 
 -- affectation
+-- E -> ( A = A ) | A
 E -> A #trans EX #gen ;
 #trans {
     EX^htype = A^type;
@@ -592,12 +616,12 @@ EX -> #gen ;
     EX^code = EX^hcode;
 }
 
--- relation
-A -> R #trans AX #gen ;
+-- or
+-- A -> AND ( || AND )*
+A -> AND #trans AX #gen ;
 #trans {
-    AX^htype = R^type;
-    AX^hcode = R^code;
-
+    AX^htype = AND^type;
+    AX^hcode = AND^code;
 }
 
 #gen {
@@ -605,14 +629,19 @@ A -> R #trans AX #gen ;
     A^code = AX^code;
 }
 
-AX -> OPREL R #gen ;
-#gen {
-    if (!AX^htype.comparableWith(R^type, OPREL^name)) {
-        error(TYPES_incomparable, AX^htype, R^type, OPREL^name);
+AX -> or AND #trans AX #gen ;
+#trans {
+    if (!AX^htype.binaryUsable(AND^type, "||")) {
+        error(TYPES_binary_unusable, AX^htype, AND^type, "||");
     }
 
-    AX^type = new TBOOL(AX^machine.getBoolSize());
-    AX^code = AX^machine.genBinary(AX^hcode, AX^htype, R^code, R^type, OPREL^name);
+    AX1^htype = new TBOOL(AX^machine.getBoolSize());
+    AX1^hcode = AX^machine.genBinary(AX^hcode, AX^htype, AND^code, AND^type, "||");
+}
+
+#gen {
+    AX^type = AX1^type;
+    AX^code = AX1^code;
 }
 
 AX -> #gen ;
@@ -621,172 +650,478 @@ AX -> #gen ;
     AX^code = AX^hcode;
 }
 
--- relation operators
-OPREL -> inf #name ;
-#name { OPREL^name = "<"; }
-
-OPREL -> sup #name ;
-#name { OPREL^name = ">"; }
-
-OPREL -> infeq #name ;
-#name { OPREL^name = "<="; }
-
-OPREL -> supeq #name ;
-#name { OPREL^name = ">="; }
-
-OPREL -> eq #name ;
-#name { OPREL^name = "=="; }
-
-OPREL -> neq #name ;
-#name { OPREL^name = "!="; }
-
--- additions
-R -> T #trans RX #gen ;
+-- and
+-- AND -> BIT_OR ( && BIT_OR )*
+AND -> BIT_OR #trans ANDX #gen ;
 #trans {
-    RX^htype = T^type;
-    RX^hcode = T^code;
+    ANDX^htype = BIT_OR^type;
+    ANDX^hcode = BIT_OR^code;
 }
 
 #gen {
-    R^type = RX^type;
-    R^code = RX^code;
+    AND^type = ANDX^type;
+    AND^code = ANDX^code;
 }
 
-RX -> OPADD T #trans RX #gen ;
+ANDX -> and BIT_OR #trans ANDX #gen ;
 #trans {
-    if (!RX^htype.binaryUsable(T^type, OPADD^name)) {
-        error(TYPES_binary_unusable, RX^htype, T^type, OPADD^name);
+    if (!ANDX^htype.binaryUsable(BIT_OR^type, "&&")) {
+        error(TYPES_binary_unusable, ANDX^htype, BIT_OR^type, "&&");
     }
 
-    RX1^htype = RX^htype;
-    RX1^hcode = RX^machine.genBinary(RX^hcode, RX^htype, T^code, T^type, OPADD^name);
+    ANDX1^htype = new TBOOL(ANDX^machine.getBoolSize());
+    ANDX1^hcode = ANDX^machine.genBinary(ANDX^hcode, ANDX^htype, BIT_OR^code, BIT_OR^type, "&&");
 }
 
 #gen {
-    RX^type = RX1^type;
-    RX^code = RX1^code;
+    ANDX^type = ANDX1^type;
+    ANDX^code = ANDX1^code;
 }
 
-RX -> #gen ;
+ANDX -> #gen ;
 #gen {
-    RX^type = RX^htype;
-    RX^code = RX^hcode;
+    ANDX^type = ANDX^htype;
+    ANDX^code = ANDX^hcode;
 }
 
--- addition operators
-OPADD -> plus #name ;
-#name { OPADD^name = "+"; }
-
-OPADD -> minus #name ;
-#name { OPADD^name = "-"; }
-
-OPADD -> or #name ;
-#name { OPADD^name = "||"; }
-
--- multiplications
-T -> D #trans TX #gen ;
+-- bit or
+-- BIT_OR -> XOR ( | BIT_OR )*
+BIT_OR -> XOR #trans BIT_ORX #gen ;
 #trans {
-    TX^htype = D^type;
-    TX^hcode = D^code;
+    BIT_ORX^htype = XOR^type;
+    BIT_ORX^hcode = XOR^code;
 }
 
 #gen {
-    T^type = TX^type;
-    T^code = TX^code;
+    BIT_OR^type = BIT_ORX^type;
+    BIT_OR^code = BIT_ORX^code;
 }
 
-TX -> OPMUL D #trans TX #gen ;
+BIT_ORX -> bit_or XOR #trans BIT_ORX #gen ;
 #trans {
-    if (!TX^htype.binaryUsable(D^type, OPMUL^name)) {
-        error(TYPES_binary_unusable, TX^htype, D^type, OPMUL^name);
+    if (!BIT_ORX^htype.binaryUsable(XOR^type, "|")) {
+        error(TYPES_binary_unusable, BIT_ORX^htype, XOR^type, "|");
     }
 
-    TX1^htype = TX^htype;
-    TX1^hcode = TX^machine.genBinary(TX^hcode, TX^htype, D^code, D^type, OPMUL^name);
+    BIT_ORX1^htype = BIT_ORX^htype;
+    BIT_ORX1^hcode = BIT_ORX^machine.genBinary(BIT_ORX^hcode, BIT_ORX^htype, XOR^code, XOR^type, "|");
 }
 
 #gen {
-    TX^type = TX1^type;
-    TX^code = TX1^code;
+    BIT_ORX^type = BIT_ORX1^type;
+    BIT_ORX^code = BIT_ORX1^code;
 }
 
-TX -> #gen ;
+BIT_ORX -> #gen ;
 #gen {
-    TX^type = TX^htype;
-    TX^code = TX^hcode;
+    BIT_ORX^type = BIT_ORX^htype;
+    BIT_ORX^code = BIT_ORX^hcode;
 }
 
--- multiplication operators
-OPMUL -> mult #name ;
-#name { OPMUL^name = "*"; }
-
-OPMUL -> div #name ;
-#name { OPMUL^name = "/"; }
-
-OPMUL -> mod #name ;
-#name { OPMUL^name = "%"; }
-
-OPMUL -> and #name ;
-#name { OPMUL^name = "&&"; }
-
-OPMUL -> bit_and #name ;
-#name { OPMUL^name = "&"; }
-
-OPMUL -> bit_or #name ;
-#name { OPMUL^name = "|"; }
-
-OPMUL -> bit_xor #name ;
-#name { OPMUL^name = "^"; }
-
-OPMUL -> lshift #name ;
-#name { OPMUL^name = "<<"; }
-
-OPMUL -> rshift #name ;
-#name { OPMUL^name = ">>"; }
-
--- dotted expression
-D -> F #trans DX #gen ;
+-- xor
+-- XOR -> BIT_AND ( ^ BIT_AND )*
+XOR -> BIT_AND #trans XORX #gen ;
 #trans {
-    DX^htype = F^type;
-    DX^hcode = F^code;
+    XORX^htype = BIT_AND^type;
+    XORX^hcode = BIT_AND^code;
 }
 
 #gen {
-    D^type = DX^type;
-    D^code = DX^code;
+    XOR^type = XORX^type;
+    XOR^code = XORX^code;
 }
 
-DX -> dot ident #trans DX #gen ;
+XORX -> bit_xor BIT_AND #trans XORX #gen ;
 #trans {
-    match (DX^htype) {
+    if (!XORX^htype.binaryUsable(BIT_AND^type, "^")) {
+        error(TYPES_binary_unusable, XORX^htype, BIT_AND^type, "^");
+    }
+
+    XORX1^htype = XORX^htype;
+    XORX1^hcode = XORX^machine.genBinary(XORX^hcode, XORX^htype, BIT_AND^code, BIT_AND^type, "^");
+}
+
+#gen {
+    XORX^type = XORX1^type;
+    XORX^code = XORX1^code;
+}
+
+XORX -> #gen ;
+#gen {
+    XORX^type = XORX^htype;
+    XORX^code = XORX^hcode;
+}
+
+-- bit and
+-- BIT_AND -> COMPEQ ( & COMPEQ )*
+BIT_AND -> COMPEQ #trans BIT_ANDX #gen ;
+#trans {
+    BIT_ANDX^htype = COMPEQ^type;
+    BIT_ANDX^hcode = COMPEQ^code;
+}
+
+#gen {
+    BIT_AND^type = BIT_ANDX^type;
+    BIT_AND^code = BIT_ANDX^code;
+}
+
+BIT_ANDX -> bit_and COMPEQ #trans BIT_ANDX #gen ;
+#trans {
+    if (!BIT_ANDX^htype.binaryUsable(COMPEQ^type, "&")) {
+        error(TYPES_binary_unusable, BIT_ANDX^htype, COMPEQ^type, "&");
+    }
+
+    BIT_ANDX1^htype = BIT_ANDX^htype;
+    BIT_ANDX1^hcode = BIT_ANDX^machine.genBinary(BIT_ANDX^hcode, BIT_ANDX^htype, COMPEQ^code, COMPEQ^type, "&");
+}
+
+#gen {
+    BIT_ANDX^type = BIT_ANDX1^type;
+    BIT_ANDX^code = BIT_ANDX1^code;
+}
+
+BIT_ANDX -> #gen ;
+#gen {
+    BIT_ANDX^type = BIT_ANDX^htype;
+    BIT_ANDX^code = BIT_ANDX^hcode;
+}
+
+-- comparision (=, !=)
+-- COMPEQ -> COMP ( { == | != } COMP )*
+COMPEQ -> COMP #trans COMPEQX #gen ;
+#trans {
+    COMPEQX^htype = COMP^type;
+    COMPEQX^hcode = COMP^code;
+}
+
+#gen {
+    COMPEQ^type = COMPEQX^type;
+    COMPEQ^code = COMPEQX^code;
+}
+
+COMPEQX -> COMPEQ_OP COMP #trans COMPEQX #gen ;
+#trans {
+    if (!COMPEQX^htype.comparableWith(COMP^type, COMPEQ_OP^name)) {
+        error(TYPES_incomparable, COMPEQX^htype, COMP^type, COMPEQ_OP^name);
+    }
+
+    COMPEQX1^htype = new TBOOL(COMPEQX^machine.getBoolSize());
+    COMPEQX1^hcode = COMPEQX^machine.genBinary(COMPEQX^hcode, COMPEQX^htype, COMP^code, COMP^type, COMPEQ_OP^name);
+}
+
+#gen {
+    COMPEQX^type = COMPEQX1^type;
+    COMPEQX^code = COMPEQX1^code;
+}
+
+COMPEQX -> #gen ;
+#gen {
+    COMPEQX^type = COMPEQX^htype;
+    COMPEQX^code = COMPEQX^hcode;
+}
+
+COMPEQ_OP -> eq #name ;
+#name { COMPEQ_OP^name = "=="; }
+
+COMPEQ_OP -> neq #name ;
+#name { COMPEQ_OP^name = "!="; }
+
+-- comparision (<, <=, >, >=)
+-- COMP -> SHIFT ( { < | <= | > | >= } SHIFT )*
+COMP -> SHIFT #trans COMPX #gen ;
+#trans {
+    COMPX^htype = SHIFT^type;
+    COMPX^hcode = SHIFT^code;
+}
+
+#gen {
+    COMP^type = COMPX^type;
+    COMP^code = COMPX^code;
+}
+
+COMPX -> COMP_OP SHIFT #trans COMPX #gen ;
+#trans {
+    if (!COMPX^htype.comparableWith(SHIFT^type, COMP_OP^name)) {
+        error(TYPES_incomparable, COMPX^htype, SHIFT^type, COMP_OP^name);
+    }
+
+    COMPX1^htype = new TBOOL(COMPX^machine.getBoolSize());
+    COMPX1^hcode = COMPX^machine.genBinary(COMPX^hcode, COMPX^htype, SHIFT^code, SHIFT^type, COMP_OP^name);
+}
+
+#gen {
+    COMPX^type = COMPX1^type;
+    COMPX^code = COMPX1^code;
+}
+
+COMPX -> #gen ;
+#gen {
+    COMPX^type = COMPX^htype;
+    COMPX^code = COMPX^hcode;
+}
+
+COMP_OP -> inf #name ;
+#name { COMP_OP^name = "<"; }
+
+COMP_OP -> infeq #name ;
+#name { COMP_OP^name = "<="; }
+
+COMP_OP -> sup #name ;
+#name { COMP_OP^name = ">"; }
+
+COMP_OP -> supeq #name ;
+#name { COMP_OP^name = ">="; }
+
+-- shift
+-- SHIFT -> ADD ( { << | >> } ADD)*
+SHIFT -> ADD #trans SHIFTX #gen ;
+#trans {
+    SHIFTX^htype = ADD^type;
+    SHIFTX^hcode = ADD^code;
+}
+
+#gen {
+    SHIFT^type = SHIFTX^type;
+    SHIFT^code = SHIFTX^code;
+}
+
+SHIFTX -> SHIFT_OP ADD #trans SHIFTX #gen ;
+#trans {
+    if (!SHIFTX^htype.binaryUsable(ADD^type, SHIFT_OP^name)) {
+        error(TYPES_binary_unusable, SHIFTX^htype, ADD^type, SHIFT_OP^name);
+    }
+
+    SHIFTX1^htype = SHIFTX^htype;
+    SHIFTX1^hcode = SHIFTX^machine.genBinary(SHIFTX^hcode, SHIFTX^htype, ADD^code, ADD^type, SHIFT_OP^name);
+}
+
+#gen {
+    SHIFTX^type = SHIFTX1^type;
+    SHIFTX^code = SHIFTX1^code;
+}
+
+SHIFTX -> #gen ;
+#gen {
+    SHIFTX^type = SHIFTX^htype;
+    SHIFTX^code = SHIFTX^hcode;
+}
+
+SHIFT_OP -> lshift #name ;
+#name { SHIFT_OP^name = "<<"; }
+
+SHIFT_OP -> rshift #name ;
+#name { SHIFT_OP^name = ">>"; }
+
+-- add
+-- ADD -> MULT ( { + | - } MULT )*
+ADD -> MULT #trans ADDX #gen ;
+#trans {
+    ADDX^htype = MULT^type;
+    ADDX^hcode = MULT^code;
+}
+
+#gen {
+    ADD^type = ADDX^type;
+    ADD^code = ADDX^code;
+}
+
+ADDX -> ADD_OP MULT #trans ADDX #gen ;
+#trans {
+    if (!ADDX^htype.binaryUsable(MULT^type, ADD_OP^name)) {
+        error(TYPES_binary_unusable, ADDX^htype, MULT^type, ADD_OP^name);
+    }
+
+    ADDX1^htype = ADDX^htype;
+    ADDX1^hcode = ADDX^machine.genBinary(ADDX^hcode, ADDX^htype, MULT^code, MULT^type, ADD_OP^name);
+}
+
+#gen {
+    ADDX^type = ADDX1^type;
+    ADDX^code = ADDX1^code;
+}
+
+ADDX -> #gen ;
+#gen {
+    ADDX^type = ADDX^htype;
+    ADDX^code = ADDX^hcode;
+}
+
+ADD_OP -> plus #name ;
+#name { ADD_OP^name = "+"; }
+
+ADD_OP -> minus #name ;
+#name { ADD_OP^name = "-"; }
+
+-- mult
+-- MULT -> UNARY ( { * | / | % } UNARY )*
+MULT -> UNARY #trans MULTX #gen ;
+#trans {
+    MULTX^htype = UNARY^type;
+    MULTX^hcode = UNARY^code;
+}
+
+#gen {
+    MULT^type = MULTX^type;
+    MULT^code = MULTX^code;
+}
+
+MULTX -> MULT_OP UNARY #trans MULTX #gen ;
+#trans {
+    if (!MULTX^htype.binaryUsable(UNARY^type, MULT_OP^name)) {
+        error(TYPES_binary_unusable, MULTX^htype, UNARY^type, MULT_OP^name);
+    }
+
+    MULTX1^htype = MULTX^htype;
+    MULTX1^hcode = MULTX^machine.genBinary(MULTX^hcode, MULTX^htype, UNARY^code, UNARY^type, MULT_OP^name);
+}
+
+#gen {
+    MULTX^type = MULTX1^type;
+    MULTX^code = MULTX1^code;
+}
+
+MULTX -> #gen ;
+#gen {
+    MULTX^type = MULTX^htype;
+    MULTX^code = MULTX^hcode;
+}
+
+MULT_OP -> mult #name ;
+#name { MULT_OP^name = "*"; }
+
+MULT_OP -> div #name ;
+#name { MULT_OP^name = "/"; }
+
+MULT_OP -> mod #name ;
+#name { MULT_OP^name = "%"; } --" (fix vim syntax)
+
+-- unary
+-- UNARY -> ( { + | - | ! | ~ | * | & | (TYPE) } UNARY ) | DOTTED
+UNARY -> UNARY_OP UNARY #gen ;
+#gen {
+    if (!UNARY1^type.unaryUsable(UNARY_OP^name)) {
+        error(TYPE_unary_unusable, UNARY1^type, UNARY_OP^name);
+    }
+
+    UNARY^type = UNARY1^type;
+    UNARY^code = UNARY^machine.genUnary(UNARY1^code, UNARY1^type, UNARY_OP^name);
+}
+
+-- unary expressions
+UNARY_OP -> plus #name ;
+#name { UNARY_OP^name = "+"; }
+
+UNARY_OP -> minus #name ;
+#name { UNARY_OP^name = "-"; }
+
+UNARY_OP -> not #name ;
+#name { UNARY_OP^name = "!"; }
+
+UNARY_OP -> bit_not #name ;
+#name { UNARY_OP^name = "~"; }
+
+-- pointed-to memory access
+UNARY -> mult UNARY #gen ;
+#gen {
+    match (UNARY1^type) {
+        case TPOINTER {
+            TPOINTER p = UNARY1^type;
+            UNARY^type = p.getType();
+            UNARY^code = UNARY^machine.genAccess(UNARY1^code, p.getType());
+        }
+        default {
+            error(TYPE_not_pointer, UNARY1^type);
+        }
+    }
+}
+
+-- address
+UNARY -> bit_and ident #gen ;
+#gen {
+    -- search for ident in the symbols table
+    INFO i = UNARY^st.globalSearch(ident^txt);
+
+    if (i == null) {
+        error(VAR_undefined, ident^txt);
+    }
+    else {
+        match (i) {
+            case INFOVAR {
+                INFOVAR info = i;
+                UNARY^type = new TPOINTER(info.getType(), UNARY^machine.getPointerSize());
+                UNARY^code = UNARY^machine.genAddress(info);
+            }
+            default {
+                error(INFO_not_var, ident^txt);
+            }
+        }
+    }
+}
+
+-- cast
+UNARY -> opar TYPE cpar UNARY #gen ;
+#gen {
+    if (UNARY1^type.equals(TYPE^type)) {
+        warning(TYPE_cast_useless, TYPE^type.toString(), TYPE^type.toString());
+    }
+    elseif (!UNARY1^type.isCastableTo(TYPE^type)) {
+        error(TYPE_uncastable, UNARY1^type, TYPE^type);
+    }
+
+    UNARY^type = TYPE^type;
+    UNARY^code = UNARY^machine.genCast(TYPE^type, UNARY1^type, UNARY1^code);
+}
+
+UNARY -> DOTTED #gen ;
+#gen {
+    UNARY^type = DOTTED^type;
+    UNARY^code = DOTTED^code;
+}
+
+-- dotted expressions
+-- DOTTED -> F { .ident | ->ident }*
+DOTTED -> F #trans DOTTEDX #gen ;
+#trans {
+    DOTTEDX^htype = F^type;
+    DOTTEDX^hcode = F^code;
+}
+
+#gen {
+    DOTTED^type = DOTTEDX^type;
+    DOTTED^code = DOTTEDX^code;
+}
+
+DOTTEDX -> dot ident #trans DOTTEDX #gen ;
+#trans {
+    match (DOTTEDX^htype) {
         case TSTRUCT {
-            TSTRUCT type = DX^htype;
+            TSTRUCT type = DOTTEDX^htype;
 
             if(!type.hasField(ident^txt)) {
                 error(STRUCT_no_field, type, ident^txt);
             }
             else {
                 FIELD field = type.getField(ident^txt);
-                DX1^htype = field.getType();
-                DX1^hcode = DX^machine.genFieldAccess(type, field, DX^hcode);
+                DOTTEDX1^htype = field.getType();
+                DOTTEDX1^hcode = DOTTEDX^machine.genFieldAccess(type, field, DOTTEDX^hcode);
             }
         }
         default {
-            error(TYPE_not_struct, DX^htype);
+            error(TYPE_not_struct, DOTTEDX^htype);
         }
     }
 }
 
 #gen {
-    DX^type = DX1^type;
-    DX^code = DX1^code;
+    DOTTEDX^type = DOTTEDX1^type;
+    DOTTEDX^code = DOTTEDX1^code;
 }
 
-DX -> arrow ident #trans DX #gen ;
+DOTTEDX -> arrow ident #trans DOTTEDX #gen ;
 #trans {
-    match (DX^htype) {
+    match (DOTTEDX^htype) {
         case TPOINTER {
-            TPOINTER pointerType = DX^htype;
+            TPOINTER pointerType = DOTTEDX^htype;
             TTYPE pointedType = pointerType.getType();
 
             match (pointedType) {
@@ -798,31 +1133,35 @@ DX -> arrow ident #trans DX #gen ;
                         }
                         else {
                             FIELD field = type.getField(ident^txt);
-                            DX1^htype = field.getType();
-                            DX1^hcode = DX^machine.genPointerFieldAccess(type, field, DX^hcode);
+                            DOTTEDX1^htype = field.getType();
+                            DOTTEDX1^hcode = DOTTEDX^machine.genPointerFieldAccess(type, field, DOTTEDX^hcode);
                         }
                 }
                 default {
-                    error(TYPE_not_struct_pointer, DX^htype);
+                    error(TYPE_not_struct_pointer, DOTTEDX^htype);
                 }
             }
         }
         default {
-            error(TYPE_not_struct_pointer, DX^htype);
+            error(TYPE_not_struct_pointer, DOTTEDX^htype);
         }
     }
 }
 
 #gen {
-    DX^type = DX1^type;
-    DX^code = DX1^code;
+    DOTTEDX^type = DOTTEDX1^type;
+    DOTTEDX^code = DOTTEDX1^code;
 }
 
-DX -> #gen ;
+DOTTEDX -> #gen ;
 #gen {
-    DX^type = DX^htype;
-    DX^code = DX^hcode;
+    DOTTEDX^type = DOTTEDX^htype;
+    DOTTEDX^code = DOTTEDX^hcode;
 }
+
+-- leaf
+-- F -> integer | string | character | null | true | false | ident
+--     | (E) | f(ARGS) | ident[A]
 
 -- base expressions
 F -> integer #gen ;
@@ -861,47 +1200,11 @@ F -> false #gen ;
     F^code = F^machine.genBool(0);
 }
 
-F -> OPUN F #gen ;
-#gen {
-    if (!F1^type.unaryUsable(OPUN^name)) {
-        error(TYPE_unary_unusable, F1^type, OPUN^name);
-    }
-
-    F^type = F1^type;
-    F^code = F^machine.genUnary(F1^code, F1^type, OPUN^name);
-}
-
--- unary expressions
-OPUN -> plus #name ;
-#name { OPUN^name = "+"; }
-
-OPUN -> minus #name ;
-#name { OPUN^name = "-"; }
-
-OPUN -> not #name ;
-#name { OPUN^name = "!"; }
-
-OPUN -> bit_not #name ;
-#name { OPUN^name = "~"; }
-
 -- parenthesised expression
 F -> opar E cpar #gen ;
 #gen {
     F^type = E^type;
     F^code = E^code;
-}
-
-F -> opar TYPE cpar F #gen ;
-#gen {
-    if (F1^type.equals(TYPE^type)) {
-        warning(TYPE_cast_useless, TYPE^type.toString(), TYPE^type.toString());
-    }
-    elseif (!F1^type.isCastableTo(TYPE^type)) {
-        error(TYPE_uncastable, F1^type, TYPE^type);
-    }
-
-    F^type = TYPE^type;
-    F^code = F^machine.genCast(TYPE^type, F1^type, F1^code);
 }
 
 -- subprogram call
@@ -958,44 +1261,6 @@ F -> ident #gen ;
             default {
                 error(INFO_not_var, ident^txt);
             }
-        }
-    }
-}
-
--- address
-F -> bit_and ident #gen ;
-#gen {
-    -- search for ident in the symbols table
-    INFO i = F^st.globalSearch(ident^txt);
-
-    if (i == null) {
-        error(VAR_undefined, ident^txt);
-    }
-    else {
-        match (i) {
-            case INFOVAR {
-                INFOVAR info = i;
-                F^type = new TPOINTER(info.getType(), F^machine.getPointerSize());
-                F^code = F^machine.genAddress(info);
-            }
-            default {
-                error(INFO_not_var, ident^txt);
-            }
-        }
-    }
-}
-
--- pointed-to memory access
-F -> mult F #gen ;
-#gen {
-    match (F1^type) {
-        case TPOINTER {
-            TPOINTER p = F1^type;
-            F^type = p.getType();
-            F^code = F^machine.genAccess(F1^code, p.getType());
-        }
-        default {
-            error(TYPE_not_pointer, F1^type);
         }
     }
 }
