@@ -93,7 +93,7 @@ sugar mult       is  "\*" ;
 sugar div        is  "\/" ;
 sugar mod        is  "\%" ;
 sugar not        is  "\!" ;
-sugar bit_not    is  "~" ;
+sugar bit_not    is  "\~" ;
 sugar colon      is  "\:" ;
 sugar osbra      is  "\[" ;
 sugar csbra      is  "\]" ;
