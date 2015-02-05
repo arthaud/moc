@@ -86,6 +86,7 @@ sugar true       is  "true" ;
 sugar false      is  "false" ;
 sugar return     is  "return" ;
 sugar null       is  "NULL" ;
+sugar sizeof     is  "sizeof" ;
 sugar dot        is  "\." ;
 sugar arrow      is  "\-\>" ;
 sugar inf        is  "\<" ;
@@ -1208,6 +1209,14 @@ F -> opar E cpar #gen ;
 }
 
 -- subprogram call
+F -> sizeof opar TYPE cpar #gen ;
+#gen {
+    F^type = new TINTEGER(F^machine.getIntSize());
+
+    Integer size = TYPE^type.getSize();
+    F^code = F^machine.genInt(size.toString());
+}
+
 F -> ident opar #hgen ARGS cpar #gen ;
 global LTYPES args_types; TFUNCTION fun;
 
