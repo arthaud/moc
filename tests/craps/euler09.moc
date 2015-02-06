@@ -1,0 +1,21 @@
+#include "lib/craps.moc"
+#include "tests/craps/scroll.moc"
+
+int main() {
+    int a;
+    int b;
+    int c;
+    bool stop = false;
+
+    for(a = 1; a < 1000; a = a + 1) {
+        for(b = a + 1; b < (1000 - a); b = b + 1) {
+            c = 1000 - a - b;
+            if(c*c == a*a + b*b) {
+                scroll(a*b*c);
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
