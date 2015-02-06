@@ -11,7 +11,8 @@ asm("
     reti
 
     start:
-    set 0x180, %sp
+    // /!\ Should be big enough not to overwrite the code !
+    set 0x6000, %sp
     ba f_main
 ")
 
@@ -136,16 +137,37 @@ export int task2()
     }
 }
 
+export int task3()
+{
+    int *ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b0111;
+    }
+}
+
+export int task4()
+{
+    int *ssegs = (int*) 0xA0000000;
+    while(true)
+    {
+        *(ssegs + 1) = 0b1110;
+    }
+}
+
 int main() {
     pwm_count = 0;
-    malloc_start = (void*)0x185;
+    // /!\ Should be big enough not to overwrite the code !
+    malloc_start = (void*)0x3000;
+
+    int nb_tasks = 4;
 
     // alloc the process table
     // 2 for nb_tasks and current_task and 1 per process
-    process_table = syscall_malloc(2 + 2);
+    process_table = syscall_malloc(2 + nb_tasks);
 
     // nb_tasks and current_task
-    *((int*)process_table) = 2;
+    *((int*)process_table) = nb_tasks;
     *((int*)process_table+1) = 0;
 
     // stacks !
@@ -163,6 +185,18 @@ int main() {
     stack = syscall_malloc(256) + 255;
     *((void**)process_table+2+1) = stack;
     asm("set f_task2, %r9
+    st %r9, $task");
+    *((int*)stack) = task;
+
+    stack = syscall_malloc(256) + 255;
+    *((void**)process_table+2+2) = stack;
+    asm("set f_task3, %r9
+    st %r9, $task");
+    *((int*)stack) = task;
+
+    stack = syscall_malloc(256) + 255;
+    *((void**)process_table+2+3) = stack;
+    asm("set f_task4, %r9
     st %r9, $task");
     *((int*)stack) = task;
 
