@@ -1,0 +1,61 @@
+#include "lib/craps.moc"
+
+
+void sleep(int time){
+    int wait = 20000 * time;
+    while(wait != 0){
+        wait = wait - 1;
+    }
+}
+
+
+int length(int nb){
+    int l = 1;
+    while(nb > 9){
+        nb = nb >> 4;
+        l = l + 1;
+    }
+    return l;
+}
+
+
+void scroll(int data){
+    int *ssegs = (int*) 0xA0000000; // 7 segs adress
+    int tmp_ssegs = 0;
+    int *anodes =  ssegs + 1; // Anodes adress
+    int tmp_anodes = 0;
+    *ssegs = tmp_ssegs;
+    *anodes = tmp_anodes;
+
+    int mask_digit = 0xF;
+
+    int l = length(data);
+    int i = 0;
+    // Write the number
+    while(i < l) {
+        tmp_ssegs = tmp_ssegs * 16 + ((data >> (4 * (l - i))) & mask_digit);
+        tmp_anodes = tmp_anodes * 2 + 1;
+        *ssegs = tmp_ssegs;
+        *anodes = tmp_anodes;
+        i = i + 1;
+        sleep(3);
+    }
+
+    // Add splitters
+    i = 0;
+    while(i < 3) {
+        tmp_ssegs = (tmp_ssegs * 16);// & masq_ssegs;
+        tmp_anodes = (tmp_anodes * 2);// & masq_anodes;
+        *ssegs = tmp_ssegs;
+        *anodes = tmp_anodes;
+        sleep(3);
+        i = i + 1;
+    }
+}
+
+
+int main() {
+    int n = 0x123456;
+    scroll(n);
+    return 0;
+}
