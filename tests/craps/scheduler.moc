@@ -39,54 +39,17 @@ asm("
     push %r7
     push %r8
     push %r9
+
     ld $process_table, %r2
     ld [%r2], %r3 // %r3: nb_tasks
     ld [%r2+1], %r4 // %r4: current_task
-    umulcc %r4, 14, %r5
-    add %r5, 2, %r5
+    add %r4, 2, %r5
     add %r5, %r2, %r5 // %r5: current task entry
     
-    // %r9
-    pop %r6
-    st %r6, [%r5+8]
-    // %r8
-    pop %r6
-    st %r6, [%r5+7]
-    // %r7
-    pop %r6
-    st %r6, [%r5+6]
-    // %r6
-    pop %r6
-    st %r6, [%r5+5]
-    // %r5
-    pop %r6
-    st %r6, [%r5+4]
-    // %r4
-    pop %r6
-    st %r6, [%r5+3]
-    // %r3
-    pop %r6
-    st %r6, [%r5+2]
-    // %r2
-    pop %r6
-    st %r6, [%r5+1]
-    // %r1
-    pop %r6
-    st %r6, [%r5]
+    st %sp, [%r5]
 
-    // before %r1 we have pc and then psr to also set
-   
-    // psr
-    pop %r6
-    st %r6, [%r5+9]
- 
-    // pc
-    pop %r6
-    st %r6, [%r5+13]
-
-    st %sp, [%r5+12]
-    st %fp, [%r5+10]
-    st %r28, [%r5+11]
+    push %fp
+    push %r28
     
     // now it is stored, we can load the other task
 
@@ -97,38 +60,27 @@ asm("
     xor %r4, %r4, %r4 // %r4 <- 0
     pwm_handler_afterreset:
 
-    umulcc %r4, 14, %r5
-    add %r5, 2, %r5
-    add %r5, %r2, %r5 // %r5: current task entry
-
+    st %r4, [%r2+1]
     // don't forget to store the incremented counter
     st %r1, $pwm_count
 
-    // load the registers
+    add %r4, 2, %r5
+    add %r5, %r2, %r5 // %r5: current task entry
 
     // We switch the stack now that everything is pop'ed
-    ld [%r5+12], %sp
-    ld [%r5+10], %fp
-    ld [%r5+11], %r28
+    ld [%r5], %sp
 
-    // pc
-    ld [%r5+13], %r6
-    push %r6
-
-    // psr
-    ld [%r5+9], %r6
-    push %r6
-    
-    // load all the registers !
-    ld [%r5+8], %r9
-    ld [%r5+7], %r8
-    ld [%r5+6], %r7
-    ld [%r5+5], %r6
-    ld [%r5+4], %r5
-    ld [%r5+3], %r4
-    ld [%r5+2], %r3
-    ld [%r5+1], %r2
-    ld [%r5], %r1
+    pop %r28
+    pop %fp
+    pop %r9
+    pop %r8
+    pop %r7
+    pop %r6
+    pop %r5
+    pop %r4
+    pop %r3
+    pop %r2
+    pop %r1
     
     reti
 
@@ -229,10 +181,9 @@ int main() {
     ld $process_table, %r2
     ld [%r2], %r3 // %r3: nb_tasks
     ld [%r2+1], %r4 // %r4: current_task
-    umulcc %r4, 14, %r5
-    add %r5, 2, %r5
-    add %r5, %r2, %r5 // %r5: current task entry
-    ld [%r5+12], %sp
+    add %r2, 2, %r5
+    add %r5, %r4, %r5 // %r5: current task entry
+    ld [%r5], %sp
 
     // jump to the task
     //ld [%r5+13], %r6
