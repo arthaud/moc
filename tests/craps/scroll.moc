@@ -32,30 +32,28 @@ void scroll(int data){
     int l = length(data);
     int i = 0;
     // Write the number
-    while(i < l) {
+    for(i = 1; i <= l; i = i + 1) {
         tmp_ssegs = tmp_ssegs * 16 + ((data >> (4 * (l - i))) & mask_digit);
         tmp_anodes = tmp_anodes * 2 + 1;
         *ssegs = tmp_ssegs;
         *anodes = tmp_anodes;
         i = i + 1;
-        sleep(3);
+        sleep(4);
     }
 
     // Add splitters
-    i = 0;
-    while(i < 3) {
+    for(i = 0; i < 4; i = i + 1) {
         tmp_ssegs = (tmp_ssegs * 16);// & masq_ssegs;
         tmp_anodes = (tmp_anodes * 2);// & masq_anodes;
         *ssegs = tmp_ssegs;
         *anodes = tmp_anodes;
-        sleep(3);
-        i = i + 1;
+        sleep(4);
     }
 }
 
 
 int main() {
-    int n = 0x123456;
+    int n = 0x337423;
     scroll(n);
     return 0;
 }
