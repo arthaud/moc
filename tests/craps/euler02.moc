@@ -1,0 +1,23 @@
+#include "lib/craps.moc"
+#include "tests/craps/scroll.moc"
+
+
+int main() {
+    int a = 2; //fibonacci nth term
+    int b = 1; //fibonacci (n-1)th term
+    int tmp = 0; //temporary variable
+    int sum = 0; //result
+
+    while(a < 4000000) {
+        if((a & 0b1) == 0) { //a % 2 == 0
+            sum = sum + a;
+        }
+        tmp = a;
+        a = a + b;
+        b = tmp;
+    }
+
+    scroll(sum);
+    return 0;
+}
+
