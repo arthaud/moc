@@ -1,5 +1,5 @@
-#include "lib/craps.moc"
-
+#ifndef SCROLL_MOC_INCLUDED
+#define SCROLL_MOC_INCLUDED
 
 void sleep(int time){
     int wait = 20000 * time;
@@ -11,7 +11,7 @@ void sleep(int time){
 
 int length(int nb){
     int l = 1;
-    while(nb > 9){
+    while(nb > 15){
         nb = nb >> 4;
         l = l + 1;
     }
@@ -32,12 +32,11 @@ void scroll(int data){
     int l = length(data);
     int i = 0;
     // Write the number
-    for(i = 1; i <= l; i = i + 1) {
-        tmp_ssegs = tmp_ssegs * 16 + ((data >> (4 * (l - i))) & mask_digit);
+    for(i = l - 1; i >= 0; i = i - 1) {
+        tmp_ssegs = tmp_ssegs * 16 + ((data >> (4 * i)) & mask_digit);
         tmp_anodes = tmp_anodes * 2 + 1;
         *ssegs = tmp_ssegs;
         *anodes = tmp_anodes;
-        i = i + 1;
         sleep(4);
     }
 
@@ -51,9 +50,4 @@ void scroll(int data){
     }
 }
 
-
-int main() {
-    int n = 0x337423;
-    scroll(n);
-    return 0;
-}
+#endif
