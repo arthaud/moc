@@ -10,6 +10,8 @@ import moc.type.TFUNCTION;
 import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TARRAY;
+import moc.type.TSTRUCT;
+import moc.type.FIELD;
 import moc.type.TPOINTER;
 
 /**
@@ -277,6 +279,9 @@ public class MCRAPS extends AbstractMachine {
             case "|":
                 leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
+            case "^":
+                leftOperand.appendAsm("xor " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
+                break;
             case "<<":
                 leftOperand.appendAsm("sll " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
                 break;
@@ -351,6 +356,9 @@ public class MCRAPS extends AbstractMachine {
                 operand.appendAsm("subcc " + genLocation(reg) + ", %r0, %r0");
                 operand.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
                 operand.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
+                break;
+            case "~":
+                operand.appendAsm("xor " + genLocation(reg) + ", %r19, " + genLocation(reg));
                 break;
             default:
                 throw new RuntimeException("Unknown operator: " + operator);
@@ -501,6 +509,25 @@ public class MCRAPS extends AbstractMachine {
         return posCode;
     }
 
+    public Code genFieldAccess(TSTRUCT struct, FIELD field, Code c) {
+        int offset = struct.getFieldOffset(field.getName());
+        Location reg = allocator.pop();
+        allocator.push(reg);
+
+        c.appendAsm(genComment("field access :"));
+
+        if(offset > 0)
+            c.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
+
+        c.setIsAddress(true);
+        c.setLocation(null);
+        return c;
+    }
+
+    public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code c) {
+        return genFieldAccess(struct, field, c);
+    }
+
     public Code genBlock(Code instsCode, VariableLocator vloc) {
         SPARCVariableLocator vl = (SPARCVariableLocator) vloc;
 
@@ -520,6 +547,9 @@ public class MCRAPS extends AbstractMachine {
         allocator.push(reg);
 
         if(i.getType() instanceof TARRAY) { // special case for arrays : generate the address
+            return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
+        }
+        if(i.getType() instanceof TSTRUCT) { // special case for structures : generate the address
             return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
 

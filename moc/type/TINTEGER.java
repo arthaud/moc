@@ -25,7 +25,7 @@ public class TINTEGER implements TTYPE {
     }
 
     public boolean unaryUsable(String op) {
-        return op.equals("+") || op.equals("-");
+        return op.equals("+") || op.equals("-") || op.equals("~");
     }
 
     public boolean isCastableTo(TTYPE other) {

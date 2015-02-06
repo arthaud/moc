@@ -6,6 +6,8 @@ import moc.type.TTYPE;
 import moc.type.TVOID;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
+import moc.type.TSTRUCT;
+import moc.type.FIELD;
 import moc.st.INFOVAR;
 
 /**
@@ -442,6 +444,14 @@ public class Mx86 extends AbstractMachine {
     }
 
     public Code genPointerArrayAccess(INFOVAR info, Code posCode) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genFieldAccess(TSTRUCT struct, FIELD field, Code c) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code c) {
         throw new UnsupportedOperationException();
     }
 
