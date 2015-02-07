@@ -229,11 +229,13 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genBreak() {
-        throw new UnsupportedOperationException();
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
+        return new Code("ba end_loop_" + num + " // break");
     }
 
     public Code genContinue() {
-        throw new UnsupportedOperationException();
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
+        return new Code("ba loop_" + num + " // continue");
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
