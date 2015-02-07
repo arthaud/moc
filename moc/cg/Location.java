@@ -8,10 +8,10 @@ public class Location {
         REGISTER, STACKFRAME, ABSOLUTE
     }
 
-    private int memoryOffset;
+    private long memoryOffset;
     private LocationType memoryType;
 
-    public int getOffset() {
+    public long getOffset() {
         return memoryOffset;
     }
 
@@ -24,7 +24,7 @@ public class Location {
         return memoryOffset + "@" + memoryType;
     }
 
-    public Location(LocationType memoryType, int memoryOffset) {
+    public Location(LocationType memoryType, long memoryOffset) {
         this.memoryOffset = memoryOffset;
         this.memoryType = memoryType;
     }

@@ -13,7 +13,13 @@ public class Code {
     protected Location address;
 
     /**
-     * True if asm generates an address
+     * The value, when it is known at compilation time
+     * Otherwise, null
+     */
+    protected Long value;
+
+    /**
+     * True if the code generates an address
      */
     protected boolean isAddress;
 
@@ -22,11 +28,19 @@ public class Code {
     }
 
     public Code(String asm) {
-        this.asm = asm;
-        address = null;
-        isAddress = false;
+        this(asm, false);
     }
 
+    public Code(String asm, boolean isa) {
+        this.asm = asm;
+        address = null;
+        value = null;
+        isAddress = isa;
+    }
+
+    /**
+     * Assembler
+     */
     public String getAsm() {
         return asm;
     }
@@ -43,8 +57,15 @@ public class Code {
         this.asm = asm;
     }
 
+    /**
+     * Location
+     */
     public void setLocation(Location add) {
         address = add;
+    }
+
+    public boolean hasLocation() {
+        return address != null;
     }
 
     public Location getLocation() {
@@ -57,5 +78,45 @@ public class Code {
 
     public boolean getIsAddress() {
         return isAddress;
+    }
+
+    /**
+     * Value
+     */
+    public Long getValue() {
+        return value;
+    }
+
+    public void setValue(Long value) {
+        this.value = value;
+    }
+
+    public boolean hasValue() {
+        return value != null;
+    }
+
+    /**
+     * Static constructors
+     */
+    public static Code fromLocation(Location l, boolean isa) {
+        Code c = new Code();
+        c.setLocation(l);
+        c.setIsAddress(isa);
+        return c;
+    }
+
+    public static Code fromLocation(Location l) {
+        return fromLocation(l, false);
+    }
+
+    public static Code fromValue(long value, boolean isa) {
+        Code c = new Code();
+        c.setValue(value);
+        c.setIsAddress(isa);
+        return c;
+    }
+
+    public static Code fromValue(long value) {
+        return fromValue(value, false);
     }
 }

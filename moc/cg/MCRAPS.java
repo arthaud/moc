@@ -2,6 +2,7 @@ package moc.cg;
 
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Collections;
 
 import moc.st.INFOVAR;
@@ -13,6 +14,7 @@ import moc.type.TARRAY;
 import moc.type.TSTRUCT;
 import moc.type.FIELD;
 import moc.type.TPOINTER;
+import moc.type.TINTEGER;
 
 /**
  * The CRAPS machine and its generation functions
@@ -22,6 +24,13 @@ public class MCRAPS extends AbstractMachine {
     public static final String[] registerNames = {
         "%r1", "%r2", "%r3", "%r4", "%r5", "%r6", "%r7", "%r8", "%r9"
     };
+
+    public static final HashMap<Long, String> fixedRegisters;
+    static {
+        fixedRegisters = new HashMap<>();
+        fixedRegisters.put(0L, "%r0");
+        fixedRegisters.put(1L, "%r20");
+    }
 
     private Allocator allocator = new Allocator();
 
@@ -52,7 +61,7 @@ public class MCRAPS extends AbstractMachine {
                 if(sb.length() > 1)
                     sb.append(", ");
 
-                sb.append(registerNames[l.getOffset()]);
+                sb.append(registerNames[(int) l.getOffset()]);
             }
 
             sb.append("]");
@@ -66,7 +75,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public String getName() {
-        return "SPARC";
+        return "CRAPS";
     }
 
     public String getSuffix() {
@@ -102,8 +111,8 @@ public class MCRAPS extends AbstractMachine {
         return new DefaultParametersLocator(2);
     }
 
-    public class SPARCVariableLocator extends DefaultVariableLocator {
-        public SPARCVariableLocator(int offset) {
+    public class CRAPSVariableLocator extends DefaultVariableLocator {
+        public CRAPSVariableLocator(int offset) {
             super(offset);
         }
 
@@ -115,7 +124,7 @@ public class MCRAPS extends AbstractMachine {
         }
 
         public VariableLocator getChild() {
-            return new SPARCVariableLocator(offset);
+            return new CRAPSVariableLocator(offset);
         }
     }
 
@@ -126,7 +135,7 @@ public class MCRAPS extends AbstractMachine {
     public VariableLocator getVariableLocator() {
         /* it will generate [%fp - size of first parameter,
          *                   %fp - size of the first two parameters, …] */
-        return new SPARCVariableLocator(0);
+        return new CRAPSVariableLocator(0);
     }
 
     /**
@@ -134,7 +143,7 @@ public class MCRAPS extends AbstractMachine {
      */
     public String genLocation(Location l) {
         if(l.getType() == Location.LocationType.REGISTER) {
-            return registerNames[l.getOffset()];
+            return registerNames[(int) l.getOffset()];
         }
         else if(l.getType() == Location.LocationType.STACKFRAME) {
             if(l.getOffset() >= 0)
@@ -164,215 +173,521 @@ public class MCRAPS extends AbstractMachine {
         return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
-    public Code genConditional(Code codeCond, Code trueBloc, Code falseBloc) {
-        Location regCond = allocator.pop();
-        Code c = forceValue(codeCond, regCond, new TBOOL(getBoolSize()));
+    public Code genConditional(Code conditionCode, Code trueCode, Code falseCode) {
+        if(conditionCode.hasValue() && !conditionCode.getIsAddress()) {
+            if(conditionCode.getValue() == 0) { // if(false)
+                return falseCode;
+            }
+            else { // if(true)
+                return trueCode;
+            }
+        }
+        else {
+            CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
+            forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
+            Code code = cond.code;
 
-        int num = getLabelNum();
-        falseBloc.appendAsm("ba cond_end_" + num);
-        trueBloc.prependAsm("cond_then_" + num + ":");
-        trueBloc.appendAsm("cond_end_" + num + ":");
+            int num = getLabelNum();
+            falseCode.appendAsm("ba cond_end_" + num);
+            trueCode.prependAsm("cond_then_" + num + ":");
+            trueCode.appendAsm("cond_end_" + num + ":");
 
-        c.prependAsm(genComment("if condition :"));
-        c.appendAsm("cmp " + genLocation(regCond) + ", %r0");
-        c.appendAsm("bne cond_then_" + num);
-        c.appendAsm(falseBloc.getAsm());
-        c.appendAsm(trueBloc.getAsm());
-        return c;
+            code.prependAsm(genComment("if condition :"));
+            code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
+            code.appendAsm("bne cond_then_" + num);
+            code.appendAsm(falseCode.getAsm());
+            code.appendAsm(trueCode.getAsm());
+            return code;
+        }
     }
 
-    public Code genWhileLoop(Code condition, Code c) {
-        Location regCond = allocator.pop();
-        condition = forceValue(condition, regCond, new TBOOL(1));
+    public Code genWhileLoop(Code conditionCode, Code body) {
+        if(conditionCode.hasValue() && !conditionCode.getIsAddress()) {
+            if(conditionCode.getValue() == 0) { // while(false)
+                return new Code("");
+            }
+            else { // while(true)
+                int num = getLabelNum();
+                body.prependAsm("loop_" + num + ":");
+                body.prependAsm(genComment("while true loop :"));
+                body.appendAsm("ba loop_" + num);
+                return body;
+            }
+        }
+        else {
+            CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
+            forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
 
-        int num = getLabelNum();
-        condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
-        condition.appendAsm("be end_loop_" + num);
+            int num = getLabelNum();
+            cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
+            cond.code.appendAsm("be end_loop_" + num);
 
-        c.prependAsm(condition.getAsm());
-        c.prependAsm(genComment("loop condition :"));
-        c.prependAsm("loop_" + num + ":");
-        c.appendAsm("ba loop_" + num);
-        c.appendAsm("end_loop_" + num + ":");
-        return c;
+            body.prependAsm(cond.code.getAsm());
+            body.prependAsm(genComment("loop condition :"));
+            body.prependAsm("loop_" + num + ":");
+
+            body.appendAsm("ba loop_" + num);
+            body.appendAsm("end_loop_" + num + ":");
+            return body;
+        }
     }
 
-    public Code genForLoop(Code init, Code condition, Code incr, Code c) {
-        Location regCond = allocator.pop();
-        condition = forceValue(condition, regCond, new TBOOL(1));
+    public Code genForLoop(Code init, Code conditionCode, Code incr, Code body) {
+        CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
+        forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
 
         int num = getLabelNum();
-        condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
-        condition.appendAsm("be end_loop_" + num);
+        cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
+        cond.code.appendAsm("be end_loop_" + num);
 
-        c.prependAsm(condition.getAsm());
-        c.prependAsm(genComment("loop condition :"));
-        c.prependAsm("loop_" + num + ":");
-        c.prependAsm(init.getAsm());
+        body.prependAsm(cond.code.getAsm());
+        body.prependAsm(genComment("loop condition :"));
+        body.prependAsm("loop_" + num + ":");
+        body.prependAsm(init.getAsm());
 
-        c.appendAsm(incr.getAsm());
-        c.appendAsm("ba loop_" + num);
-        c.appendAsm("end_loop_" + num + ":");
-        return c;
+        body.appendAsm(incr.getAsm());
+        body.appendAsm("ba loop_" + num);
+        body.appendAsm("end_loop_" + num + ":");
+        return body;
     }
 
-    public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
-        Location valueReg = allocator.pop();
-        returnVal = forceValue(returnVal, valueReg, function.getReturnType());
+    public Code genFunctionReturn(Code returnCode, TTYPE type, TFUNCTION fun) {
+        Location r1 = new Location(Location.LocationType.REGISTER, 0);
+        Code code;
 
-        if(!genLocation(valueReg).equals("%r1")) {
-            returnVal.appendAsm("mov " + genLocation(valueReg) + ", %r1");
+        if(returnCode.hasValue() && !returnCode.getIsAddress()) {
+            code = new Code(genSet(returnCode.getValue(), r1));
+        }
+        else if(returnCode.hasLocation() && !returnCode.getIsAddress()) {
+            code = new Code(genMovMemToReg(genLocation(returnCode.getLocation()), r1));
+        }
+        else {
+            CodeValue ret = forceAsm(returnCode, type);
+            code = ret.code;
+            forceValue(code, ret.reg, type);
+
+            if(!ret.reg.equals(r1))
+                code.appendAsm("mov " + genLocation(ret.reg) + ", " + genLocation(r1));
         }
 
-        returnVal.appendAsm("ba f_" + function.getName() + "_end");
-        return returnVal;
+        code.appendAsm("ba f_" + fun.getName() + "_end");
+        return code;
     }
 
-    public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        Location valueReg = allocator.pop();
-        Location addrReg = allocator.pop();
+    public Code genAffectation(Code addrCode, Code valueCode, TTYPE addrType, TTYPE valueType) {
+        CodeValue value = forceAsm(valueCode, valueType);
+        forceValue(value.code, value.reg, valueType);
+        Code code = value.code;
+        code.prependAsm(genComment("affected value :"));
 
-        affectedVal = forceValue(affectedVal, valueReg, type);
-        affectedVal.prependAsm(genComment("affected value :"));
-
-        if (address.getLocation() != null) {
-            affectedVal.appendAsm(genMovRegToMem(valueReg, genLocation(address.getLocation())));
-            return affectedVal;
-        } else {
-            address.prependAsm(genComment("affected address :"));
-            address.appendAsm(affectedVal.getAsm());
-            address.appendAsm(genMovRegToMem(valueReg, "[" + genLocation(addrReg) + "]"));
-            return address;
+        if(addrCode.hasLocation() && !addrCode.getIsAddress()) {
+            code.appendAsm(genMovRegToMem(value.reg, genLocation(addrCode.getLocation())));
         }
+        else {
+            assert(addrCode.getIsAddress());
+
+            // in that case, we will need a new register
+            if(addrCode.hasValue() || addrCode.hasLocation())
+                allocator.push(value.reg);
+
+            CodeValue addr = forceAsm(addrCode, addrType);
+
+            if(addrCode.hasValue() || addrCode.hasLocation())
+                allocator.pop();
+
+            code = addr.code;
+            code.prependAsm(genComment("affected address :"));
+            code.appendAsm(value.code.getAsm());
+            code.appendAsm(genMovRegToMem(value.reg, "[" + genLocation(addr.reg) + "]"));
+        }
+
+        return code;
     }
 
     public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
-        // Warning : Don't forget the order is important here...
-        Location rightReg = allocator.pop();
-        Location leftReg = allocator.pop();
+        if(leftOperand.hasValue() && !leftOperand.getIsAddress()) {
+            long left = leftOperand.getValue();
 
-        leftOperand = forceValue(leftOperand, leftReg, leftType);
-        rightOperand = forceValue(rightOperand, rightReg, rightType);
+            if(rightOperand.hasValue() && !rightOperand.getIsAddress()) {
+                long right = rightOperand.getValue();
 
-        leftOperand.prependAsm(genComment("left operand :"));
-        rightOperand.prependAsm(genComment("right operand :"));
+                switch(operator) {
+                    case "+": return Code.fromValue(left + right);
+                    case "-": return Code.fromValue(left - right);
+                    case "*": return Code.fromValue(left * right);
+                    case "/": return Code.fromValue(left / right);
+                    case "%": return Code.fromValue(left % right);
+                    case "&": return Code.fromValue(left & right);
+                    case "|": return Code.fromValue(left | right);
+                    case "^": return Code.fromValue(left ^ right);
+                    case "<<": return Code.fromValue(left << right);
+                    case ">>": return Code.fromValue(left >> right);
+                    case "&&": return Code.fromValue((left != 0 && right != 0) ? 1 : 0);
+                    case "||": return Code.fromValue((left != 0 || right != 0) ? 1 : 0);
+                    case "==": return Code.fromValue(left == right ? 1 : 0);
+                    case "!=": return Code.fromValue(left != right ? 1 : 0);
+                    case "<": return Code.fromValue(left < right ? 1 : 0);
+                    case ">=": return Code.fromValue(left >= right ? 1 : 0);
+                    case ">": return Code.fromValue(left > right ? 1 : 0);
+                    case "<=": return Code.fromValue(left <= right ? 1 : 0);
+                    default:
+                        throw new RuntimeException("Unknown operator: " + operator);
+                }
+            }
+            else {
+                CodeValue right = forceAsm(rightOperand, rightType);
+                forceValue(right.code, right.reg, rightType);
+                Code code = right.code;
+                Location reg = right.reg;
+                Location tmp;
+                allocator.push(reg);
 
-        // the result will be in leftReg
-        leftOperand.appendAsm(rightOperand.getAsm());
+                code.prependAsm(genComment("right operand :"));
+                code.appendAsm(genComment(left + " " + operator + " " + genLocation(reg)));
 
-        switch(operator) {
-            case "+":
-                leftOperand.appendAsm("add " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "-":
-                leftOperand.appendAsm("sub " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "*":
-                leftOperand.appendAsm("umulcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "/":
-            case "%":
-                throw new UnsupportedOperationException("CRAPS");
-            case "&":
-                leftOperand.appendAsm("and " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "|":
-                leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "^":
-                leftOperand.appendAsm("xor " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "<<":
-                leftOperand.appendAsm("sll " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case ">>":
-                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "&&":
-                // "and" in craps is a bitwise operator.
-                // 0b10 and 0b100 = 0, too bad..
-                leftOperand.appendAsm(genComment("operator " + operator));
+                switch(operator) {
+                    case "+":
+                        code.appendAsm(genImmediateOperation("add", reg, left, reg));
+                        break;
+                    case "-":
+                        tmp = allocator.getFreeReg();
+                        code.appendAsm(genSet(left, tmp));
+                        code.appendAsm(genOperation("sub", tmp, reg, reg));
+                        break;
+                    case "*":
+                        code.appendAsm(genImmediateOperation("umulcc", reg, left, reg));
+                        break;
+                    case "/":
+                    case "%":
+                        throw new UnsupportedOperationException("CRAPS");
+                    case "&":
+                        code.appendAsm(genImmediateOperation("and", reg, left, reg));
+                        break;
+                    case "|":
+                        code.appendAsm(genImmediateOperation("or", reg, left, reg));
+                        break;
+                    case "^":
+                        code.appendAsm(genImmediateOperation("xor", reg, left, reg));
+                        break;
+                    case "<<":
+                        tmp = allocator.getFreeReg();
+                        code.appendAsm(genSet(left, tmp));
+                        code.appendAsm(genOperation("sll", tmp, reg, reg));
+                        break;
+                    case ">>":
+                        tmp = allocator.getFreeReg();
+                        code.appendAsm(genSet(left, tmp));
+                        code.appendAsm(genOperation("srl", tmp, reg, reg));
+                        break;
+                    case "&&":
+                        if(left == 0) {
+                            allocator.pop(); // reg is no more used
+                            return Code.fromValue(0);
+                        }
+                        else {
+                            // generates reg = (reg != 0)
+                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
+                            code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
+                        }
+                        break;
+                    case "||":
+                        if(left == 0) {
+                            // generates reg = (reg != 0)
+                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
+                            code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
+                        }
+                        else {
+                            allocator.pop(); // reg is no more used
+                            return Code.fromValue(1);
+                        }
+                        break;
+                    case "==":
+                    case "!=":
+                        code.appendAsm(genImmediateOperation("subcc", reg, left, reg));
+                        code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
+                        code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
+                        if (operator.equals("!="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case "<":
+                    case ">=":
+                        tmp = allocator.getFreeReg();
+                        code.appendAsm(genSet(left, tmp));
+                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(reg) + ", %r0");
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals(">="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case ">":
+                    case "<=":
+                        code.appendAsm(genImmediateOperation("subcc", reg, left, reg));
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals("<="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown operator: " + operator);
+                }
 
-                // leftReg > 0
-                leftOperand.appendAsm("subcc %r0, " + genLocation(leftReg) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
-
-                // rightReg > 0
-                leftOperand.appendAsm("subcc %r0, " + genLocation(rightReg) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(rightReg)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(rightReg) + ", 7, " + genLocation(rightReg)); // normalization
-
-                leftOperand.appendAsm("and " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "||":
-                leftOperand.appendAsm("or " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", " + genLocation(leftReg));
-                break;
-            case "==":
-            case "!=":
-                leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", %r0");
-                leftOperand.appendAsm("and %r25, 64, " + genLocation(leftReg)); // 64 -> mask for Z
-                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 6, " + genLocation(leftReg)); // normalization
-                if (operator.equals("!="))
-                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
-                break;
-            case "<":
-            case ">=":
-                leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(leftReg) + ", " + genLocation(rightReg) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
-                if(operator.equals(">="))
-                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
-                break;
-            case ">":
-            case "<=":
-                leftOperand.appendAsm(genComment("operator " + operator));
-                leftOperand.appendAsm("subcc " + genLocation(rightReg) + ", " + genLocation(leftReg) + ", %r0");
-                leftOperand.appendAsm("and %r25, 128, " + genLocation(leftReg)); // 128 -> mask for N (= left < right)
-                leftOperand.appendAsm("srl " + genLocation(leftReg) + ", 7, " + genLocation(leftReg)); // normalization
-                if(operator.equals("<="))
-                    leftOperand.appendAsm("xor " + genLocation(leftReg) + ", 1, " + genLocation(leftReg));
-                break;
-            default:
-                throw new RuntimeException("Unknown operator: " + operator);
+                return code;
+            }
         }
+        else { // !leftOperand.hasValue()
+            if(rightOperand.hasValue() && !rightOperand.getIsAddress()) {
+                long right = rightOperand.getValue();
 
-        allocator.push(leftReg);
-        return leftOperand;
+                CodeValue left = forceAsm(leftOperand, leftType);
+                forceValue(left.code, left.reg, leftType);
+                Code code = left.code;
+                Location reg = left.reg;
+                Location tmp;
+                allocator.push(reg);
+
+                code.prependAsm(genComment("left operand :"));
+                code.appendAsm(genComment(genLocation(reg) + " " + operator + " " + right));
+
+                switch(operator) {
+                    case "+":
+                        code.appendAsm(genImmediateOperation("add", reg, right, reg));
+                        break;
+                    case "-":
+                        code.appendAsm(genImmediateOperation("sub", reg, right, reg));
+                        break;
+                    case "*":
+                        code.appendAsm(genImmediateOperation("umulcc", reg, right, reg));
+                        break;
+                    case "/":
+                    case "%":
+                        throw new UnsupportedOperationException("CRAPS");
+                    case "&":
+                        code.appendAsm(genImmediateOperation("and", reg, right, reg));
+                        break;
+                    case "|":
+                        code.appendAsm(genImmediateOperation("or", reg, right, reg));
+                        break;
+                    case "^":
+                        code.appendAsm(genImmediateOperation("xor", reg, right, reg));
+                        break;
+                    case "<<":
+                        code.appendAsm(genImmediateOperation("sll", reg, right, reg));
+                        break;
+                    case ">>":
+                        code.appendAsm(genImmediateOperation("srl", reg, right, reg));
+                        break;
+                    case "&&":
+                        if(right == 0) {
+                            allocator.pop(); // reg is no more used
+                            return Code.fromValue(0);
+                        }
+                        else {
+                            // generates reg = (reg != 0)
+                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
+                            code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
+                        }
+                        break;
+                    case "||":
+                        if(right == 0) {
+                            // generates reg = (reg != 0)
+                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
+                            code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
+                        }
+                        else {
+                            allocator.pop(); // reg is no more used
+                            return Code.fromValue(1);
+                        }
+                        break;
+                    case "==":
+                    case "!=":
+                        code.appendAsm(genImmediateOperation("subcc", reg, right, reg));
+                        code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
+                        code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
+                        if (operator.equals("!="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case "<":
+                    case ">=":
+                        code.appendAsm(genImmediateOperation("subcc", reg, right, reg));
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals(">="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case ">":
+                    case "<=":
+                        tmp = allocator.getFreeReg();
+                        code.appendAsm(genSet(right, tmp));
+                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(reg) + ", %r0");
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals("<="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown operator: " + operator);
+                }
+
+                return code;
+            }
+            else {
+                // warning : Don't forget the order is important here...
+                CodeValue right = forceAsm(rightOperand, rightType);
+                CodeValue left = forceAsm(leftOperand, leftType);
+
+                Location reg = right.reg;
+                allocator.push(reg);
+
+                /* This is very tricky.
+                 * It is possible that both forceAsm(right) and forceAsm(left) make
+                 * a getFreeReg(), and so right.reg and left.reg are the same.
+                 * An other potential problem is when forceAsm(right) makes a pop()
+                 * and forceAsm(left) makes a getFreeReg().
+                 */
+                if(right.reg.equals(left.reg)) {
+                    left = forceAsm(leftOperand, leftType);
+                }
+
+                forceValue(left.code, left.reg, leftType);
+                forceValue(right.code, right.reg, rightType);
+
+                left.code.prependAsm(genComment("left operand :"));
+                right.code.prependAsm(genComment("right operand :"));
+
+                Code code = left.code;
+                code.appendAsm(right.code.getAsm());
+                code.appendAsm(genComment(genLocation(left.reg) + " " + operator + " " + genLocation(right.reg)));
+
+                switch(operator) {
+                    case "+":
+                        code.appendAsm("add " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "-":
+                        code.appendAsm("sub " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "*":
+                        code.appendAsm("umulcc " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "/":
+                    case "%":
+                        throw new UnsupportedOperationException("CRAPS");
+                    case "&":
+                        code.appendAsm("and " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "|":
+                        code.appendAsm("or " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "^":
+                        code.appendAsm("xor " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "<<":
+                        code.appendAsm("sll " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case ">>":
+                        code.appendAsm("srl " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "&&":
+                        // "and" in craps is a bitwise operator.
+                        // 0b10 and 0b100 = 0, too bad..
+
+                        // generates left.reg = (left.reg != 0)
+                        code.appendAsm("cmp %r0, " + genLocation(left.reg));
+                        code.appendAsm("and %r25, 16, " + genLocation(left.reg)); // 16 -> mask for C
+
+                        // generates right.reg = (right.reg != 0)
+                        code.appendAsm("cmp %r0, " + genLocation(right.reg));
+                        code.appendAsm("and %r25, 16, " + genLocation(right.reg)); // 16 -> mask for C
+
+                        code.appendAsm("and " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
+                        break;
+                    case "||":
+                        code.appendAsm("or " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        break;
+                    case "==":
+                    case "!=":
+                        code.appendAsm("subcc " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", %r0");
+                        code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
+                        code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
+                        if (operator.equals("!="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case "<":
+                    case ">=":
+                        code.appendAsm("subcc " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", %r0");
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals(">="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    case ">":
+                    case "<=":
+                        code.appendAsm("subcc " + genLocation(right.reg) + ", " + genLocation(left.reg) + ", %r0");
+                        code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
+                        code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
+                        if(operator.equals("<="))
+                            code.appendAsm("xor " + genLocation(reg) + ", 1, " + genLocation(reg));
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown operator: " + operator);
+                }
+
+                return code;
+            }
+        }
     }
 
     public Code genUnary(Code operand, TTYPE type, String operator) {
-        Location reg = allocator.pop();
-        operand = forceValue(operand, reg, type);
-
-        switch(operator) {
-            case "-":
-                operand.appendAsm("negcc " + genLocation(reg));
-                break;
-            case "!":
-                operand.appendAsm(genComment("operator " + operator));
-                operand.appendAsm("subcc " + genLocation(reg) + ", %r0, %r0");
-                operand.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
-                operand.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
-                break;
-            case "~":
-                operand.appendAsm("xor " + genLocation(reg) + ", %r19, " + genLocation(reg));
-                break;
-            default:
-                throw new RuntimeException("Unknown operator: " + operator);
+        if(operand.hasValue() && !operand.getIsAddress()) {
+            switch(operator) {
+                case "-": return Code.fromValue(- operand.getValue());
+                case "!": return Code.fromValue(operand.getValue() != 0 ? 0 : 1);
+                case "~": return Code.fromValue(~ operand.getValue());
+                default:
+                    throw new RuntimeException("Unknown operator: " + operator);
+            }
         }
+        else {
+            CodeValue c = forceAsm(operand, type);
+            forceValue(c.code, c.reg, type);
+            c.code.appendAsm(genComment("operator " + operator));
 
-        allocator.push(reg);
-        return operand;
+            switch(operator) {
+                case "-":
+                    c.code.appendAsm("negcc " + genLocation(c.reg));
+                    break;
+                case "!":
+                    c.code.appendAsm("cmp " + genLocation(c.reg) + ", %r0");
+                    c.code.appendAsm("and %r25, 64, " + genLocation(c.reg)); // 64 -> mask for Z
+                    c.code.appendAsm("srl " + genLocation(c.reg) + ", 6, " + genLocation(c.reg)); // normalization
+                    break;
+                case "~":
+                    c.code.appendAsm("xor " + genLocation(c.reg) + ", -1, " + genLocation(c.reg));
+                    break;
+                default:
+                    throw new RuntimeException("Unknown operator: " + operator);
+            }
+
+            allocator.push(c.reg);
+            return c.code;
+        }
     }
 
     public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
-        Location reg = allocator.pop();
-        castedCode = forceValue(castedCode, reg, oldType);
-        allocator.push(reg);
-        return castedCode;
+        if(!castedCode.getIsAddress()
+                && (castedCode.hasValue() || castedCode.hasLocation())) {
+            return castedCode;
+        }
+        else {
+            CodeValue c = forceAsm(castedCode, oldType);
+            forceValue(c.code, c.reg, oldType);
+            allocator.push(c.reg);
+            return c.code;
+        }
     }
 
     @Override
@@ -420,11 +735,8 @@ public class MCRAPS extends AbstractMachine {
      *
      * @param value The code for the initial value
      */
-    public Code genDecl(INFOVAR info, Code value, TTYPE type) {
-        Location valueReg = allocator.pop();
-        value = forceValue(value, valueReg, type);
-        value.appendAsm(genPush(valueReg));
-        return value;
+    public Code genDecl(INFOVAR info, Code operand, TTYPE type) {
+        return genArg(operand, type);
     }
 
     /**
@@ -442,94 +754,151 @@ public class MCRAPS extends AbstractMachine {
      *
      * @param value The code for the expression
      */
-    public Code genInst(TTYPE type, Code value) {
-        // if it's an expression of type void, no register are used
-        if(!(type instanceof TVOID))
-            allocator.pop();
+    public Code genInst(TTYPE type, Code operand) {
+        if(operand.hasValue() || operand.hasLocation()) {
+            return new Code("");
+        }
+        else {
+            // if it's an expression of type void, no register are used
+            if(!(type instanceof TVOID))
+                allocator.pop();
 
-        return value;
+            return operand;
+        }
     }
 
-    public Code genArg(Code e, TTYPE type) {
-        Location argReg = allocator.pop();
-        e = forceValue(e, argReg, type);
-        e.appendAsm(genPush(argReg));
-        return e;
+    public Code genArg(Code operand, TTYPE type) {
+        if(operand.hasValue() && !operand.getIsAddress()
+                && fixedRegisters.containsKey(operand.getValue())) {
+            return new Code("push " + fixedRegisters.get(operand.getValue()));
+        }
+        else {
+            CodeValue c = forceAsm(operand, type);
+            forceValue(c.code, c.reg, type);
+            c.code.appendAsm(genPush(c.reg));
+            return c.code;
+        }
     }
 
     public Code genAccess(Code pointerCode, TTYPE pointedType) {
-        Location pointerReg = allocator.pop();
+        Code code;
 
         if(pointerCode.getIsAddress()) {
-            pointerCode.appendAsm(genMovMemToReg("[" + genLocation(pointerReg) + "]", genLocation(pointerReg)));
+            CodeValue c = forceAsm(pointerCode, new TPOINTER(pointedType, getPointerSize()));
+            code = c.code;
+            forceValue(code, c.reg, new TPOINTER(pointedType, getPointerSize()));
+            allocator.push(c.reg);
+        }
+        else {
+            code = pointerCode;
         }
 
-        pointerCode.setIsAddress(true);
-        pointerCode.setLocation(null);
-        allocator.push(pointerReg);
-        return pointerCode;
+        code.setIsAddress(true);
+        return code;
     }
 
     public Code genStackArrayAccess(INFOVAR info, Code posCode) {
         TARRAY type = (TARRAY) info.getType();
-        Location posReg = allocator.pop();
+        Code code;
 
-        posCode.appendAsm(genComment("stack array access :"));
-        // compute %fp - tab.offset + index * elementsType.size in posReg
+        if(posCode.hasValue() && !posCode.getIsAddress()) {
+            long offset = posCode.getValue() * type.getElementsType().getSize();
+            Location loc = info.getLocation();
+            code = Code.fromLocation(new Location(loc.getType(),
+                                                  loc.getOffset() + offset));
+        }
+        else {
+            CodeValue c = forceAsm(posCode, new TINTEGER(getIntSize()));
+            code = c.code;
+            allocator.push(c.reg);
 
-        if(type.getElementsType().getSize() != 1)
-            posCode.appendAsm("umulcc " + genLocation(posReg) + ", " + type.getElementsType().getSize() + ", " + genLocation(posReg));
+            code.appendAsm(genComment("stack array access :"));
+            if(type.getElementsType().getSize() != 1)
+                code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getElementsType().getSize() + ", " + genLocation(c.reg));
 
-        posCode.appendAsm("add " + genLocation(posReg) + ", %fp, " + genLocation(posReg));
-        posCode.appendAsm("sub " + genLocation(posReg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(posReg));
-        posCode.setIsAddress(true);
-        posCode.setLocation(null);
+            code.appendAsm("add " + genLocation(c.reg) + ", %fp, " + genLocation(c.reg));
+            code.appendAsm("sub " + genLocation(c.reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(c.reg));
+            code.setIsAddress(true);
+        }
 
-        allocator.push(posReg);
-        return posCode;
+        return code;
     }
 
     public Code genPointerArrayAccess(INFOVAR info, Code posCode) {
         TPOINTER type = (TPOINTER) info.getType();
-        Location posReg = allocator.pop();
-        allocator.push(posReg);
-        Location arrayReg = allocator.getFreeReg();
+        Code code;
 
-        posCode.appendAsm(genComment("pointer array access :"));
-        // compute %fp - tab.offset + index * elementsType.size in posReg
+        if(posCode.hasValue() && !posCode.getIsAddress()) {
+            long offset = posCode.getValue() * type.getType().getSize();
+            Location reg = allocator.getFreeReg();
+            allocator.push(reg);
 
-        if(type.getType().getSize() != 1)
-            posCode.appendAsm("umulcc " + genLocation(posReg) + ", " + type.getType().getSize() + ", " + genLocation(posReg));
+            code = new Code(genMovMemToReg(genLocation(info.getLocation()), reg)); // pointer value
+            code.appendAsm(genComment("pointer array access :"));
 
-        posCode.appendAsm(genMovMemToReg(genLocation(info.getLocation()), genLocation(arrayReg)));
-        posCode.appendAsm("add " + genLocation(arrayReg) + ", " + genLocation(posReg) + ", " + genLocation(posReg));
-        posCode.setIsAddress(true);
-        posCode.setLocation(null);
+            if(offset > 0)
+                code.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
+        }
+        else {
+            CodeValue c = forceAsm(posCode, new TINTEGER(getIntSize()));
+            code = c.code;
+            forceValue(code, c.reg, new TINTEGER(getIntSize()));
+            allocator.push(c.reg);
 
-        return posCode;
+            Location pointerReg = allocator.getFreeReg();
+            code.appendAsm(genMovMemToReg(genLocation(info.getLocation()), pointerReg)); // pointer value
+            code.appendAsm(genComment("pointer array access :"));
+
+            if(type.getType().getSize() != 1)
+                code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getType().getSize() + ", " + genLocation(c.reg));
+
+            code.appendAsm("add " + genLocation(pointerReg) + ", " + genLocation(c.reg) + ", " + genLocation(c.reg));
+        }
+
+        code.setIsAddress(true);
+        return code;
     }
 
-    public Code genFieldAccess(TSTRUCT struct, FIELD field, Code c) {
+    public Code genFieldAccess(TSTRUCT struct, FIELD field, Code operand) {
         int offset = struct.getFieldOffset(field.getName());
-        Location reg = allocator.pop();
-        allocator.push(reg);
+        Code code;
 
-        c.appendAsm(genComment("field access :"));
+        if(operand.hasLocation() && !operand.getIsAddress()) {
+            Location loc = operand.getLocation();
+            code = Code.fromLocation(new Location(loc.getType(),
+                                                  loc.getOffset() + offset));
+        }
+        else {
+            assert(operand.getIsAddress());
+            CodeValue c = forceAsm(operand, struct);
+            code = c.code;
 
-        if(offset > 0)
-            c.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
+            if(offset > 0)
+                code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
 
-        c.setIsAddress(true);
-        c.setLocation(null);
-        return c;
+            allocator.push(c.reg);
+            code.setIsAddress(true);
+        }
+
+        return code;
     }
 
-    public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code c) {
-        return genFieldAccess(struct, field, c);
+    public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code operand) {
+        int offset = struct.getFieldOffset(field.getName());
+        CodeValue c = forceAsm(operand, new TPOINTER(struct, getPointerSize()));
+        forceValue(c.code, c.reg, new TPOINTER(struct, getPointerSize()));
+
+        c.code.appendAsm(genComment("field access :"));
+        if(offset > 0)
+            c.code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
+
+        c.code.setIsAddress(true);
+        allocator.push(c.reg);
+        return c.code;
     }
 
     public Code genBlock(Code instsCode, VariableLocator vloc) {
-        SPARCVariableLocator vl = (SPARCVariableLocator) vloc;
+        CRAPSVariableLocator vl = (CRAPSVariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {
             instsCode.appendAsm("add %sp, " + (-vl.getLocalOffset()) + ", %sp " + genComment("removing local variables"));
@@ -539,35 +908,14 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genVariable(INFOVAR i) {
-        Location.LocationType locType = i.getLocation().getType();
-        assert(locType == Location.LocationType.STACKFRAME ||
-               locType == Location.LocationType.ABSOLUTE);
-
-        Location reg = allocator.getFreeReg();
-        allocator.push(reg);
-
-        if(i.getType() instanceof TARRAY) { // special case for arrays : generate the address
-            return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
-        }
-        if(i.getType() instanceof TSTRUCT) { // special case for structures : generate the address
-            return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
-        }
-
-        Code c = new Code(genMovMemToReg(genLocation(i.getLocation()), genLocation(reg)));
-        c.setLocation(i.getLocation());
-
-        return c;
+        return Code.fromLocation(i.getLocation());
     }
 
     public Code genAddress(INFOVAR i) {
-        Location.LocationType locType = i.getLocation().getType();
-        assert(locType == Location.LocationType.STACKFRAME ||
-               locType == Location.LocationType.ABSOLUTE);
-
         Location reg = allocator.getFreeReg();
         allocator.push(reg);
 
-        if(locType == Location.LocationType.STACKFRAME) {
+        if(i.getLocation().getType() == Location.LocationType.STACKFRAME) {
             return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
         else { // locType == Location.LocationType.ABSOLUTE
@@ -576,9 +924,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genInt(String cst) {
-        Location reg = allocator.getFreeReg();
-        allocator.push(reg);
-        return new Code("set " + cst + ", " + genLocation(reg));
+        return Code.fromValue(getLongFromString(cst));
     }
 
     private int stringOffset = 0;
@@ -594,48 +940,93 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genNull() {
-        return genBool(0);
+        return Code.fromValue(0);
     }
 
     public Code genBool(int b) {
-        Location reg = allocator.getFreeReg();
-        allocator.push(reg);
-        return new Code("set " + b + ", " + genLocation(reg));
+        return Code.fromValue(b);
     }
 
     public Code genChar(String c) {
-        Location reg = allocator.getFreeReg();
-        allocator.push(reg);
-        return new Code("set " + getCharFromString(c) + ", " + genLocation(reg));
+        return Code.fromValue(getCharFromString(c));
     }
 
     /**
-     * Ensures the Code gives a value
+     * Generates the assembler for a lazy code
+     *
+     * warning: the register is not pushed on the allocator
+     */
+    private CodeValue forceAsm(Code operand, TTYPE type) {
+        Code code;
+        Location reg;
+
+        if(operand.hasValue()) {
+            reg = allocator.getFreeReg();
+            code = new Code(genSet(operand.getValue(), reg));
+        }
+        else if(operand.hasLocation()) {
+            reg = allocator.getFreeReg();
+            Location loc = operand.getLocation();
+
+            // special case for arrays and structures
+            if((type instanceof TARRAY || type instanceof TSTRUCT)
+                    && !operand.getIsAddress()) {
+                if(loc.getType() == Location.LocationType.STACKFRAME) {
+                    code = new Code("sub %fp, " + (-loc.getOffset()) + ", " + genLocation(reg));
+                }
+                else { // locType == Location.LocationType.ABSOLUTE
+                    code = new Code("set glob_" + loc.getOffset() + ", " + genLocation(reg));
+                }
+            }
+            else {
+                code = new Code(genMovMemToReg(genLocation(loc), reg));
+            }
+        }
+        else {
+            reg = allocator.pop();
+            code = new Code(operand.getAsm());
+        }
+
+        code.setIsAddress(operand.getIsAddress());
+        return new CodeValue(code, reg);
+    }
+
+    /**
+     * Ensures the Code gives a value (dereference)
      *
      * @param operand The code
-     * @param valueReg Where to store the value
+     * @param reg In which register is the value
      * @param type The type of the value
      */
-    private Code forceValue(Code operand, Location valueReg, TTYPE type) {
-        if(type instanceof TARRAY) // special case for arrays : no dereferencing
-            return operand;
+    private void forceValue(Code operand, Location reg, TTYPE type) {
+        assert(!operand.hasValue() && !operand.hasLocation());
 
-        if(operand.getLocation() != null) {
-            return new Code(genMovMemToReg(genLocation(operand.getLocation()), genLocation(valueReg)));
-        }
-        else if(operand.getIsAddress()) {
-            operand.appendAsm(genMovMemToReg("[" + genLocation(valueReg) + "]", genLocation(valueReg)));
+        if(operand.getIsAddress()) {
+            operand.appendAsm(genMovMemToReg("[" + genLocation(reg) + "]", reg));
             operand.setIsAddress(false);
         }
+    }
 
-        return operand;
+    /**
+     * A code that puts a value in a register
+     */
+    private class CodeValue {
+        public Code code;
+        public Location reg;
+
+        public CodeValue(Code code, Location reg) {
+            assert(!code.hasValue() && !code.hasLocation());
+            this.code = code;
+            this.reg = reg;
+        }
     }
 
     /**
      * Generate a push
      */
-    private String genPush(Location operand) {
-        return "push " + genLocation(operand);
+    private String genPush(Location reg) {
+        assert(reg.getType() == Location.LocationType.REGISTER);
+        return "push " + genLocation(reg);
     }
 
     /**
@@ -649,8 +1040,49 @@ public class MCRAPS extends AbstractMachine {
     /**
      * Generate a mov from memory to a register
      */
-    private String genMovMemToReg(String mem, String reg) {
-        return "ld " + mem + ", " + reg;
+    private String genMovMemToReg(String mem, Location reg) {
+        assert(reg.getType() == Location.LocationType.REGISTER);
+        return "ld " + mem + ", " + genLocation(reg);
+    }
+
+    /**
+     * Generate a set
+     */
+    private String genSet(long value, Location reg) {
+        assert(reg.getType() == Location.LocationType.REGISTER);
+
+        if(value >= -4096 && value <= 4095)
+            return "setq " + value + ", " + genLocation(reg);
+        else
+            return "set " + value + ", " + genLocation(reg);
+    }
+
+    /**
+     * Generate an operation between a register and an immediate value
+     */
+    private String genImmediateOperation(String op, Location left, long right, Location result) {
+        assert(left.getType() == Location.LocationType.REGISTER);
+        assert(result.getType() == Location.LocationType.REGISTER);
+
+        if(right >= -4096 && right <= 4095)
+            return op + " " + genLocation(left) + ", " + right + ", " + genLocation(result);
+        else {
+            Location tmp = allocator.getFreeReg();
+            return "set " + right + ", " + genLocation(tmp) + "\n"
+                          + genOperation(op, left, tmp, result);
+        }
+    }
+
+    /**
+     * Generate an operation between a register and a register
+     */
+    private String genOperation(String op, Location left, Location right, Location result) {
+        assert(left.getType() == Location.LocationType.REGISTER);
+        assert(right.getType() == Location.LocationType.REGISTER);
+        assert(result.getType() == Location.LocationType.REGISTER);
+
+        return op + " " + genLocation(left) + ", " + genLocation(right)
+                  + ", " + genLocation(result);
     }
 
     /**

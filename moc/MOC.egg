@@ -556,7 +556,7 @@ INST -> return E semicolon #gen ;
         error(TYPES_incompatible, returnType, E^type);
     }
 
-    INST^code = INST^machine.genFunctionReturn(E^code, INST^st.getCurrentFunction());
+    INST^code = INST^machine.genFunctionReturn(E^code, E^type, INST^st.getCurrentFunction());
 }
 
 -- inline asm
@@ -607,7 +607,7 @@ EX -> affect A #gen ;
     }
 
     EX^type = new TVOID();
-    EX^code = EX^machine.genAffectation(EX^hcode, A^code, A^type);
+    EX^code = EX^machine.genAffectation(EX^hcode, A^code, EX^htype, A^type);
 }
 
 EX -> #gen ;

@@ -37,13 +37,13 @@ public interface IMachine {
 
     Code genForLoop(Code init, Code condition, Code incr, Code bloc);
 
-    Code genFunctionReturn(Code returnVal, TFUNCTION fun);
+    Code genFunctionReturn(Code returnVal, TTYPE returnType, TFUNCTION fun);
 
     Code genAsm(String asmCode, ST symbolsTable);
 
     AsmCode genGlobalAsm(String asmCode, ST symbolsTable);
 
-    Code genAffectation(Code address, Code affectedVal, TTYPE type);
+    Code genAffectation(Code address, Code affectedVal, TTYPE addrType, TTYPE affectedType);
 
     Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator);
 
@@ -176,4 +176,6 @@ public interface IMachine {
     int getCharFromString(String c);
 
     int getIntFromString(String c);
+
+    long getLongFromString(String c);
 }

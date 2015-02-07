@@ -142,7 +142,7 @@ public class MTAM extends AbstractMachine {
         throw new UnsupportedOperationException();
     }
 
-    public Code genFunctionReturn(Code returnVal, TFUNCTION fun) {
+    public Code genFunctionReturn(Code returnVal, TTYPE returnType, TFUNCTION fun) {
         int retsize = fun.getReturnType().getSize();
         int paramsize = fun.getParameterTypes().getSize();
         Code c = genVal(returnVal, fun.getReturnType());
@@ -150,17 +150,17 @@ public class MTAM extends AbstractMachine {
         return c;
     }
 
-    public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
-        Code retCode = genVal(affectedVal, type);
+    public Code genAffectation(Code address, Code affectedVal, TTYPE addrType, TTYPE affectedType) {
+        Code retCode = genVal(affectedVal, affectedType);
         retCode.prependAsm(genComment("affected value :"));
 
         if (address.getLocation() != null) {
-            retCode.appendAsm("STORE (" + type.getSize() + ") " + address.getLocation().getOffset() + "[LB] " + genComment("affectation"));
+            retCode.appendAsm("STORE (" + addrType.getSize() + ") " + address.getLocation().getOffset() + "[LB] " + genComment("affectation"));
         } else {
             assert(address.getIsAddress());
             retCode.appendAsm(genComment("affected address :"));
             retCode.appendAsm(address.getAsm());
-            retCode.appendAsm("STOREI (" + type.getSize() + ") " + genComment("affectation"));
+            retCode.appendAsm("STOREI (" + addrType.getSize() + ") " + genComment("affectation"));
         }
 
         return retCode;

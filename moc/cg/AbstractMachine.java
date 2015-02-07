@@ -240,4 +240,16 @@ public abstract class AbstractMachine implements IMachine {
         else
             return Integer.parseInt(c);
     }
+
+    /**
+     * Parse a string and returns a long
+     */
+    public long getLongFromString(String c) {
+        if(c.startsWith("0x"))
+            return Long.parseLong(c.substring(2), 16);
+        else if(c.startsWith("0b"))
+            return Long.parseLong(c.substring(2), 2);
+        else
+            return Long.parseLong(c);
+    }
 }

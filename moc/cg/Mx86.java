@@ -48,7 +48,7 @@ public class Mx86 extends AbstractMachine {
                 if(sb.length() > 1)
                     sb.append(", ");
 
-                sb.append(registerNames[l.getOffset()]);
+                sb.append(registerNames[(int) l.getOffset()]);
             }
 
             sb.append("]");
@@ -112,7 +112,7 @@ public class Mx86 extends AbstractMachine {
     /* Convert a Location to a string representing it in x86 */
     public String genLocation(Location l) {
         if(l.getType() == Location.LocationType.REGISTER) {
-            return registerNames[l.getOffset()];
+            return registerNames[(int) l.getOffset()];
         }
         else if(l.getType() == Location.LocationType.STACKFRAME) {
             if(l.getOffset() >= 0)
@@ -190,24 +190,24 @@ public class Mx86 extends AbstractMachine {
         return returnVal;
     }
 
-    public Code genFunctionReturn(Code returnVal, TFUNCTION function) {
-        return genReturn("f_" + function.getName(), function.getReturnType(), returnVal);
+    public Code genFunctionReturn(Code returnVal, TTYPE returnType, TFUNCTION function) {
+        return genReturn("f_" + function.getName(), returnType, returnVal);
     }
 
-    public Code genAffectation(Code address, Code affectedVal, TTYPE type) {
+    public Code genAffectation(Code address, Code affectedVal, TTYPE addrType, TTYPE affectedType) {
         Location v = allocator.pop();
         Location a = allocator.pop();
 
-        affectedVal = genVal(affectedVal, v, type);
+        affectedVal = genVal(affectedVal, v, affectedType);
         affectedVal.prependAsm(genComment("affected value :"));
 
         if (address.getLocation() != null) {
-            affectedVal.appendAsm(genMovRegToMem(genLocation(address.getLocation()), v, type.getSize()));
+            affectedVal.appendAsm(genMovRegToMem(genLocation(address.getLocation()), v, addrType.getSize()));
             return affectedVal;
         } else {
             address.prependAsm(genComment("affected address :"));
             address.appendAsm(affectedVal.getAsm());
-            address.appendAsm(genMovRegToMem("[" + genLocation(a) + "]", v, type.getSize()));
+            address.appendAsm(genMovRegToMem("[" + genLocation(a) + "]", v, addrType.getSize()));
             return address;
         }
     }
@@ -557,11 +557,11 @@ public class Mx86 extends AbstractMachine {
             }
             case 2: {
                 String[] registerNames = {"ax", "bx", "cx", "dx", "si", "di"};
-                return "mov " + left + ", " + registerNames[right.getOffset()];
+                return "mov " + left + ", " + registerNames[(int) right.getOffset()];
             }
             case 1: {
                 String[] registerNames = {"al", "bl", "cl", "dl", "sil", "dil"};
-                return "mov " + left + ", " + registerNames[right.getOffset()];
+                return "mov " + left + ", " + registerNames[(int) right.getOffset()];
             }
             default:
                 throw new RuntimeException("Invalid size: " + size);
