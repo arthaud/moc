@@ -45,6 +45,10 @@ public class Code {
         return asm;
     }
 
+    public boolean hasAsm() {
+        return asm != null;
+    }
+
     public void appendAsm(String asm) {
         this.asm += "\n" + asm;
     }

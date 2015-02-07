@@ -287,12 +287,12 @@ public class MCRAPS extends AbstractMachine {
             assert(addrCode.getIsAddress());
 
             // in that case, we will need a new register
-            if(addrCode.hasValue() || addrCode.hasLocation())
+            if(!addrCode.hasAsm())
                 allocator.push(value.reg);
 
             CodeValue addr = forceAsm(addrCode, addrType);
 
-            if(addrCode.hasValue() || addrCode.hasLocation())
+            if(!addrCode.hasAsm())
                 allocator.pop();
 
             code = addr.code;
@@ -535,20 +535,24 @@ public class MCRAPS extends AbstractMachine {
                 return code;
             }
             else {
-                // warning : Don't forget the order is important here...
-                CodeValue right = forceAsm(rightOperand, rightType);
-                CodeValue left = forceAsm(leftOperand, leftType);
+                CodeValue left, right;
+                Code code;
+                Location reg;
 
-                Location reg = right.reg;
-                allocator.push(reg);
+                if(leftOperand.hasAsm()) {
+                    // so leftOperand has a register on the stack, and we are
+                    // sure that rightOperand don't use this register
+                    right = forceAsm(rightOperand, rightType);
+                    left = forceAsm(leftOperand, leftType);
 
-                /* This is very tricky.
-                 * It is possible that both forceAsm(right) and forceAsm(left) make
-                 * a getFreeReg(), and so right.reg and left.reg are the same.
-                 * An other potential problem is when forceAsm(right) makes a pop()
-                 * and forceAsm(left) makes a getFreeReg().
-                 */
-                if(right.reg.equals(left.reg)) {
+                    reg = right.reg;
+                    allocator.push(reg);
+                }
+                else {
+                    // rightOperand may has a register on the stack
+                    right = forceAsm(rightOperand, rightType);
+                    reg = right.reg;
+                    allocator.push(reg);
                     left = forceAsm(leftOperand, leftType);
                 }
 
@@ -558,8 +562,15 @@ public class MCRAPS extends AbstractMachine {
                 left.code.prependAsm(genComment("left operand :"));
                 right.code.prependAsm(genComment("right operand :"));
 
-                Code code = left.code;
-                code.appendAsm(right.code.getAsm());
+                if(leftOperand.hasAsm()) {
+                    code = left.code;
+                    code.appendAsm(right.code.getAsm());
+                }
+                else {
+                    code = right.code;
+                    code.appendAsm(left.code.getAsm());
+                }
+
                 code.appendAsm(genComment(genLocation(left.reg) + " " + operator + " " + genLocation(right.reg)));
 
                 switch(operator) {
