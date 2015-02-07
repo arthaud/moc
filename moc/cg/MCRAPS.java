@@ -96,6 +96,14 @@ public class MCRAPS extends AbstractMachine {
 
     public int getPointerSize() { return 1; }
 
+    private TINTEGER getIntType() { return new TINTEGER(getIntSize()); }
+
+    private TBOOL getBoolType() { return new TBOOL(getBoolSize()); }
+
+    private TPOINTER getPointerType(TTYPE pointedType) {
+        return new TPOINTER(pointedType, getPointerSize());
+    }
+
     @Override
     public String genComment(String comm) {
         return "// " + comm;
@@ -183,8 +191,8 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else {
-            CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
-            forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
+            CodeValue cond = forceAsm(conditionCode, getBoolType());
+            forceValue(cond.code, cond.reg, getBoolType());
             Code code = cond.code;
 
             int num = getLabelNum();
@@ -215,8 +223,8 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else {
-            CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
-            forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
+            CodeValue cond = forceAsm(conditionCode, getBoolType());
+            forceValue(cond.code, cond.reg, getBoolType());
 
             int num = getLabelNum();
             cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
@@ -233,8 +241,8 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genForLoop(Code init, Code conditionCode, Code incr, Code body) {
-        CodeValue cond = forceAsm(conditionCode, new TBOOL(getBoolSize()));
-        forceValue(cond.code, cond.reg, new TBOOL(getBoolSize()));
+        CodeValue cond = forceAsm(conditionCode, getBoolType());
+        forceValue(cond.code, cond.reg, getBoolType());
 
         int num = getLabelNum();
         cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
@@ -795,9 +803,9 @@ public class MCRAPS extends AbstractMachine {
         Code code;
 
         if(pointerCode.getIsAddress()) {
-            CodeValue c = forceAsm(pointerCode, new TPOINTER(pointedType, getPointerSize()));
+            CodeValue c = forceAsm(pointerCode, getPointerType(pointedType));
             code = c.code;
-            forceValue(code, c.reg, new TPOINTER(pointedType, getPointerSize()));
+            forceValue(code, c.reg, getPointerType(pointedType));
             allocator.push(c.reg);
         }
         else {
@@ -819,9 +827,9 @@ public class MCRAPS extends AbstractMachine {
                                                   loc.getOffset() + offset));
         }
         else {
-            CodeValue c = forceAsm(posCode, new TINTEGER(getIntSize()));
+            CodeValue c = forceAsm(posCode, getIntType());
             code = c.code;
-            forceValue(code, c.reg, new TINTEGER(getIntSize()));
+            forceValue(code, c.reg, getIntType());
             allocator.push(c.reg);
 
             code.appendAsm(genComment("stack array access :"));
@@ -852,9 +860,9 @@ public class MCRAPS extends AbstractMachine {
                 code.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
         }
         else {
-            CodeValue c = forceAsm(posCode, new TINTEGER(getIntSize()));
+            CodeValue c = forceAsm(posCode, getIntType());
             code = c.code;
-            forceValue(code, c.reg, new TINTEGER(getIntSize()));
+            forceValue(code, c.reg, getIntType());
             allocator.push(c.reg);
 
             Location pointerReg = allocator.getFreeReg();
@@ -897,8 +905,8 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code operand) {
         int offset = struct.getFieldOffset(field.getName());
-        CodeValue c = forceAsm(operand, new TPOINTER(struct, getPointerSize()));
-        forceValue(c.code, c.reg, new TPOINTER(struct, getPointerSize()));
+        CodeValue c = forceAsm(operand, getPointerType(struct));
+        forceValue(c.code, c.reg, getPointerType(struct));
 
         c.code.appendAsm(genComment("field access :"));
         if(offset > 0)
