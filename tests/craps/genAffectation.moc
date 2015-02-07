@@ -1,0 +1,13 @@
+#include "lib/craps.moc"
+
+int main() {
+    int x = 1;
+    int* y = &x;
+    int** z = &y;
+    **z = x + 1; // code = code
+    **z = 1; // code = value
+    x = x + 1; // location = code
+    x = 1; // location = value
+    *((int*)100) = x + 1; // value = code
+    *((int*)100) = 1; // value = value
+}

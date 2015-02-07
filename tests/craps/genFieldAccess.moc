@@ -1,0 +1,24 @@
+#include "lib/craps.moc"
+
+struct point {
+    int x;
+    int y;
+};
+
+int main() {
+    struct point p;
+    p.x = 1;
+    p.y = 2;
+
+    struct point* q = &p;
+    (*q).x = 3;
+    (*q).y = 4;
+
+    struct point** r = &q;
+    (**r).x = 5;
+    (**r).y = 6;
+
+    struct point[4] tab;
+    int x = 2;
+    tab[x].y = 1;
+}

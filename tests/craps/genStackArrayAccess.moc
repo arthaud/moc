@@ -1,0 +1,9 @@
+#include "lib/craps.moc"
+
+int main() {
+    int[4] tab;
+    tab[0] = 42;
+    tab[1] = 43;
+    int x = 2;
+    tab[x] = 44;
+}

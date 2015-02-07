@@ -1,0 +1,8 @@
+#include "lib/craps.moc"
+
+int main() {
+    int x = 1;
+    int* y = &x;
+    int** z = &y;
+    **z = **z + 42;
+}

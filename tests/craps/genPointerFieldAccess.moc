@@ -1,0 +1,17 @@
+#include "lib/craps.moc"
+
+struct point {
+    int x;
+    int y;
+};
+
+int main() {
+    struct point p;
+    struct point* q = &p;
+    q->x = 1;
+    q->y = 2;
+
+    struct point** r = &q;
+    (*r)->x = 3;
+    (*r)->y = (*r)->x + 1;
+}
