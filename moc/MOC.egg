@@ -7,20 +7,20 @@ option version = 0.0.1;
 option k = 3;
 
 inh source : MOCSourceFile for
-         PROGRAM, ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         PROGRAM, ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, IF, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
          COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
          UNARY, DOTTED, DOTTEDX, F;
 inh machine : IMachine for
-         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, IF, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE, REFS,
          E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
          COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
          UNARY, DOTTED, DOTTEDX, F;
 inh st : ST for
-         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, ELSE,
+         ENTITIES, STRUCT_FIELDS, GLOBAL_DECL, INST, BLOC, INSTS, IF, ELSE,
          FUNC_PARAMETERS, FUNC_PARAMETER, FUNC_PARAMETERSX, ARGS, ARGSX, AFF,
          TYPE, STYPE,
          E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
@@ -40,10 +40,10 @@ inh hinfo : INFOVAR for AFF;
 syn name : STRING for COMPEQ_OP, COMP_OP, SHIFT_OP, ADD_OP, MULT_OP, UNARY_OP,
                       FUNC_PARAMETER;
 inh plocator : ParametersLocator for FUNC_PARAMETERS, FUNC_PARAMETERSX;
-inh vlocator : VariableLocator for BLOC, INSTS, INST, ELSE;
+inh vlocator : VariableLocator for BLOC, INSTS, INST, IF, ELSE;
 
 syn code : Code for
-         INST, BLOC, INSTS, ELSE,
+         INST, BLOC, INSTS, IF, ELSE,
          ARGS, ARGSX, AFF,
          E, EX, A, AX, AND, ANDX, BIT_OR, BIT_ORX, XOR, XORX, BIT_AND, BIT_ANDX,
          COMPEQ, COMPEQX, COMP, COMPX, SHIFT, SHIFTX, ADD, ADDX, MULT, MULTX,
@@ -490,23 +490,33 @@ INST -> #trans BLOC #gen ;
 }
 
 -- conditional
-INST -> if opar E cpar #trans BLOC ELSE #gen ;
+INST -> IF #gen ;
+#gen {
+    INST^code = IF^code;
+}
+
+IF -> if opar E cpar #trans BLOC ELSE #gen ;
 #trans {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
     }
 
-    BLOC^vlocator = INST^vlocator.getChild();
-    ELSE^vlocator = INST^vlocator.getChild();
+    BLOC^vlocator = IF^vlocator.getChild();
+    ELSE^vlocator = IF^vlocator.getChild();
 }
 
 #gen {
-    INST^code = INST^machine.genConditional(E^code, BLOC^code, ELSE^code);
+    IF^code = IF^machine.genConditional(E^code, BLOC^code, ELSE^code);
 }
 
 ELSE -> else BLOC #gen ;
 #gen {
     ELSE^code = BLOC^code;
+}
+
+ELSE -> else IF #gen ;
+#gen {
+    ELSE^code = IF^code;
 }
 
 ELSE -> #gen ;
