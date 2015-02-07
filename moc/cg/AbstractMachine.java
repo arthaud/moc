@@ -23,10 +23,15 @@ import moc.type.TFUNCTION;
 public abstract class AbstractMachine implements IMachine {
 
     protected int labelNum = 0;
+    protected ArrayList<Integer> loopLabelStack = new ArrayList<>();
 
     protected int getLabelNum() {
         labelNum++;
         return labelNum - 1;
+    }
+
+    public int currentLoopLabel() {
+        return loopLabelStack.get(loopLabelStack.size()-1);
     }
 
     protected int globalNum = 0;
@@ -147,6 +152,14 @@ public abstract class AbstractMachine implements IMachine {
 
     protected String asmVariablePattern() {
         return "%([a-z][_0-9A-Za-z]*)";
+    }
+
+    public void beginLoop() {
+        loopLabelStack.add(loopLabelStack.size(), getLabelNum());
+    }
+
+    public void endLoop() {
+        loopLabelStack.remove(loopLabelStack.size()-1);
     }
 
     private String genAsmImpl(String asmCode, ST symbolsTable) {

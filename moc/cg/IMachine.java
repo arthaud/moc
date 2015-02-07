@@ -37,7 +37,13 @@ public interface IMachine {
 
     Code genForLoop(Code init, Code condition, Code incr, Code bloc);
 
+    void beginLoop();
+    void endLoop();
+
     Code genFunctionReturn(Code returnVal, TFUNCTION fun);
+
+    Code genBreak();
+    Code genContinue();
 
     Code genAsm(String asmCode, ST symbolsTable);
 

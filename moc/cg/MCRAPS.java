@@ -185,7 +185,7 @@ public class MCRAPS extends AbstractMachine {
         Location regCond = allocator.pop();
         condition = forceValue(condition, regCond, new TBOOL(1));
 
-        int num = getLabelNum();
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
         condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
         condition.appendAsm("be end_loop_" + num);
 
@@ -201,7 +201,7 @@ public class MCRAPS extends AbstractMachine {
         Location regCond = allocator.pop();
         condition = forceValue(condition, regCond, new TBOOL(1));
 
-        int num = getLabelNum();
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
         condition.appendAsm("cmp " + genLocation(regCond) + ", %r0");
         condition.appendAsm("be end_loop_" + num);
 
@@ -226,6 +226,14 @@ public class MCRAPS extends AbstractMachine {
 
         returnVal.appendAsm("ba f_" + function.getName() + "_end");
         return returnVal;
+    }
+
+    public Code genBreak() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genContinue() {
+        throw new UnsupportedOperationException();
     }
 
     public Code genAffectation(Code address, Code affectedVal, TTYPE type) {

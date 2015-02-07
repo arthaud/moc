@@ -85,6 +85,8 @@ sugar bool       is  "bool" ;
 sugar true       is  "true" ;
 sugar false      is  "false" ;
 sugar return     is  "return" ;
+sugar break      is  "break" ;
+sugar continue   is  "continue" ;
 sugar null       is  "NULL" ;
 sugar sizeof     is  "sizeof" ;
 sugar dot        is  "\." ;
@@ -519,11 +521,13 @@ INST -> while opar E cpar #trans BLOC #gen ;
         error(TYPE_not_bool, E^type);
     }
 
+    INST^machine.beginLoop();
     BLOC^vlocator = INST^vlocator.getChild();
 }
 
 #gen {
     INST^code = INST^machine.genWhileLoop(E^code, BLOC^code);
+    INST^machine.endLoop();
 }
 
 -- for loop
@@ -539,11 +543,13 @@ INST -> t_for opar E semicolon A semicolon E cpar #trans BLOC #gen ;
         error(TYPE_not_assignment, E1^type);
     }
 
+    INST^machine.beginLoop();
     BLOC^vlocator = INST^vlocator.getChild();
 }
 
 #gen {
     INST^code = INST^machine.genForLoop(E^code, A^code, E1^code, BLOC^code);
+    INST^machine.endLoop();
 }
 
 -- function return
@@ -558,6 +564,16 @@ INST -> return E semicolon #gen ;
     }
 
     INST^code = INST^machine.genFunctionReturn(E^code, INST^st.getCurrentFunction());
+}
+
+INST -> break #gen semicolon ;
+#gen {
+    INST^code = INST^machine.genBreak();
+}
+
+INST -> continue #gen semicolon ;
+#gen {
+    INST^code = INST^machine.genContinue();
 }
 
 -- inline asm
