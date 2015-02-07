@@ -821,6 +821,7 @@ public class MCRAPS extends AbstractMachine {
         else {
             CodeValue c = forceAsm(posCode, new TINTEGER(getIntSize()));
             code = c.code;
+            forceValue(code, c.reg, new TINTEGER(getIntSize()));
             allocator.push(c.reg);
 
             code.appendAsm(genComment("stack array access :"));
