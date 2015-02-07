@@ -1,0 +1,23 @@
+#include "lib/craps.moc"
+#include "tests/craps/scroll.moc"
+
+int main() {
+    int sum = 0; //result
+    int n = 0; //index
+
+    // Add mutiples of 3 
+    for(n = 3; n < 1000; n = n + 3) {
+        sum = sum + n;
+    }
+    // Add multiples of 5
+    for(n = 5; n < 1000; n = n + 5) {
+        sum = sum + n;
+    }
+    // Subtract multiples of 15 (counted twice)
+    for(n = 15; n < 1000; n = n + 15) {
+        sum = sum - n;
+    }
+
+    scroll(sum);
+    return 0;
+}

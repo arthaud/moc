@@ -1,0 +1,13 @@
+struct test {
+    int a;
+    int b;
+};
+
+int main() {
+    sizeof(char);
+    sizeof(int);
+    sizeof(char*);
+    sizeof(struct test);
+    sizeof(int[42]);
+}
+
