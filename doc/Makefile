@@ -1,6 +1,11 @@
-rapport.pdf: pdf
-pdf:
-	pdflatex -shell-escape report.tex
+TEXC = latexmk -lualatex
+
+.PHONY: FORCE
+
+all: report.pdf language.pdf FORCE
+
+%.pdf: %.tex FORCE
+	$(TEXC) -latexoption=-shell-escape $<
 
 clean:
 	rm -f *.aux
