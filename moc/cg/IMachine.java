@@ -118,7 +118,7 @@ public interface IMachine {
     /**
      * Generate a new location for a global variable
      */
-    Location genGlobalLocation();
+    Location genGlobalLocation(TTYPE type);
 
     /**
      * Returns a ParametersLocator, responsible for managing the location of

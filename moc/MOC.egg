@@ -227,7 +227,7 @@ EXPORT -> export #gen ;
 -- global vars
 GLOBAL_DECL -> semicolon #gen ;
 #gen {
-    INFOVAR info = new INFOVAR(GLOBAL_DECL^htype, GLOBAL_DECL^machine.genGlobalLocation());
+    INFOVAR info = new INFOVAR(GLOBAL_DECL^htype, GLOBAL_DECL^machine.genGlobalLocation(GLOBAL_DECL^htype));
     GLOBAL_DECL^st.insert(GLOBAL_DECL^hident, info);
     GLOBAL_DECL^globalCode = GLOBAL_DECL^machine.genDeclGlobal(info);
 }

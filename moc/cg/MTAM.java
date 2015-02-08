@@ -262,6 +262,10 @@ public class MTAM extends AbstractMachine {
         throw new UnsupportedOperationException();
     }
 
+    public Location genGlobalLocation(TTYPE type) {
+        throw new UnsupportedOperationException();
+    }
+
     public Code genArg(Code argument, TTYPE type) {
         return genVal(argument, type);
     }

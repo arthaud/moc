@@ -32,6 +32,8 @@ public class MCRAPS extends AbstractMachine {
         fixedRegisters.put(1L, "%r20");
     }
 
+    private long staticOffset = 0L;
+
     private Allocator allocator = new Allocator();
 
     /**
@@ -72,6 +74,7 @@ public class MCRAPS extends AbstractMachine {
     public MCRAPS() {
         // We will put static data at the end of the code
         endCode = "\n" + genComment("### static section #############") + "\n";
+        endCode += "static:\n";
     }
 
     public String getName() {
@@ -160,7 +163,7 @@ public class MCRAPS extends AbstractMachine {
                 return "[%fp - " + (-l.getOffset()) + "]";
         }
         else {
-            return "[glob_" + l.getOffset() + "]";
+            return "[static + " + l.getOffset() + "]";
         }
     }
 
@@ -762,10 +765,18 @@ public class MCRAPS extends AbstractMachine {
      * Declare a global variable
      */
     public GlobalCode genDeclGlobal(INFOVAR info) {
-        return new GlobalCode(
-            "glob_" + info.getLocation().getOffset() + ": "
-            + genBytes(Collections.nCopies(info.getSize(), 0)) + "\n"
-        );
+        return new GlobalCode("");
+    }
+
+    /*
+     * Generate a new location for a global variable
+     */
+    public Location genGlobalLocation(TTYPE type) {
+        long offset = staticOffset;
+        staticOffset += type.getSize();
+
+        endCode += genBytes(Collections.nCopies(type.getSize(), 0)) + "\n";
+        return new Location(Location.LocationType.ABSOLUTE, offset);
     }
 
     /**
@@ -836,8 +847,14 @@ public class MCRAPS extends AbstractMachine {
             if(type.getElementsType().getSize() != 1)
                 code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getElementsType().getSize() + ", " + genLocation(c.reg));
 
-            code.appendAsm("add " + genLocation(c.reg) + ", %fp, " + genLocation(c.reg));
-            code.appendAsm("sub " + genLocation(c.reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(c.reg));
+            if(info.getLocation().isStackFrame()) {
+                code.appendAsm("add " + genLocation(c.reg) + ", %fp, " + genLocation(c.reg));
+                code.appendAsm("sub " + genLocation(c.reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(c.reg));
+            }
+            else { // info.getLocation().isAbsolute()
+                code.appendAsm("add " + genLocation(c.reg) + ", static + " + info.getLocation().getOffset() + ", " + genLocation(c.reg));
+            }
+
             code.setIsAddress(true);
         }
 
@@ -939,7 +956,7 @@ public class MCRAPS extends AbstractMachine {
             return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
         else { // i.getLocation().isAbsolute()
-            return new Code("set glob_" + i.getLocation().getOffset() + ", " + genLocation(reg));
+            return new Code("set static + " + i.getLocation().getOffset() + ", " + genLocation(reg));
         }
     }
 
@@ -947,16 +964,15 @@ public class MCRAPS extends AbstractMachine {
         return Code.fromValue(getLongFromString(cst));
     }
 
-    private int stringOffset = 0;
-
     public Code genString(String txt) {
-        int offset = stringOffset;
-        stringOffset++;
+        List<Integer> bytes = getArrayFromString(txt);
+        long offset = staticOffset;
+        staticOffset += bytes.size();
 
-        endCode += "str_" + offset + ": " + genBytes(getArrayFromString(txt)) + "\n";
+        endCode += genBytes(getArrayFromString(txt)) + "\n";
         Location reg = allocator.getFreeReg();
         allocator.push(reg);
-        return new Code("set str_" + offset + ", " + genLocation(reg));
+        return new Code("set static + " + offset + ", " + genLocation(reg));
     }
 
     public Code genNull() {
@@ -995,7 +1011,7 @@ public class MCRAPS extends AbstractMachine {
                     code = new Code("sub %fp, " + (-loc.getOffset()) + ", " + genLocation(reg));
                 }
                 else { // loc.isAbsolute()
-                    code = new Code("set glob_" + loc.getOffset() + ", " + genLocation(reg));
+                    code = new Code("set static + " + loc.getOffset() + ", " + genLocation(reg));
                 }
             }
             else {

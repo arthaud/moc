@@ -29,13 +29,6 @@ public abstract class AbstractMachine implements IMachine {
         return labelNum - 1;
     }
 
-    protected int globalNum = 0;
-
-    protected int getGlobalNum() {
-        globalNum++;
-        return globalNum - 1;
-    }
-
     protected String initCode = "";
     protected String endCode = "";
 
@@ -130,13 +123,6 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     protected abstract Code genFunctionCallImpl(TFUNCTION f, Code arguments);
-
-    /*
-     * Generate a new location for a global variable
-     */
-    public Location genGlobalLocation() {
-        return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());
-    }
 
     /**
      * Print a comment in assembler

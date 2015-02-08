@@ -410,6 +410,10 @@ public class Mx86 extends AbstractMachine {
         throw new UnsupportedOperationException();
     }
 
+    public Location genGlobalLocation(TTYPE type) {
+        throw new UnsupportedOperationException();
+    }
+
     // expression instruction
     public Code genInst(TTYPE type, Code value) {
         if(!(type instanceof TVOID))
