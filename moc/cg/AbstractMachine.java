@@ -3,18 +3,19 @@ package moc.cg;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.List;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import moc.compiler.MOCException;
-import moc.st.ST;
 import moc.st.INFO;
 import moc.st.INFOVAR;
+import moc.st.ST;
 import moc.type.TFUNCTION;
 
 /**
@@ -23,22 +24,20 @@ import moc.type.TFUNCTION;
 public abstract class AbstractMachine implements IMachine {
 
     protected int labelNum = 0;
-    protected ArrayList<Integer> loopLabelStack = new ArrayList<>();
+    protected ArrayDeque<Integer> loopLabelStack = new ArrayDeque<>();
 
     protected int getLabelNum() {
-        labelNum++;
-        return labelNum - 1;
+        return labelNum++;
     }
 
     public int currentLoopLabel() {
-        return loopLabelStack.get(loopLabelStack.size()-1);
+        return loopLabelStack.peek();
     }
 
     protected int globalNum = 0;
 
     protected int getGlobalNum() {
-        globalNum++;
-        return globalNum - 1;
+        return globalNum++;
     }
 
     protected String initCode = "";
@@ -71,7 +70,8 @@ public abstract class AbstractMachine implements IMachine {
 
             pw.print(endCode);
             pw.close();
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             throw new MOCException(e.getMessage());
         }
     }
@@ -126,6 +126,7 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     public Code genFunctionCall(String currentFunc, TFUNCTION f, Code arguments) {
+        // remember the function was called and should not be removed
         if (!callTree.containsKey(currentFunc)) {
             callTree.put(currentFunc, new HashSet<String>());
         }
@@ -143,9 +144,6 @@ public abstract class AbstractMachine implements IMachine {
         return new Location(Location.LocationType.ABSOLUTE, getGlobalNum());
     }
 
-    /**
-     * Print a comment in assembler
-     */
     public String genComment(String comm) {
         return "; " + comm;
     }
@@ -155,11 +153,11 @@ public abstract class AbstractMachine implements IMachine {
     }
 
     public void beginLoop() {
-        loopLabelStack.add(loopLabelStack.size(), getLabelNum());
+        loopLabelStack.add(getLabelNum());
     }
 
     public void endLoop() {
-        loopLabelStack.remove(loopLabelStack.size()-1);
+        loopLabelStack.pop();
     }
 
     private String genAsmImpl(String asmCode, ST symbolsTable) {
@@ -219,10 +217,12 @@ public abstract class AbstractMachine implements IMachine {
 
                 escaped = false;
             }
-            else if(txt.charAt(i) == '\\')
+            else if(txt.charAt(i) == '\\') {
                 escaped = true;
-            else
+            }
+            else {
                 str.add((int) txt.charAt(i));
+            }
         }
 
         str.add(0);
@@ -235,22 +235,30 @@ public abstract class AbstractMachine implements IMachine {
      * ex: getStringAsChar("'t'") = 116
      */
     public int getCharFromString(String c) {
-        if(c.equals("'\\0'")) return 0;
-        else if(c.equals("'\\n'")) return 10;
-        else if(c.equals("'\\r'")) return 13;
-        else if(c.equals("'\\t'")) return 9;
-        else return (int) c.charAt(1);
+        switch (c) {
+            case "'\\0'": return 0;
+            case "'\\n'": return 10;
+            case "'\\r'": return 13;
+            case "'\\t'": return 9;
+            default: return (int) c.charAt(1);
+        }
     }
 
     /**
      * Parse a string and returns an integer
      */
     public int getIntFromString(String c) {
-        if(c.startsWith("0x"))
+        if(c.startsWith("0x")) {
             return Integer.parseInt(c.substring(2), 16);
-        else if(c.startsWith("0b"))
+        }
+        else if(c.startsWith("0b")) {
             return Integer.parseInt(c.substring(2), 2);
-        else
+        }
+        else if(c.startsWith("0")) {
+            return Integer.parseInt(c.substring(2), 8);
+        }
+        else {
             return Integer.parseInt(c);
+        }
     }
 }

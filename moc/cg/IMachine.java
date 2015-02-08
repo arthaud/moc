@@ -37,7 +37,9 @@ public interface IMachine {
 
     Code genForLoop(Code init, Code condition, Code incr, Code bloc);
 
+    /** Notifies the machine a loop is being generated. */
     void beginLoop();
+    /** Notifies the machine the end of a loop generation. */
     void endLoop();
 
     Code genFunctionReturn(Code returnVal, TFUNCTION fun);
@@ -86,7 +88,7 @@ public interface IMachine {
     Code genInst(TTYPE type, Code value);
 
     /**
-     * Print a comment in assembler
+     * Turns the given string into a comment
      */
     String genComment(String comm);
 
