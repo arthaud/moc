@@ -1114,12 +1114,18 @@ public class MCRAPS extends AbstractMachine {
         assert(left.isRegister());
         assert(result.isRegister());
 
+        // useless operation
+        if(result.equals(left) && right == 0L
+                && (op.equals("add") || op.equals("sub") || op.equals("or")
+                    || op.equals("sll") || op.equals("srl"))) {
+            return "";
+        }
+
         if(right >= -4096 && right <= 4095)
             return op + " " + genLocation(left) + ", " + right + ", " + genLocation(result);
         else {
             Location tmp = allocator.getFreeReg();
-            return "set " + right + ", " + genLocation(tmp) + "\n"
-                          + genOperation(op, left, tmp, result);
+            return genSet(right, tmp) + "\n" + genOperation(op, left, tmp, result);
         }
     }
 
