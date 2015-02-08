@@ -347,8 +347,8 @@ public class MCRAPS extends AbstractMachine {
                 && fixedRegisters.containsKey(valueCode.getValue());
         CodeValue value = forceAsm(valueCode, valueType);
         forceValue(value.code, value.reg, valueType);
-        Code code = value.code;
-        code.prependAsm(genComment("affected value :"));
+        Code code;
+        value.code.prependAsm(genComment("affected value :"));
 
         if(addrCode.hasLocation() && !addrCode.isAddress()) {
             if(valueInFixedRegisters) {
@@ -356,6 +356,7 @@ public class MCRAPS extends AbstractMachine {
                               + ", " + genLocation(addrCode.getLocation()));
             }
             else {
+                code = value.code;
                 code.appendAsm(genMovRegToMem(value.reg, genLocation(addrCode.getLocation())));
             }
         }
@@ -371,14 +372,22 @@ public class MCRAPS extends AbstractMachine {
             if(!addrCode.hasAsm())
                 allocator.pop();
 
-            code = addr.code;
-            code.prependAsm(genComment("affected address :"));
+            addr.code.prependAsm(genComment("affected address :"));
 
             if(valueInFixedRegisters) {
+                code = addr.code;
                 code.appendAsm("st " + fixedRegisters.get(valueCode.getValue()) + ", [" + genLocation(addr.reg) + "]");
             }
             else {
-                code.appendAsm(value.code.getAsm());
+                if(addrCode.hasAsm()) {
+                    code = addr.code;
+                    code.appendAsm(value.code.getAsm());
+                }
+                else {
+                    code = value.code;
+                    code.appendAsm(addr.code.getAsm());
+                }
+
                 code.appendAsm(genMovRegToMem(value.reg, "[" + genLocation(addr.reg) + "]"));
             }
         }
