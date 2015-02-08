@@ -264,10 +264,11 @@ public class MCRAPS extends AbstractMachine {
                 return new Code("");
             }
             else { // while(true)
-                int num = getLabelNum();
+                int num = loopLabelStack.peek();
                 body.prependAsm("loop_" + num + ":");
                 body.prependAsm(genComment("while true loop :"));
                 body.appendAsm("ba loop_" + num);
+                body.appendAsm("end_loop_" + num + ":"); // needed by genBreak()
                 return body;
             }
         }
