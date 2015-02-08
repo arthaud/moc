@@ -211,15 +211,24 @@ public class MCRAPS extends AbstractMachine {
             Code code = cond.code;
 
             int num = getLabelNum();
-            falseCode.appendAsm("ba cond_end_" + num);
-            trueCode.prependAsm("cond_then_" + num + ":");
-            trueCode.appendAsm("cond_end_" + num + ":");
-
             code.prependAsm(genComment("if condition :"));
             code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
-            code.appendAsm("bne cond_then_" + num);
-            code.appendAsm(falseCode.getAsm());
-            code.appendAsm(trueCode.getAsm());
+
+            if(falseCode.getAsm().trim().isEmpty()) {
+                code.appendAsm("be cond_end_" + num);
+                code.appendAsm(trueCode.getAsm());
+                code.appendAsm("cond_end_" + num + ":");
+            }
+            else {
+                falseCode.appendAsm("ba cond_end_" + num);
+                trueCode.prependAsm("cond_then_" + num + ":");
+                trueCode.appendAsm("cond_end_" + num + ":");
+
+                code.appendAsm("bne cond_then_" + num);
+                code.appendAsm(falseCode.getAsm());
+                code.appendAsm(trueCode.getAsm());
+            }
+
             return code;
         }
     }
