@@ -1101,6 +1101,8 @@ public class MCRAPS extends AbstractMachine {
 
         if(value >= -4096 && value <= 4095)
             return "setq " + value + ", " + genLocation(reg);
+        else if(value >= 0 && value % 256L == 0L) // equivalent to value & 0xff == 0
+            return "sethi " + (value >> 8) + ", " + genLocation(reg);
         else
             return "set " + value + ", " + genLocation(reg);
     }
