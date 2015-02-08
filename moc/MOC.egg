@@ -412,7 +412,7 @@ global ST st;
 }
 
 #gen {
-    BLOC^code = BLOC^machine.genBlock(INSTS^code, BLOC^vlocator);
+    BLOC^code = BLOC^machine.genBlock(INSTS^code, BLOC^vlocator, st);
 
     -- debug
     if (BLOC^source.getVerbosity() >= 2) {

@@ -8,6 +8,7 @@ import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.type.TSTRUCT;
 import moc.type.FIELD;
+import moc.st.ST;
 import moc.st.INFOVAR;
 
 /**
@@ -459,7 +460,7 @@ public class Mx86 extends AbstractMachine {
         throw new UnsupportedOperationException();
     }
 
-    public Code genBlock(Code instsCode , VariableLocator vloc) {
+    public Code genBlock(Code instsCode , VariableLocator vloc, ST symbolsTable) {
         X86VariableLocator vl = (X86VariableLocator) vloc;
 
         if(vl.getLocalOffset() != 0) {

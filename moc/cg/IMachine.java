@@ -113,7 +113,7 @@ public interface IMachine {
     /**
      * Generate a block { }, removing local variables at the end
      */
-    Code genBlock(Code instsCode, VariableLocator vloc);
+    Code genBlock(Code instsCode, VariableLocator vloc, ST symbolsTable);
 
     /**
      * Generate a new location for a global variable

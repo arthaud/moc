@@ -8,6 +8,7 @@ import moc.type.TBOOL;
 import moc.type.TFUNCTION;
 import moc.type.TSTRUCT;
 import moc.type.FIELD;
+import moc.st.ST;
 import moc.st.INFOVAR;
 
 /**
@@ -305,7 +306,7 @@ public class MTAM extends AbstractMachine {
         throw new UnsupportedOperationException();
     }
 
-    public Code genBlock(Code c, VariableLocator vloc) {
+    public Code genBlock(Code c, VariableLocator vloc, ST symbolsTable) {
         TamVariableLocator vl = (TamVariableLocator) vloc;
 
         if (vl.getLocalOffset() > 0) {

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import moc.st.ST;
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
@@ -993,10 +994,13 @@ public class MCRAPS extends AbstractMachine {
         return c.code;
     }
 
-    public Code genBlock(Code instsCode, VariableLocator vloc) {
+    public Code genBlock(Code instsCode, VariableLocator vloc, ST symbolsTable) {
         CRAPSVariableLocator vl = (CRAPSVariableLocator) vloc;
 
-        if(vl.getLocalOffset() != 0) {
+        boolean isFunction = symbolsTable.getMother() != null
+                                && symbolsTable.getMother().getMother() != null
+                                && symbolsTable.getMother().getMother().getMother() == null;
+        if(vl.getLocalOffset() != 0 && !isFunction) {
             instsCode.appendAsm("add %sp, " + (-vl.getLocalOffset()) + ", %sp " + genComment("removing local variables"));
         }
 
