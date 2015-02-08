@@ -22,6 +22,10 @@ public class FunctionCode implements EntityCode {
         return asm;
     }
 
+    public void setAsm(String asm) {
+        this.asm = asm;
+    }
+
     public boolean isExported() {
         return exported;
     }

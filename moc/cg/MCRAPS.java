@@ -4,6 +4,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Collections;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
@@ -84,6 +86,28 @@ public class MCRAPS extends AbstractMachine {
     protected void prepareWrite(EntityList entities) {
         if(staticOffset == 0L) {
             endCode = ""; // delete the label
+        }
+
+        /*
+         * Fix duplicate labels by inserting a null operation.
+         * It's ugly, but it works.
+         */
+        for(EntityCode entity : entities.getList()) {
+            String asm = entity.getAsm();
+
+            StringBuffer sb = new StringBuffer();
+            Pattern pattern = Pattern.compile("(^|\n)(\\w+):\\s*\n\\s*(\\w+):");
+            Matcher matcher = pattern.matcher(asm);
+
+            while (matcher.find()) {
+                String firstLabel = matcher.group(2);
+                String secondLabel = matcher.group(3);
+                matcher.appendReplacement(sb, "\n" + firstLabel + ":\n"
+                                            + "add %r0, %r0, %r0 // fix duplicate labels\n"
+                                            + secondLabel + ":");
+            }
+            matcher.appendTail(sb);
+            entity.setAsm(sb.toString());
         }
 
         super.prepareWrite(entities);
