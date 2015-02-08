@@ -598,31 +598,31 @@ public class MCRAPS extends AbstractMachine {
 
                 switch(operator) {
                     case "+":
-                        code.appendAsm("add " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("add", left.reg, right.reg, reg));
                         break;
                     case "-":
-                        code.appendAsm("sub " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("sub", left.reg, right.reg, reg));
                         break;
                     case "*":
-                        code.appendAsm("umulcc " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("umulcc", left.reg, right.reg, reg));
                         break;
                     case "/":
                     case "%":
                         throw new UnsupportedOperationException("CRAPS");
                     case "&":
-                        code.appendAsm("and " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("and", left.reg, right.reg, reg));
                         break;
                     case "|":
-                        code.appendAsm("or " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("or", left.reg, right.reg, reg));
                         break;
                     case "^":
-                        code.appendAsm("xor " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("xor", left.reg, right.reg, reg));
                         break;
                     case "<<":
-                        code.appendAsm("sll " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("sll", left.reg, right.reg, reg));
                         break;
                     case ">>":
-                        code.appendAsm("srl " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("srl", left.reg, right.reg, reg));
                         break;
                     case "&&":
                         // "and" in craps is a bitwise operator.
@@ -636,11 +636,11 @@ public class MCRAPS extends AbstractMachine {
                         code.appendAsm("cmp %r0, " + genLocation(right.reg));
                         code.appendAsm("and %r25, 16, " + genLocation(right.reg)); // 16 -> mask for C
 
-                        code.appendAsm("and " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("and", left.reg, right.reg, reg));
                         code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         break;
                     case "||":
-                        code.appendAsm("or " + genLocation(left.reg) + ", " + genLocation(right.reg) + ", " + genLocation(reg));
+                        code.appendAsm(genOperation("or", left.reg, right.reg, reg));
                         break;
                     case "==":
                     case "!=":
