@@ -433,11 +433,11 @@ public class Mx86 extends AbstractMachine {
         Location l = allocator.pop();
         Location d = allocator.get();
 
-        if(pointerCode.getIsAddress()) {
+        if(pointerCode.isAddress()) {
             pointerCode.appendAsm(genMovMemToReg(genLocation(d), "[" + genLocation(l) + "]", pointedType.getSize()));
         }
 
-        pointerCode.setIsAddress(true);
+        pointerCode.setAddress(true);
         pointerCode.setLocation(null);
         allocator.push(d);
         return pointerCode;
@@ -475,7 +475,7 @@ public class Mx86 extends AbstractMachine {
         allocator.push(l);
 
         Code c = new Code(genMovMemToReg(genLocation(l), genLocation(i.getLocation()), i.getType().getSize()));
-        c.setIsAddress(false);
+        c.setAddress(false);
         c.setLocation(i.getLocation());
 
         return c;
@@ -527,9 +527,9 @@ public class Mx86 extends AbstractMachine {
         if(operand.getLocation() != null) {
             return new Code(genMovMemToReg(genLocation(l), genLocation(operand.getLocation()), type.getSize()));
         }
-        else if(operand.getIsAddress()) {
+        else if(operand.isAddress()) {
             operand.appendAsm(genMovMemToReg(genLocation(l), "[" + genLocation(l) + "]", type.getSize()));
-            operand.setIsAddress(false);
+            operand.setAddress(false);
         }
 
         return operand;

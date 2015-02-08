@@ -7,10 +7,10 @@ public class Code {
     protected String asm;
 
     /**
-     * The address, when it is known at compilation time
+     * The location, when it is known at compilation time
      * Otherwise, null
      */
-    protected Location address;
+    protected Location location;
 
     /**
      * The value, when it is known at compilation time
@@ -21,7 +21,7 @@ public class Code {
     /**
      * True if the code generates an address
      */
-    protected boolean isAddress;
+    protected boolean address;
 
     public Code() {
         this(null);
@@ -31,11 +31,11 @@ public class Code {
         this(asm, false);
     }
 
-    public Code(String asm, boolean isa) {
+    public Code(String asm, boolean isAddress) {
         this.asm = asm;
-        address = null;
+        location = null;
         value = null;
-        isAddress = isa;
+        address = isAddress;
     }
 
     /**
@@ -64,24 +64,24 @@ public class Code {
     /**
      * Location
      */
-    public void setLocation(Location add) {
-        address = add;
+    public void setLocation(Location location) {
+        this.location = location;
     }
 
     public boolean hasLocation() {
-        return address != null;
+        return location != null;
     }
 
     public Location getLocation() {
+        return location;
+    }
+
+    public void setAddress(boolean isAddress) {
+        address = isAddress;
+    }
+
+    public boolean isAddress() {
         return address;
-    }
-
-    public void setIsAddress(boolean isa) {
-        isAddress = isa;
-    }
-
-    public boolean getIsAddress() {
-        return isAddress;
     }
 
     /**
@@ -102,10 +102,10 @@ public class Code {
     /**
      * Static constructors
      */
-    public static Code fromLocation(Location l, boolean isa) {
+    public static Code fromLocation(Location l, boolean isAddress) {
         Code c = new Code();
         c.setLocation(l);
-        c.setIsAddress(isa);
+        c.setAddress(isAddress);
         return c;
     }
 
@@ -113,10 +113,10 @@ public class Code {
         return fromLocation(l, false);
     }
 
-    public static Code fromValue(long value, boolean isa) {
+    public static Code fromValue(long value, boolean isAddress) {
         Code c = new Code();
         c.setValue(value);
-        c.setIsAddress(isa);
+        c.setAddress(isAddress);
         return c;
     }
 

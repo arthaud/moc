@@ -157,7 +157,7 @@ public class MTAM extends AbstractMachine {
         if (address.getLocation() != null) {
             retCode.appendAsm("STORE (" + addrType.getSize() + ") " + address.getLocation().getOffset() + "[LB] " + genComment("affectation"));
         } else {
-            assert(address.getIsAddress());
+            assert(address.isAddress());
             retCode.appendAsm(genComment("affected address :"));
             retCode.appendAsm(address.getAsm());
             retCode.appendAsm("STOREI (" + addrType.getSize() + ") " + genComment("affectation"));
@@ -280,11 +280,11 @@ public class MTAM extends AbstractMachine {
 
     /** the generated code puts the address of the pointed var on the top of the stack */
     public Code genAccess(Code pointerCode, TTYPE pointedType) {
-        if (pointerCode.getIsAddress()) {
+        if (pointerCode.isAddress()) {
             pointerCode.appendAsm("LOADI (" + pointedType.getSize() + ")");
         }
 
-        pointerCode.setIsAddress(true);
+        pointerCode.setAddress(true);
         pointerCode.setLocation(null);
         return pointerCode;
     }
@@ -317,7 +317,7 @@ public class MTAM extends AbstractMachine {
 
     public Code genVariable(INFOVAR i) {
         Code retCode = new Code("LOAD (" + i.getSize() + ") " + i.getLocation().getOffset() + "[LB]");
-        retCode.setIsAddress(false);
+        retCode.setAddress(false);
         retCode.setLocation(i.getLocation());
         return retCode;
     }
@@ -332,7 +332,7 @@ public class MTAM extends AbstractMachine {
 
     public Code genString(String txt) {
         Code retCode = new Code("LOADL " + initOffset + " " + genComment("string " + txt));
-        retCode.setIsAddress(false);
+        retCode.setAddress(false);
 
         initCode += genComment(txt) + "\n";
         List<Integer> bytes = getArrayFromString(txt);
@@ -364,9 +364,9 @@ public class MTAM extends AbstractMachine {
         if(operand.getLocation() != null) {
             return new Code("LOAD (" + type.getSize() + ") " + operand.getLocation().getOffset() + "[LB]");
         }
-        else if(operand.getIsAddress()) {
+        else if(operand.isAddress()) {
             operand.appendAsm("LOADI (" + type.getSize() + ")");
-            operand.setIsAddress(false);
+            operand.setAddress(false);
         }
 
         return operand;

@@ -197,7 +197,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genConditional(Code conditionCode, Code trueCode, Code falseCode) {
-        if(conditionCode.hasValue() && !conditionCode.getIsAddress()) {
+        if(conditionCode.hasValue() && !conditionCode.isAddress()) {
             if(conditionCode.getValue() == 0) { // if(false)
                 return falseCode;
             }
@@ -234,7 +234,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genWhileLoop(Code conditionCode, Code body) {
-        if(conditionCode.hasValue() && !conditionCode.getIsAddress()) {
+        if(conditionCode.hasValue() && !conditionCode.isAddress()) {
             if(conditionCode.getValue() == 0) { // while(false)
                 return new Code("");
             }
@@ -287,10 +287,10 @@ public class MCRAPS extends AbstractMachine {
         Location r1 = new Location(Location.LocationType.REGISTER, 0);
         Code code;
 
-        if(returnCode.hasValue() && !returnCode.getIsAddress()) {
+        if(returnCode.hasValue() && !returnCode.isAddress()) {
             code = new Code(genSet(returnCode.getValue(), r1));
         }
-        else if(returnCode.hasLocation() && !returnCode.getIsAddress()) {
+        else if(returnCode.hasLocation() && !returnCode.isAddress()) {
             code = new Code(genMovMemToReg(genLocation(returnCode.getLocation()), r1));
         }
         else {
@@ -307,14 +307,14 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genAffectation(Code addrCode, Code valueCode, TTYPE addrType, TTYPE valueType) {
-        boolean valueInFixedRegisters = valueCode.hasValue() && !valueCode.getIsAddress()
+        boolean valueInFixedRegisters = valueCode.hasValue() && !valueCode.isAddress()
                 && fixedRegisters.containsKey(valueCode.getValue());
         CodeValue value = forceAsm(valueCode, valueType);
         forceValue(value.code, value.reg, valueType);
         Code code = value.code;
         code.prependAsm(genComment("affected value :"));
 
-        if(addrCode.hasLocation() && !addrCode.getIsAddress()) {
+        if(addrCode.hasLocation() && !addrCode.isAddress()) {
             if(valueInFixedRegisters) {
                 code = new Code("st " + fixedRegisters.get(valueCode.getValue())
                               + ", " + genLocation(addrCode.getLocation()));
@@ -324,7 +324,7 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else {
-            assert(addrCode.getIsAddress());
+            assert(addrCode.isAddress());
 
             // in that case, we will need a new register
             if(!addrCode.hasAsm())
@@ -351,10 +351,10 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genBinary(Code leftOperand, TTYPE leftType, Code rightOperand, TTYPE rightType, String operator) {
-        if(leftOperand.hasValue() && !leftOperand.getIsAddress()) {
+        if(leftOperand.hasValue() && !leftOperand.isAddress()) {
             long left = leftOperand.getValue();
 
-            if(rightOperand.hasValue() && !rightOperand.getIsAddress()) {
+            if(rightOperand.hasValue() && !rightOperand.isAddress()) {
                 long right = rightOperand.getValue();
 
                 switch(operator) {
@@ -483,7 +483,7 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else { // !leftOperand.hasValue()
-            if(rightOperand.hasValue() && !rightOperand.getIsAddress()) {
+            if(rightOperand.hasValue() && !rightOperand.isAddress()) {
                 long right = rightOperand.getValue();
 
                 CodeValue left = forceAsm(leftOperand, leftType);
@@ -699,7 +699,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genUnary(Code operand, TTYPE type, String operator) {
-        if(operand.hasValue() && !operand.getIsAddress()) {
+        if(operand.hasValue() && !operand.isAddress()) {
             switch(operator) {
                 case "-": return Code.fromValue(- operand.getValue());
                 case "!": return Code.fromValue(operand.getValue() != 0 ? 0 : 1);
@@ -735,7 +735,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
-        if(!castedCode.getIsAddress()
+        if(!castedCode.isAddress()
                 && (castedCode.hasValue() || castedCode.hasLocation())) {
             return castedCode;
         }
@@ -833,7 +833,7 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genArg(Code operand, TTYPE type) {
-        if(operand.hasValue() && !operand.getIsAddress()
+        if(operand.hasValue() && !operand.isAddress()
                 && fixedRegisters.containsKey(operand.getValue())) {
             return new Code("push " + fixedRegisters.get(operand.getValue()));
         }
@@ -848,7 +848,7 @@ public class MCRAPS extends AbstractMachine {
     public Code genAccess(Code pointerCode, TTYPE pointedType) {
         Code code;
 
-        if(pointerCode.getIsAddress()) {
+        if(pointerCode.isAddress()) {
             CodeValue c = forceAsm(pointerCode, getPointerType(pointedType));
             code = c.code;
             forceValue(code, c.reg, getPointerType(pointedType));
@@ -858,7 +858,7 @@ public class MCRAPS extends AbstractMachine {
             code = pointerCode;
         }
 
-        code.setIsAddress(true);
+        code.setAddress(true);
         return code;
     }
 
@@ -866,7 +866,7 @@ public class MCRAPS extends AbstractMachine {
         TARRAY type = (TARRAY) info.getType();
         Code code;
 
-        if(posCode.hasValue() && !posCode.getIsAddress()) {
+        if(posCode.hasValue() && !posCode.isAddress()) {
             long offset = posCode.getValue() * type.getElementsType().getSize();
             Location loc = info.getLocation();
             code = Code.fromLocation(new Location(loc.getType(),
@@ -890,7 +890,7 @@ public class MCRAPS extends AbstractMachine {
                 code.appendAsm("add " + genLocation(c.reg) + ", static + " + info.getLocation().getOffset() + ", " + genLocation(c.reg));
             }
 
-            code.setIsAddress(true);
+            code.setAddress(true);
         }
 
         return code;
@@ -900,7 +900,7 @@ public class MCRAPS extends AbstractMachine {
         TPOINTER type = (TPOINTER) info.getType();
         Code code;
 
-        if(posCode.hasValue() && !posCode.getIsAddress()) {
+        if(posCode.hasValue() && !posCode.isAddress()) {
             long offset = posCode.getValue() * type.getType().getSize();
             Location reg = allocator.getFreeReg();
             allocator.push(reg);
@@ -927,7 +927,7 @@ public class MCRAPS extends AbstractMachine {
             code.appendAsm("add " + genLocation(pointerReg) + ", " + genLocation(c.reg) + ", " + genLocation(c.reg));
         }
 
-        code.setIsAddress(true);
+        code.setAddress(true);
         return code;
     }
 
@@ -935,13 +935,13 @@ public class MCRAPS extends AbstractMachine {
         int offset = struct.getFieldOffset(field.getName());
         Code code;
 
-        if(operand.hasLocation() && !operand.getIsAddress()) {
+        if(operand.hasLocation() && !operand.isAddress()) {
             Location loc = operand.getLocation();
             code = Code.fromLocation(new Location(loc.getType(),
                                                   loc.getOffset() + offset));
         }
         else {
-            assert(operand.getIsAddress());
+            assert(operand.isAddress());
             CodeValue c = forceAsm(operand, struct);
             code = c.code;
 
@@ -949,7 +949,7 @@ public class MCRAPS extends AbstractMachine {
                 code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
 
             allocator.push(c.reg);
-            code.setIsAddress(true);
+            code.setAddress(true);
         }
 
         return code;
@@ -964,7 +964,7 @@ public class MCRAPS extends AbstractMachine {
         if(offset > 0)
             c.code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
 
-        c.code.setIsAddress(true);
+        c.code.setAddress(true);
         allocator.push(c.reg);
         return c.code;
     }
@@ -1041,7 +1041,7 @@ public class MCRAPS extends AbstractMachine {
 
             // special case for arrays and structures
             if((type instanceof TARRAY || type instanceof TSTRUCT)
-                    && !operand.getIsAddress()) {
+                    && !operand.isAddress()) {
                 if(loc.isStackFrame()) {
                     code = new Code("sub %fp, " + (-loc.getOffset()) + ", " + genLocation(reg));
                 }
@@ -1058,7 +1058,7 @@ public class MCRAPS extends AbstractMachine {
             code = new Code(operand.getAsm());
         }
 
-        code.setIsAddress(operand.getIsAddress());
+        code.setAddress(operand.isAddress());
         return new CodeValue(code, reg);
     }
 
@@ -1072,9 +1072,9 @@ public class MCRAPS extends AbstractMachine {
     private void forceValue(Code operand, Location reg, TTYPE type) {
         assert(!operand.hasValue() && !operand.hasLocation());
 
-        if(operand.getIsAddress()) {
+        if(operand.isAddress()) {
             operand.appendAsm(genMovMemToReg("[" + genLocation(reg) + "]", reg));
-            operand.setIsAddress(false);
+            operand.setAddress(false);
         }
     }
 

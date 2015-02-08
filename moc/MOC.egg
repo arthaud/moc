@@ -603,7 +603,7 @@ EX -> affect A #gen ;
     if (!EX^htype.constructFrom(A^type)) {
         error(TYPES_incompatible, EX^htype, A^type);
     }
-    elseif (!EX^hcode.getIsAddress() && EX^hcode.getLocation() == null) {
+    elseif (!EX^hcode.isAddress() && EX^hcode.getLocation() == null) {
         error(AFF_impossible);
     }
 
