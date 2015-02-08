@@ -37,4 +37,16 @@ public class Location {
         Location o = (Location) other;
         return this.memoryType == o.memoryType && this.memoryOffset == o.memoryOffset;
     }
+
+    public boolean isRegister() {
+        return memoryType == LocationType.REGISTER;
+    }
+
+    public boolean isStackFrame() {
+        return memoryType == LocationType.STACKFRAME;
+    }
+
+    public boolean isAbsolute() {
+        return memoryType == LocationType.ABSOLUTE;
+    }
 }

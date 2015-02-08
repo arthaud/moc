@@ -150,10 +150,10 @@ public class MCRAPS extends AbstractMachine {
      * Converts a location to its representation in assembler
      */
     public String genLocation(Location l) {
-        if(l.getType() == Location.LocationType.REGISTER) {
+        if(l.isRegister()) {
             return registerNames[(int) l.getOffset()];
         }
-        else if(l.getType() == Location.LocationType.STACKFRAME) {
+        else if(l.isStackFrame()) {
             if(l.getOffset() >= 0)
                 return "[%fp + " + l.getOffset() + "]";
             else
@@ -935,10 +935,10 @@ public class MCRAPS extends AbstractMachine {
         Location reg = allocator.getFreeReg();
         allocator.push(reg);
 
-        if(i.getLocation().getType() == Location.LocationType.STACKFRAME) {
+        if(i.getLocation().isStackFrame()) {
             return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
-        else { // locType == Location.LocationType.ABSOLUTE
+        else { // i.getLocation().isAbsolute()
             return new Code("set glob_" + i.getLocation().getOffset() + ", " + genLocation(reg));
         }
     }
@@ -991,10 +991,10 @@ public class MCRAPS extends AbstractMachine {
             // special case for arrays and structures
             if((type instanceof TARRAY || type instanceof TSTRUCT)
                     && !operand.getIsAddress()) {
-                if(loc.getType() == Location.LocationType.STACKFRAME) {
+                if(loc.isStackFrame()) {
                     code = new Code("sub %fp, " + (-loc.getOffset()) + ", " + genLocation(reg));
                 }
-                else { // locType == Location.LocationType.ABSOLUTE
+                else { // loc.isAbsolute()
                     code = new Code("set glob_" + loc.getOffset() + ", " + genLocation(reg));
                 }
             }
@@ -1045,7 +1045,7 @@ public class MCRAPS extends AbstractMachine {
      * Generate a push
      */
     private String genPush(Location reg) {
-        assert(reg.getType() == Location.LocationType.REGISTER);
+        assert(reg.isRegister());
         return "push " + genLocation(reg);
     }
 
@@ -1053,7 +1053,7 @@ public class MCRAPS extends AbstractMachine {
      * Generate a mov from registers to memory
      */
     private String genMovRegToMem(Location reg, String mem) {
-        assert(reg.getType() == Location.LocationType.REGISTER);
+        assert(reg.isRegister());
         return "st " + genLocation(reg) + ", " + mem;
     }
 
@@ -1061,7 +1061,7 @@ public class MCRAPS extends AbstractMachine {
      * Generate a mov from memory to a register
      */
     private String genMovMemToReg(String mem, Location reg) {
-        assert(reg.getType() == Location.LocationType.REGISTER);
+        assert(reg.isRegister());
         return "ld " + mem + ", " + genLocation(reg);
     }
 
@@ -1069,7 +1069,7 @@ public class MCRAPS extends AbstractMachine {
      * Generate a set
      */
     private String genSet(long value, Location reg) {
-        assert(reg.getType() == Location.LocationType.REGISTER);
+        assert(reg.isRegister());
 
         if(value >= -4096 && value <= 4095)
             return "setq " + value + ", " + genLocation(reg);
@@ -1081,8 +1081,8 @@ public class MCRAPS extends AbstractMachine {
      * Generate an operation between a register and an immediate value
      */
     private String genImmediateOperation(String op, Location left, long right, Location result) {
-        assert(left.getType() == Location.LocationType.REGISTER);
-        assert(result.getType() == Location.LocationType.REGISTER);
+        assert(left.isRegister());
+        assert(result.isRegister());
 
         if(right >= -4096 && right <= 4095)
             return op + " " + genLocation(left) + ", " + right + ", " + genLocation(result);
@@ -1097,9 +1097,9 @@ public class MCRAPS extends AbstractMachine {
      * Generate an operation between a register and a register
      */
     private String genOperation(String op, Location left, Location right, Location result) {
-        assert(left.getType() == Location.LocationType.REGISTER);
-        assert(right.getType() == Location.LocationType.REGISTER);
-        assert(result.getType() == Location.LocationType.REGISTER);
+        assert(left.isRegister());
+        assert(right.isRegister());
+        assert(result.isRegister());
 
         return op + " " + genLocation(left) + ", " + genLocation(right)
                   + ", " + genLocation(result);
