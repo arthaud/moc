@@ -151,6 +151,14 @@ public class MTAM extends AbstractMachine {
         return c;
     }
 
+    public Code genBreak() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genContinue() {
+        throw new UnsupportedOperationException();
+    }
+
     public Code genAffectation(Code address, Code affectedVal, TTYPE addrType, TTYPE affectedType) {
         Code retCode = genVal(affectedVal, affectedType);
         retCode.prependAsm(genComment("affected value :"));

@@ -195,6 +195,14 @@ public class Mx86 extends AbstractMachine {
         return genReturn("f_" + function.getName(), returnType, returnVal);
     }
 
+    public Code genBreak() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Code genContinue() {
+        throw new UnsupportedOperationException();
+    }
+
     public Code genAffectation(Code address, Code affectedVal, TTYPE addrType, TTYPE affectedType) {
         Location v = allocator.pop();
         Location a = allocator.pop();

@@ -1,0 +1,150 @@
+\documentclass{article}
+
+\usepackage[french]{babel}
+\usepackage{fontspec}
+
+% {{{ minted
+\usepackage{minted}
+\newminted[moc]{cpp}{%
+  tabsize=4, fontsize=\footnotesize,
+  frame=lines, framesep=\fboxsep,
+  rulecolor=\color{gray!40}
+}
+\newmintinline[imoc]{cpp}{}
+% }}}
+
+\author{
+       Maxime Arthaud
+  \and Korantin Auguste
+  \and Martin Carton
+  \and Étienne Lebrun
+}
+\title{Documentation du langage moc}
+
+\begin{document}
+  \maketitle
+  \tableofcontents
+  \newpage
+
+  Ce document présente la syntaxe du langage moc. Ce langage est proche du C89
+  avec quelques éléments en moins et quelques extensions.
+
+  \section{Variables}
+    Les variables se déclarent comme en C avec la limitation d'une variable par
+    instruction. Les types supportés sont:
+    \begin{itemize}
+      \item \imoc+int+;
+      \item \imoc+bool+;
+      \item \imoc+char+;
+      \item les pointeurs;
+      \item les structures;
+      \item les tableaux.
+    \end{itemize}
+
+    \imoc+void+ est aussi supporté comme type de retour de fonction ainsi que
+    \imoc+void*+ comme pointeur non-typé.
+
+    \subsection{Structures}
+      Les structures sont supportées mais pas \imoc+typedef+\footnote{Qui
+      rendrait la syntaxe contextuelle}. Leur définition est la même qu'en C:
+
+      \begin{moc}
+struct point {
+    int x;
+    int y;
+};
+
+int manhattan(struct point p) { // struct obligatoire
+    return p.x+p.y;
+}
+      \end{moc}
+
+      Il n'est pas possible de déclarer une structure sans la définir (pas de
+      \emph{forward declaration}).
+
+    \subsection{Tableaux}
+      La syntaxe de déclaration des tableaux est différente de celle du
+      C\footnote{Afin de simplifier la gestion des types dans la grammaire}:
+      \begin{moc}
+int[42] mon_tableau;
+
+// au lieu de:
+int mon_tableau[42]; // erreur syntaxique
+      \end{moc}
+
+  \section{Opérateurs}
+    Le langage possède les mêmes opérateurs que le C avec les mêmes priorités à
+    l'exception de:
+    \begin{itemize}
+      \item l'opérateur ternaire \imoc+?:+;
+      \item les opérateurs \mintinline{tex}+@=+ (\imoc.+=., \imoc.-=., etc.);
+      \item les opérateurs \imoc.++. et \imoc.--.;
+    \end{itemize}
+
+    Les opérateurs \imoc+/+ et \imoc+%+ ne sont pas supportés car CRAPS ne
+    possède pas ces opérations.
+
+    L'opérateur \imoc+sizeof+ ne fonctionne que sur un type (\imoc+sizeof a+ ne
+    marche pas, par contre \imoc+sizeof(int)+ marche).
+
+    Les opérateurs \imoc+||+ et \imoc+&&+ ne sont pas \emph{short-circuit}.
+
+  \section{Conditions}
+    Le \imoc+if+ du C est supporté et devrait fonctionner à peu près de la même
+    façon.
+
+    \imoc+switch+ et l'opérateur ternaire \imoc+?:+ ne sont pas supportés.
+
+    Il n'est pas possible de déclarer une variable dans la condition du
+    \imoc+if+.
+
+  \section{Boucles}
+    Le langage possède les boucles \imoc+while+ et \imoc+for+ du C. La boucle
+    \imoc+do {} while+ et \imoc+goto+ ne sont pas supportés.
+
+    Pour la boucle \imoc+for+, les trois parties sont obligatoires et la
+    première partie de permet pas de déclarer une variable (seulement la
+    définir). Exemple:
+
+    \begin{moc}
+int i;
+for (i = 0; i < 10; i = i+1) {
+    // ...
+}
+    \end{moc}
+
+    Dans une boucle, \imoc+break+ et \imoc+continue+ peuvent être utilisés.
+    Cependant si \imoc+break+ et \imoc+continue+ sont utilisés, toutes les
+    variables doivent être déclarées en début de fonction. Le compilateur ne
+    fourni ni warning, ni erreur en cas d'utilisation de variables déclarées au
+    milieu de fonction et de saut dans une même fonction.
+
+  \section{Fonctions}
+    La syntaxe de définition d'une fonction est la même qu'en C.
+
+    Il n'est pas possible de déclarer une fonction sans la définir (pas de
+    \emph{forward declaration}). Les fonctions mutuellement récursives sont donc
+    impossibles. Une fonction peut par contre être récursive.
+
+    Une fonction peut être marquée \imoc{export}. Ce mot clé indique au
+    compilateur qu'il ne doit pas supprimer la fonction si elle ne lui semble
+    pas utile. Il est utile si une fonction n'est appelée que dans de
+    l'assembleur \emph{inline}. La fonction \imoc+main+ est implicitement
+    marquée \imoc+export+.
+
+  \section{Asm}
+    Il est possible d'inclure de l'assembleur \emph{inline} dans une fonction ou
+    dans le contexte global. Ce code n'est pas vérifié.
+
+    \begin{moc}
+asm("set 0x4000, %sp");
+    \end{moc}
+
+    Cet instruction est utile pour le code d'initialisation.
+
+  \section{Préprocesseur}
+    Le compilateur utilise \verb+cpp+, le préprocesseur fourni avec \verb+gcc+.
+    Tout ce qu'il est possible de faire en C avec le préprocesseur est donc
+    possible dans ce langage (notamment \imoc+#include+ et \imoc+#define+).
+
+\end{document}

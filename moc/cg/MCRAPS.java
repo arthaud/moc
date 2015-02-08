@@ -275,7 +275,7 @@ public class MCRAPS extends AbstractMachine {
             CodeValue cond = forceAsm(conditionCode, getBoolType());
             forceValue(cond.code, cond.reg, getBoolType());
 
-            int num = getLabelNum();
+            int num = loopLabelStack.get(loopLabelStack.size()-1);
             cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
             cond.code.appendAsm("be end_loop_" + num);
 
@@ -293,7 +293,7 @@ public class MCRAPS extends AbstractMachine {
         CodeValue cond = forceAsm(conditionCode, getBoolType());
         forceValue(cond.code, cond.reg, getBoolType());
 
-        int num = getLabelNum();
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
         cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
         cond.code.appendAsm("be end_loop_" + num);
 
@@ -329,6 +329,16 @@ public class MCRAPS extends AbstractMachine {
 
         code.appendAsm("ba f_" + fun.getName() + "_end");
         return code;
+    }
+
+    public Code genBreak() {
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
+        return new Code("ba end_loop_" + num + " // break");
+    }
+
+    public Code genContinue() {
+        int num = loopLabelStack.get(loopLabelStack.size()-1);
+        return new Code("ba loop_" + num + " // continue");
     }
 
     public Code genAffectation(Code addrCode, Code valueCode, TTYPE addrType, TTYPE valueType) {
