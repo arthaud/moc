@@ -8,7 +8,7 @@ asm("
 
 null_handler: reti
 start:
-    set 0x200, %sp
+    set 0x2000, %sp
     ba f_main
 ")
 
