@@ -78,6 +78,17 @@ public class MCRAPS extends AbstractMachine {
         endCode += "static:\n";
     }
 
+    /**
+     * Called before writeCode
+     */
+    protected void prepareWrite(EntityList entities) {
+        if(staticOffset == 0L) {
+            endCode = ""; // delete the label
+        }
+
+        super.prepareWrite(entities);
+    }
+
     public String getName() {
         return "CRAPS";
     }

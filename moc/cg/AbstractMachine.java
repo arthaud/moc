@@ -40,6 +40,9 @@ public abstract class AbstractMachine implements IMachine {
     @Override
     public void writeCode(String fname, EntityList entities) throws MOCException {
         try {
+            // clean-up
+            prepareWrite(entities);
+
             // pre-checked at startup
             int pt = fname.lastIndexOf('.');
             String name = fname.substring(0, pt);
@@ -63,6 +66,11 @@ public abstract class AbstractMachine implements IMachine {
             throw new MOCException(e.getMessage());
         }
     }
+
+    /**
+     * Called before writeCode
+     */
+    protected void prepareWrite(EntityList entities) {}
 
     /**
      * Returns whether the given entity should be included in the final code.
