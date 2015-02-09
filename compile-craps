@@ -12,8 +12,9 @@ elif [[ -z "$1" ]] || [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
     echo "optional arguments:"
     echo "  -h, --help  show this help message and exit"
 else
+    MOC_DIR=$(dirname "${BASH_SOURCE[0]}")
     rm -f /tmp/p.moc /tmp/p.asm "${1%.*}.asm" &&
     cpp -traditional-cpp -nostdinc -Wall -I. -C -P "$1" /tmp/p.moc &&
-    ./mocc -m craps /tmp/p.moc &&
+    "$MOC_DIR"/mocc -m craps /tmp/p.moc &&
     cp /tmp/p.asm "${1%.*}.asm"
 fi
