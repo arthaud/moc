@@ -1011,6 +1011,12 @@ public class MCRAPS extends AbstractMachine {
             c.code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
 
         c.code.setAddress(true);
+
+        // special case for arrays and structures
+        if(field.getType() instanceof TARRAY || field.getType() instanceof TSTRUCT) {
+            c.code.setAddress(false);
+        }
+
         allocator.push(c.reg);
         return c.code;
     }
