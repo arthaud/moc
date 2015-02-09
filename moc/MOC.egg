@@ -1296,8 +1296,8 @@ F -> ident #gen ;
             case INFOFUN {
                 INFOFUN info = i;
                 F^type = new TPOINTER(
-                    new TINTEGER(F^machine.getIntSize()),
-                    F^machine.getIntSize()
+                    new TVOID(),
+                    F^machine.getPointerSize()
                 );
                 F^code = F^machine.genVariable(ident^txt, info);
             }
