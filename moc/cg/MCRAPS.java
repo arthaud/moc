@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Collections;
 
+import moc.st.INFOFUN;
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
@@ -567,6 +568,12 @@ public class MCRAPS extends AbstractMachine {
         c.setLocation(i.getLocation());
 
         return c;
+    }
+
+    public Code genVariable(String name, INFOFUN i) {
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set f_" + name + ", " + genLocation(reg));
     }
 
     public Code genAddress(INFOVAR i) {

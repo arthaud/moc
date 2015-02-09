@@ -1293,6 +1293,14 @@ F -> ident #gen ;
                 F^type = info.getType();
                 F^code = F^machine.genVariable(info);
             }
+            case INFOFUN {
+                INFOFUN info = i;
+                F^type = new TPOINTER(
+                    new TINTEGER(F^machine.getIntSize()),
+                    F^machine.getIntSize()
+                );
+                F^code = F^machine.genVariable(ident^txt, info);
+            }
             default {
                 error(INFO_not_var, ident^txt);
             }
