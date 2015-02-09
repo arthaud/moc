@@ -10,6 +10,7 @@ import moc.type.TSTRUCT;
 import moc.type.FIELD;
 import moc.st.ST;
 import moc.st.INFOVAR;
+import moc.st.INFOFUN;
 
 /**
  * The TAM machine and its generation functions
@@ -329,6 +330,10 @@ public class MTAM extends AbstractMachine {
         retCode.setAddress(false);
         retCode.setLocation(i.getLocation());
         return retCode;
+    }
+
+    public Code genVariable(String name, INFOFUN i) {
+        throw new UnsupportedOperationException();
     }
 
     public Code genAddress(INFOVAR i) {

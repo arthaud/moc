@@ -8,6 +8,7 @@ import moc.type.TFUNCTION;
 import moc.type.TSTRUCT;
 import moc.type.FIELD;
 import moc.st.INFOVAR;
+import moc.st.INFOFUN;
 import moc.st.ST;
 
 /**
@@ -152,6 +153,8 @@ public interface IMachine {
     */
 
     Code genVariable(INFOVAR i);
+
+    Code genVariable(String name, INFOFUN i);
 
     Code genAddress(INFOVAR i);
 

@@ -10,6 +10,7 @@ import moc.type.TSTRUCT;
 import moc.type.FIELD;
 import moc.st.ST;
 import moc.st.INFOVAR;
+import moc.st.INFOFUN;
 
 /**
  * The x86 machine and its generation functions
@@ -488,6 +489,10 @@ public class Mx86 extends AbstractMachine {
         c.setLocation(i.getLocation());
 
         return c;
+    }
+
+    public Code genVariable(String name, INFOFUN i) {
+        throw new UnsupportedOperationException();
     }
 
     public Code genAddress(INFOVAR i) {

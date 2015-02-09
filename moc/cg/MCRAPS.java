@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import moc.st.ST;
+import moc.st.INFOFUN;
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
 import moc.type.TFUNCTION;
@@ -1029,6 +1030,12 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genVariable(INFOVAR i) {
         return Code.fromLocation(i.getLocation());
+    }
+
+    public Code genVariable(String name, INFOFUN i) {
+        Location reg = allocator.getFreeReg();
+        allocator.push(reg);
+        return new Code("set f_" + name + ", " + genLocation(reg));
     }
 
     public Code genAddress(INFOVAR i) {
