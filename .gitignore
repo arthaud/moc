@@ -10,3 +10,4 @@ moc/egg
 *.tam
 *.x86
 *.asm
+*.obj
