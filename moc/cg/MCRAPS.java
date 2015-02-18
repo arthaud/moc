@@ -105,7 +105,7 @@ public class MCRAPS extends AbstractMachine {
                 String firstLabel = matcher.group(2);
                 String secondLabel = matcher.group(3);
                 matcher.appendReplacement(sb, "\n" + firstLabel + ":\n"
-                                            + "add %r0, %r0, %r0 // fix duplicate labels\n"
+                                            + "nop // fix duplicate labels\n"
                                             + secondLabel + ":");
             }
             matcher.appendTail(sb);
