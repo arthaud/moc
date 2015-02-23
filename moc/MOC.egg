@@ -118,7 +118,7 @@ sugar csbra      is  "\]" ;
 term integer     is  "(0x[0-9a-fA-F]+)|(0b[01]+)|([0-9]+)" ;
 term character   is  "\'([^\']|\\[0nrt])\'" ;
 term string      is  "\"[^\"]*\"" ;
-term ident       is  "[a-z][_0-9A-Za-z]*" ;
+term ident       is  "[a-z_][_0-9A-Za-z]*" ;
 
 
 PROGRAM -> #init ENTITIES #gen ;
