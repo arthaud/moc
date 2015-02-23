@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[a4paper]{article}
 
 \usepackage[french]{babel}
 \usepackage{fontspec}
@@ -29,7 +29,7 @@
   Ce document présente la syntaxe du langage moc. Ce langage est proche du C89
   avec quelques éléments en moins et quelques extensions.
 
-  \section{Variables}
+  \section{Variables et types}
     Les variables se déclarent comme en C avec la limitation d'une variable par
     instruction. Les types supportés sont:
     \begin{itemize}
@@ -43,6 +43,9 @@
 
     \imoc+void+ est aussi supporté comme type de retour de fonction ainsi que
     \imoc+void*+ comme pointeur non-typé.
+
+    Le typage est plus fort qu'en C, des casts supplémentaires sont nécessaires
+    (entre entiers et pointeurs, ou pointeurs de différents types par exemple).
 
     \subsection{Structures}
       Les structures sont supportées mais pas \imoc+typedef+\footnote{Qui
@@ -141,6 +144,27 @@ asm("set 0x4000, %sp");
     \end{moc}
 
     Cet instruction est utile pour le code d'initialisation.
+
+    Il est possible de faire référence à une variable déclarée en C depuis
+    l'assembleur en préfixant son nom par \verb+$+:
+    \begin{moc}
+int a;
+asm("st %r20, $a");
+    \end{moc}
+
+    Il est possible d'appeler une fonction en préfixant son nom par \verb+f_+:
+    \begin{moc}
+void dummy1() {
+}
+
+int dummy2() {
+    asm("
+        push %r28
+        call f_dummy1 // appelle dummy1
+        pop %r28
+    ");
+}
+    \end{moc}
 
   \section{Préprocesseur}
     Le compilateur utilise \verb+cpp+, le préprocesseur fourni avec \verb+gcc+.
