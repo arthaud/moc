@@ -1,20 +1,3 @@
-asm("
-    ba start
-    // interrupt table
-    .word null_handler
-    .word null_handler
-    .word null_handler
-    .word null_handler
-    .word null_handler
-    .word null_handler
-    .word null_handler
-
-null_handler: reti
-start:
-    set 0x2000, %sp
-    ba f_main
-")
-
 void div_mod(int a, int b, int *quotient, int *mod) {
     int q = 0;
 

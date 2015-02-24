@@ -1,0 +1,4 @@
+asm("
+    mov %pc, %r24
+    ba f_main
+")

@@ -201,7 +201,7 @@ public class MCRAPS extends AbstractMachine {
                 return "[%fp - " + (-l.getOffset()) + "]";
         }
         else {
-            return "[static + " + l.getOffset() + "]";
+            return "[%r24 static+" + l.getOffset() + "]";
         }
     }
 
@@ -933,6 +933,7 @@ public class MCRAPS extends AbstractMachine {
                 code.appendAsm("sub " + genLocation(c.reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(c.reg));
             }
             else { // info.getLocation().isAbsolute()
+                code.appendAsm("add " + genLocation(c.reg) + ", %r24, " + genLocation(c.reg));
                 code.appendAsm("add " + genLocation(c.reg) + ", static + " + info.getLocation().getOffset() + ", " + genLocation(c.reg));
             }
 
@@ -1052,7 +1053,7 @@ public class MCRAPS extends AbstractMachine {
             return new Code("sub %fp, " + (-i.getLocation().getOffset()) + ", " + genLocation(reg));
         }
         else { // i.getLocation().isAbsolute()
-            return new Code("set static + " + i.getLocation().getOffset() + ", " + genLocation(reg));
+            return new Code("add %r24, static + " + i.getLocation().getOffset() + ", " + genLocation(reg));
         }
     }
 
@@ -1068,7 +1069,7 @@ public class MCRAPS extends AbstractMachine {
         endCode += genBytes(getArrayFromString(txt)) + "\n";
         Location reg = allocator.getFreeReg();
         allocator.push(reg);
-        return new Code("set static + " + offset + ", " + genLocation(reg));
+        return new Code("add %r24, static + " + offset + ", " + genLocation(reg));
     }
 
     public Code genNull() {
@@ -1107,7 +1108,7 @@ public class MCRAPS extends AbstractMachine {
                     code = new Code("sub %fp, " + (-loc.getOffset()) + ", " + genLocation(reg));
                 }
                 else { // loc.isAbsolute()
-                    code = new Code("set static + " + loc.getOffset() + ", " + genLocation(reg));
+                    code = new Code("add %r24, static + " + loc.getOffset() + ", " + genLocation(reg));
                 }
             }
             else {

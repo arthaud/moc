@@ -1,3 +1,4 @@
+#include "lib/craps-header-kernelmode.moc"
 #include "lib/craps.moc"
 
 void set(int[] t, int k, int v) {
