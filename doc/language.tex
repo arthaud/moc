@@ -57,13 +57,34 @@ struct point {
     int y;
 };
 
-int manhattan(struct point p) { // struct obligatoire
-    return p.x+p.y;
+int manhattan(struct point* p) { // struct obligatoire
+    return p->x+p->y;
 }
       \end{moc}
 
       Il n'est pas possible de déclarer une structure sans la définir (pas de
       \emph{forward declaration}).
+
+      Les structures ne peuvent pas être copiées (donc elles peuvent pas être
+      assignées, passées en paramètre ou retournées):
+
+      \begin{moc}
+int manhattan(struct point p) { // pas possible
+    return p.x+p.y;
+}
+
+struct point origin() { // pas possible
+    struct point o;
+    o.x = o.y = 0;
+    return o; // pas possible
+}
+
+void test() {
+    struct point A;
+    struct point B = A; // pas possible
+    B = A; // pas possible
+}
+      \end{moc}
 
     \subsection{Tableaux}
       La syntaxe de déclaration des tableaux est différente de celle du
