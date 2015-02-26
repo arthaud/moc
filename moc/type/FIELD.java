@@ -17,8 +17,14 @@ public class FIELD {
         return type;
     }
 
-    public boolean equals(FIELD other) {
-        return name.equals(other.getName()) && type.equals(other.getType());
+    public boolean equals(Object other) {
+        if (other instanceof FIELD) {
+            FIELD of = (FIELD)other;
+            return name.equals(of.getName()) && type.equals(of.getType());
+        }
+        else {
+            return false;
+        }
     }
 
     public String toString() {

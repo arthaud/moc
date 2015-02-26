@@ -4,7 +4,6 @@ import moc.type.TTYPE;
 
 public class DefaultParametersLocator implements ParametersLocator {
     private int offset;
-    private int dec;
 
     public DefaultParametersLocator(int initOffset) {
         this.offset = initOffset;

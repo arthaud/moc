@@ -46,7 +46,13 @@ public class LFIELDS extends ArrayList<FIELD> {
         return -1;
     }
 
-    public boolean equals(LFIELDS other) {
+    public boolean equals(Object o) {
+        if (! (o instanceof LFIELDS)) {
+            return false;
+        }
+
+        LFIELDS other = (LFIELDS)o;
+
         if(size() != other.size())
             return false;
 

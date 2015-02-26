@@ -11,9 +11,6 @@ import moc.cg.MCRAPS;
  */
 public class MOCSourceFile extends SourceUnit {
 
-    // mandatory for a SourceUnit
-    private String fileName;
-
     // target machine
     private AbstractMachine machine;
 

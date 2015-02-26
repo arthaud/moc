@@ -25,7 +25,7 @@ public class Mx86 extends AbstractMachine {
         "eax", "ebx", "ecx", "edx", "esi", "edi"
     };
 
-    private class Allocator extends ArrayDeque<Location> {
+    static private class Allocator extends ArrayDeque<Location> {
         private static final long serialVersionUID = 1L;
 
         /* returns a new unused location */

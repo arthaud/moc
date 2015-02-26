@@ -43,7 +43,7 @@ public class MTAM extends AbstractMachine {
         return 1;
     }
 
-    public class TamParametersLocator implements ParametersLocator {
+    static public class TamParametersLocator implements ParametersLocator {
         private int offset;
 
         public TamParametersLocator() {
@@ -70,7 +70,7 @@ public class MTAM extends AbstractMachine {
             int res = offset;
             offset += param.getSize();
             localOffset += param.getSize();
-            
+
             return new Location(Location.LocationType.STACKFRAME, res);
         }
 

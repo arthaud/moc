@@ -44,7 +44,7 @@ public class MCRAPS extends AbstractMachine {
     /**
      * An allocator is a stack of used registers
      */
-    private class Allocator extends ArrayDeque<Location> {
+    static private class Allocator extends ArrayDeque<Location> {
         private static final long serialVersionUID = 1L;
 
         /**
@@ -1149,7 +1149,7 @@ public class MCRAPS extends AbstractMachine {
     /**
      * A code that puts a value in a register
      */
-    private class CodeValue {
+    static private class CodeValue {
         public Code code;
         public Location reg;
 
