@@ -782,7 +782,8 @@ public class MCRAPS extends AbstractMachine {
 
     public Code genCast(TTYPE newType, TTYPE oldType, Code castedCode) {
         if(!castedCode.isAddress()
-                && (castedCode.hasValue() || castedCode.hasLocation())) {
+                && (castedCode.hasValue() || castedCode.hasLocation())
+                && !(oldType instanceof TARRAY || oldType instanceof TSTRUCT)) {
             return castedCode;
         }
         else {
@@ -997,6 +998,11 @@ public class MCRAPS extends AbstractMachine {
 
             allocator.push(c.reg);
             code.setAddress(true);
+
+            // special case for arrays and structures
+            if(field.getType() instanceof TARRAY || field.getType() instanceof TSTRUCT) {
+                code.setAddress(false);
+            }
         }
 
         return code;
