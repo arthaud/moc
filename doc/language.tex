@@ -116,9 +116,10 @@ int mon_tableau[42]; // erreur syntaxique
     L'arithmétique des pointeurs ne tiens pas compte de la taille de l'objet
     pointé:
     \begin{moc}
-int* a = (int*)0x42;
-a = a+1;
-// En C a vaut maintenant 0x46 (si sizeof(int) == 4), en moc a vaut 0x43
+struct point* p = (struct point*)malloc(sizeof(struct point));
+// Supposons p == 0x42
+p = p+1;
+// En C a vaut maintenant 0x44 (sizeof(struct point) == 2), en moc a vaut 0x43
     \end{moc}
 
   \section{Conditions}
