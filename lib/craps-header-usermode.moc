@@ -1,4 +1,6 @@
 asm("
     mov %pc, %r24
+    set static, %r1
+    add %r24, %r1, %r24
     ba f_main
 ")

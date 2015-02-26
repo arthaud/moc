@@ -12,5 +12,6 @@ asm("
 null_handler: reti
 start:
     set 0x2000, %sp
+    set static, %r24
     ba f_main
 ")
