@@ -113,6 +113,14 @@ int mon_tableau[42]; // erreur syntaxique
 
     Les opérateurs \imoc+||+ et \imoc+&&+ ne sont pas \emph{short-circuit}.
 
+    L'arithmétique des pointeurs ne tiens pas compte de la taille de l'objet
+    pointé:
+    \begin{moc}
+int* a = (int*)0x42;
+a = a+1;
+// En C a vaut maintenant 0x46 (si sizeof(int) == 4), en moc a vaut 0x43
+    \end{moc}
+
   \section{Conditions}
     Le \imoc+if+ du C est supporté et devrait fonctionner à peu près de la même
     façon.
