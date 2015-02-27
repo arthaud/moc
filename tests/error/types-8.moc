@@ -1,0 +1,4 @@
+int main() {
+    char* p;
+    int* p2 = p;
+}

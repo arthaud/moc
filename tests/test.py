@@ -116,6 +116,8 @@ def run():
         'error/types-6.moc', True, 'print is not a variable')
     check('type consistency 9',
         'error/types-7.moc', True, 'Types int and char are incompatible')
+    check('type consistency 10',
+        'error/types-8.moc', True, 'Types pointer on int and pointer on char are incompatible')
 
     print(bold('Results :'))
     if errors > 0:
