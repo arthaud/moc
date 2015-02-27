@@ -49,7 +49,9 @@
 
     \subsection{Structures}
       Les structures sont supportées mais pas \imoc+typedef+\footnote{Qui
-      rendrait la syntaxe contextuelle}. Leur définition est la même qu'en C:
+      rendrait la syntaxe contextuelle}; il faut donc préciser \imoc+struct nom+
+      à chaque fois qu'on réfère à la structure \imoc+nom+. Leur définition est
+      la même qu'en C:
 
       \begin{moc}
 struct point {
@@ -63,7 +65,8 @@ int manhattan(struct point* p) { // struct obligatoire
       \end{moc}
 
       Il n'est pas possible de déclarer une structure sans la définir (pas de
-      \emph{forward declaration}).
+      \emph{forward declaration}). Il n'est pas possible de faire de structure
+      "récursive" (liste chainée par exemple) sans \imoc+void*+.
 
       Les structures ne peuvent pas être copiées (donc elles peuvent pas être
       assignées, passées en paramètre ou retournées):
@@ -105,8 +108,8 @@ int mon_tableau[42]; // erreur syntaxique
       \item les opérateurs \imoc.++. et \imoc.--.;
     \end{itemize}
 
-    Les opérateurs \imoc+/+ et \imoc+%+ ne sont pas supportés car CRAPS ne
-    possède pas ces opérations.
+    Les opérateurs \imoc+/+ et \imoc+%+ ne sont pas supportés car le processeur
+    CRAPS ne possède pas ces opérations.
 
     L'opérateur \imoc+sizeof+ ne fonctionne que sur un type (\imoc+sizeof a+ ne
     marche pas, par contre \imoc+sizeof(int)+ marche).
@@ -116,15 +119,14 @@ int mon_tableau[42]; // erreur syntaxique
     L'arithmétique des pointeurs ne tiens pas compte de la taille de l'objet
     pointé:
     \begin{moc}
-struct point* p = (struct point*)malloc(sizeof(struct point));
+struct point* p = malloc(sizeof(struct point));
 // Supposons p == 0x42
 p = p+1;
 // En C a vaut maintenant 0x44 (sizeof(struct point) == 2), en moc a vaut 0x43
     \end{moc}
 
   \section{Conditions}
-    Le \imoc+if+ du C est supporté et devrait fonctionner à peu près de la même
-    façon.
+    Le \imoc+if+ du C est supporté.
 
     \imoc+switch+ et l'opérateur ternaire \imoc+?:+ ne sont pas supportés.
 
