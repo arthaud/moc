@@ -21,7 +21,13 @@ public class TPOINTER implements TTYPE {
         return equals(other)
             || other instanceof TNULL
             || (other instanceof TARRAY
-                    && ((TARRAY) other).getElementsType().equals(type));
+                    && ((TARRAY) other).getElementsType().equals(type))
+            || (other instanceof TPOINTER
+                    && (
+                        ((TPOINTER) other).getType() instanceof TVOID
+                        || (type instanceof TVOID))
+                    )
+        ;
     }
 
     public boolean comparableWith(TTYPE other, String op) {
