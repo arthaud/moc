@@ -222,6 +222,18 @@ public class MCRAPS extends AbstractMachine {
         return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
+    public Code genCondition(Code conditionCode) {
+        if(conditionCode.hasValue() && !conditionCode.isAddress()) {
+            return conditionCode;
+        }
+        else {
+            CodeValue cond = forceAsm(conditionCode, getBoolType());
+            forceValue(cond.code, cond.reg, getBoolType());
+            cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
+            return cond.code;
+        }
+    }
+
     public Code genConditional(Code conditionCode, Code trueCode, Code falseCode) {
         if(conditionCode.hasValue() && !conditionCode.isAddress()) {
             if(conditionCode.getValue() == 0) { // if(false)
@@ -232,13 +244,10 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else {
-            CodeValue cond = forceAsm(conditionCode, getBoolType());
-            forceValue(cond.code, cond.reg, getBoolType());
-            Code code = cond.code;
+            Code code = conditionCode;
 
             int num = getLabelNum();
             code.prependAsm(genComment("if condition :"));
-            code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
 
             if(falseCode.getAsm().trim().isEmpty()) {
                 code.appendAsm("be cond_end_" + num);
@@ -274,14 +283,10 @@ public class MCRAPS extends AbstractMachine {
             }
         }
         else {
-            CodeValue cond = forceAsm(conditionCode, getBoolType());
-            forceValue(cond.code, cond.reg, getBoolType());
-
             int num = loopLabelStack.peek();
-            cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
-            cond.code.appendAsm("be end_loop_" + num);
+            conditionCode.appendAsm("be end_loop_" + num);
 
-            body.prependAsm(cond.code.getAsm());
+            body.prependAsm(conditionCode.getAsm());
             body.prependAsm(genComment("loop condition :"));
             body.prependAsm("loop_" + num + ":");
 
@@ -292,22 +297,36 @@ public class MCRAPS extends AbstractMachine {
     }
 
     public Code genForLoop(Code init, Code conditionCode, Code incr, Code body) {
-        CodeValue cond = forceAsm(conditionCode, getBoolType());
-        forceValue(cond.code, cond.reg, getBoolType());
+        if(conditionCode.hasValue() && !conditionCode.isAddress()) {
+            if(conditionCode.getValue() == 0) { // for(; false; )
+                return init;
+            }
+            else { // for(; true; )
+                int num = loopLabelStack.peek();
+                body.prependAsm("loop_" + num + ":");
+                body.prependAsm(genComment("for true condition :"));
+                body.prependAsm(init.getAsm());
 
-        int num = loopLabelStack.peek();
-        cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
-        cond.code.appendAsm("be end_loop_" + num);
+                body.appendAsm(incr.getAsm());
+                body.appendAsm("ba loop_" + num);
+                body.appendAsm("end_loop_" + num + ":"); // needed by genBreak()
+                return body;
+            }
+        }
+        else {
+            int num = loopLabelStack.peek();
+            conditionCode.appendAsm("be end_loop_" + num);
 
-        body.prependAsm(cond.code.getAsm());
-        body.prependAsm(genComment("loop condition :"));
-        body.prependAsm("loop_" + num + ":");
-        body.prependAsm(init.getAsm());
+            body.prependAsm(conditionCode.getAsm());
+            body.prependAsm(genComment("loop condition :"));
+            body.prependAsm("loop_" + num + ":");
+            body.prependAsm(init.getAsm());
 
-        body.appendAsm(incr.getAsm());
-        body.appendAsm("ba loop_" + num);
-        body.appendAsm("end_loop_" + num + ":");
-        return body;
+            body.appendAsm(incr.getAsm());
+            body.appendAsm("ba loop_" + num);
+            body.appendAsm("end_loop_" + num + ":");
+            return body;
+        }
     }
 
     public Code genFunctionReturn(Code returnCode, TTYPE type, TFUNCTION fun) {

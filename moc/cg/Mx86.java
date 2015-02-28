@@ -144,6 +144,10 @@ public class Mx86 extends AbstractMachine {
         return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
+    public Code genCondition(Code condition) {
+        return condition;
+    }
+
     public Code genConditional(Code c, Code trueBloc, Code falseBloc) {
         Location l = allocator.pop();
         c = genVal(c, l, new TBOOL(1));

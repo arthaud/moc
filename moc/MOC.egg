@@ -496,6 +496,8 @@ INST -> IF #gen ;
 }
 
 IF -> if opar E cpar #trans BLOC ELSE #gen ;
+global Code conditionCode;
+
 #trans {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
@@ -503,10 +505,11 @@ IF -> if opar E cpar #trans BLOC ELSE #gen ;
 
     BLOC^vlocator = IF^vlocator.getChild();
     ELSE^vlocator = IF^vlocator.getChild();
+    conditionCode = IF^machine.genCondition(E^code);
 }
 
 #gen {
-    IF^code = IF^machine.genConditional(E^code, BLOC^code, ELSE^code);
+    IF^code = IF^machine.genConditional(conditionCode, BLOC^code, ELSE^code);
 }
 
 ELSE -> else BLOC #gen ;
@@ -526,6 +529,8 @@ ELSE -> #gen ;
 
 -- while loop
 INST -> while opar E cpar #trans BLOC #gen ;
+global Code conditionCode;
+
 #trans {
     if (!E^type.testable()) {
         error(TYPE_not_bool, E^type);
@@ -533,15 +538,18 @@ INST -> while opar E cpar #trans BLOC #gen ;
 
     INST^machine.beginLoop();
     BLOC^vlocator = INST^vlocator.getChild();
+    conditionCode = INST^machine.genCondition(E^code);
 }
 
 #gen {
-    INST^code = INST^machine.genWhileLoop(E^code, BLOC^code);
+    INST^code = INST^machine.genWhileLoop(conditionCode, BLOC^code);
     INST^machine.endLoop();
 }
 
 -- for loop
 INST -> t_for opar E semicolon A semicolon E cpar #trans BLOC #gen ;
+global Code conditionCode;
+
 #trans {
     if (!A^type.testable()) {
         error(TYPE_not_bool, A^type);
@@ -555,10 +563,11 @@ INST -> t_for opar E semicolon A semicolon E cpar #trans BLOC #gen ;
 
     INST^machine.beginLoop();
     BLOC^vlocator = INST^vlocator.getChild();
+    conditionCode = INST^machine.genCondition(A^code);
 }
 
 #gen {
-    INST^code = INST^machine.genForLoop(E^code, A^code, E1^code, BLOC^code);
+    INST^code = INST^machine.genForLoop(E^code, conditionCode, E1^code, BLOC^code);
     INST^machine.endLoop();
 }
 

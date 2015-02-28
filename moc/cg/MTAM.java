@@ -103,6 +103,10 @@ public class MTAM extends AbstractMachine {
         return new FunctionCode(function.getName(), code.getAsm(), exported);
     }
 
+    public Code genCondition(Code condition) {
+        return condition;
+    }
+
     public Code genConditional(Code condition, Code trueBloc, Code falseBloc) {
         int num = getLabelNum();
         String st;
