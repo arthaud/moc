@@ -1040,7 +1040,9 @@ public class MCRAPS extends AbstractMachine {
                     code = new Code("add " + genLocation(info.getLocation()) + ", " + offset + ", " + genLocation(reg));
                 }
                 else {
-                    code = new Code(genMovRegToReg(info.getLocation(), reg)); // TODO: optimized
+                    allocator.pop();
+                    allocator.push(info.getLocation());
+                    code = new Code("");
                 }
             }
             else {
