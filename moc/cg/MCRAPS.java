@@ -407,12 +407,33 @@ public class MCRAPS extends AbstractMachine {
                 }
             }
             else {
-                code = value.code;
-
                 if(loc.isRegister()) {
-                    code.appendAsm(genMovRegToReg(value.reg, loc));
+                    if(valueCode.hasValue() && !valueCode.isAddress()) {
+                        code = new Code(genSet(valueCode.getValue(), loc));
+                    }
+                    else if(valueCode.hasLocation() && !valueCode.isAddress()) {
+                        if(valueCode.getLocation().isRegister()) {
+                            code = new Code(genMovRegToReg(valueCode.getLocation(), loc));
+                        }
+                        else if(valueType instanceof TARRAY || valueType instanceof TSTRUCT) {
+                            if(valueCode.getLocation().isStackFrame()) {
+                                code = new Code("sub %fp, " + (-valueCode.getLocation().getOffset()) + ", " + genLocation(loc));
+                            }
+                            else { // valueCode.getLocation().isAbsolute()
+                                code = new Code("add %r24, " + valueCode.getLocation().getOffset() + ", " + genLocation(loc));
+                            }
+                        }
+                        else {
+                            code = new Code(genMovMemToReg(genLocation(valueCode.getLocation()), loc));
+                        }
+                    }
+                    else {
+                        code = value.code;
+                        code.appendAsm(genMovRegToReg(value.reg, loc));
+                    }
                 }
                 else {
+                    code = value.code;
                     code.appendAsm(genMovRegToMem(value.reg, genLocation(loc)));
                 }
             }
