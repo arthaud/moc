@@ -47,6 +47,11 @@
     Le typage est plus fort qu'en C, des casts supplémentaires sont nécessaires
     (entre entiers et pointeurs, ou pointeurs de différents types par exemple).
 
+    Une variable peut être déclarée avec le mot clé \imoc+register+ afin de la
+    laisser en registre. Le processeur possède 19 registres banalisés pour
+    l'ensemble des variables marquées avec ce mot clé et des registres donc il
+    a besoin; si plus de 19 registres sont nécessaires, la compilation échouera.
+
     \subsection{Structures}
       Les structures sont supportées mais pas \imoc+typedef+\footnote{Qui
       rendrait la syntaxe contextuelle}; il faut donc préciser \imoc+struct nom+
