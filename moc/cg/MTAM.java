@@ -66,7 +66,7 @@ public class MTAM extends AbstractMachine {
             super(offset);
         }
 
-        public Location generate(TTYPE param) {
+        public Location generate(TTYPE param, boolean register) {
             int res = offset;
             offset += param.getSize();
             localOffset += param.getSize();

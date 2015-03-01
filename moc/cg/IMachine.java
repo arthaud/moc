@@ -170,6 +170,8 @@ public interface IMachine {
 
     Code genChar(String c);
 
+    boolean fitInRegister(TTYPE type);
+
     /**
      * Size of basic types
      */

@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import moc.st.ST;
+import moc.st.INFO;
 import moc.st.INFOFUN;
 import moc.st.INFOVAR;
 import moc.type.TBOOL;
@@ -52,6 +53,17 @@ public class MCRAPS extends AbstractMachine {
          */
         public Location getFreeReg() {
             for(int i = 0; i < registerNames.length; i++) {
+                Location l = new Location(Location.LocationType.REGISTER, i);
+
+                if(!this.contains(l))
+                    return l;
+            }
+
+            throw new RuntimeException("No more unused registers !");
+        }
+
+        public Location getFreeRegFromEnd() {
+            for(int i = registerNames.length - 1; i >= 1; i--) {
                 Location l = new Location(Location.LocationType.REGISTER, i);
 
                 if(!this.contains(l))
@@ -165,11 +177,18 @@ public class MCRAPS extends AbstractMachine {
             super(offset);
         }
 
-        public Location generate(TTYPE param) {
-            offset -= param.getSize();
-            localOffset -= param.getSize();
+        public Location generate(TTYPE param, boolean register) {
+            if(register) {
+                Location reg = allocator.getFreeRegFromEnd(); // because %r1 could be used to return a value
+                allocator.push(reg);
+                return reg;
+            }
+            else {
+                offset -= param.getSize();
+                localOffset -= param.getSize();
 
-            return new Location(Location.LocationType.STACKFRAME, offset);
+                return new Location(Location.LocationType.STACKFRAME, offset);
+            }
         }
 
         public VariableLocator getChild() {
@@ -228,7 +247,7 @@ public class MCRAPS extends AbstractMachine {
         }
         else {
             CodeValue cond = forceAsm(conditionCode, getBoolType());
-            forceValue(cond.code, cond.reg, getBoolType());
+            forceValue(cond, getBoolType());
             cond.code.appendAsm("cmp " + genLocation(cond.reg) + ", %r0");
             return cond.code;
         }
@@ -337,15 +356,20 @@ public class MCRAPS extends AbstractMachine {
             code = new Code(genSet(returnCode.getValue(), r1));
         }
         else if(returnCode.hasLocation() && !returnCode.isAddress()) {
-            code = new Code(genMovMemToReg(genLocation(returnCode.getLocation()), r1));
+            Location loc = returnCode.getLocation();
+
+            if(loc.isRegister()) {
+                code = new Code(genMovRegToReg(loc, r1));
+            }
+            else {
+                code = new Code(genMovMemToReg(genLocation(loc), r1));
+            }
         }
         else {
             CodeValue ret = forceAsm(returnCode, type);
+            forceValue(ret, type);
             code = ret.code;
-            forceValue(code, ret.reg, type);
-
-            if(!ret.reg.equals(r1))
-                code.appendAsm("mov " + genLocation(ret.reg) + ", " + genLocation(r1));
+            code.appendAsm(genMovRegToReg(ret.reg, r1));
         }
 
         code.appendAsm("ba f_" + fun.getName() + "_end");
@@ -366,18 +390,31 @@ public class MCRAPS extends AbstractMachine {
         boolean valueInFixedRegisters = valueCode.hasValue() && !valueCode.isAddress()
                 && fixedRegisters.containsKey(valueCode.getValue());
         CodeValue value = forceAsm(valueCode, valueType);
-        forceValue(value.code, value.reg, valueType);
+        forceValue(value, valueType);
         Code code;
         value.code.prependAsm(genComment("affected value :"));
 
         if(addrCode.hasLocation() && !addrCode.isAddress()) {
+            Location loc = addrCode.getLocation();
+
             if(valueInFixedRegisters) {
-                code = new Code("st " + fixedRegisters.get(valueCode.getValue())
-                              + ", " + genLocation(addrCode.getLocation()));
+                if(loc.isRegister()) {
+                    code = new Code("mov " + fixedRegisters.get(valueCode.getValue()) + ", " + genLocation(loc));
+                }
+                else {
+                    code = new Code("st " + fixedRegisters.get(valueCode.getValue())
+                            + ", " + genLocation(loc));
+                }
             }
             else {
                 code = value.code;
-                code.appendAsm(genMovRegToMem(value.reg, genLocation(addrCode.getLocation())));
+
+                if(loc.isRegister()) {
+                    code.appendAsm(genMovRegToReg(value.reg, loc));
+                }
+                else {
+                    code.appendAsm(genMovRegToMem(value.reg, genLocation(loc)));
+                }
             }
         }
         else {
@@ -447,48 +484,48 @@ public class MCRAPS extends AbstractMachine {
             }
             else {
                 CodeValue right = forceAsm(rightOperand, rightType);
-                forceValue(right.code, right.reg, rightType);
+                forceValue(right, rightType);
                 Code code = right.code;
-                Location reg = right.reg;
+                Location reg = allocator.getFreeReg();
                 Location tmp;
                 allocator.push(reg);
 
                 code.prependAsm(genComment("right operand :"));
-                code.appendAsm(genComment(left + " " + operator + " " + genLocation(reg)));
+                code.appendAsm(genComment(left + " " + operator + " " + genLocation(right.reg)));
 
                 switch(operator) {
                     case "+":
-                        code.appendAsm(genImmediateOperation("add", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("add", right.reg, left, reg));
                         break;
                     case "-":
                         tmp = allocator.getFreeReg();
                         code.appendAsm(genSet(left, tmp));
-                        code.appendAsm(genOperation("sub", tmp, reg, reg));
+                        code.appendAsm(genOperation("sub", tmp, right.reg, reg));
                         break;
                     case "*":
-                        code.appendAsm(genImmediateOperation("umulcc", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("umulcc", right.reg, left, reg));
                         break;
                     case "/":
                     case "%":
                         throw new UnsupportedOperationException("CRAPS");
                     case "&":
-                        code.appendAsm(genImmediateOperation("and", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("and", right.reg, left, reg));
                         break;
                     case "|":
-                        code.appendAsm(genImmediateOperation("or", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("or", right.reg, left, reg));
                         break;
                     case "^":
-                        code.appendAsm(genImmediateOperation("xor", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("xor", right.reg, left, reg));
                         break;
                     case "<<":
                         tmp = allocator.getFreeReg();
                         code.appendAsm(genSet(left, tmp));
-                        code.appendAsm(genOperation("sll", tmp, reg, reg));
+                        code.appendAsm(genOperation("sll", tmp, right.reg, reg));
                         break;
                     case ">>":
                         tmp = allocator.getFreeReg();
                         code.appendAsm(genSet(left, tmp));
-                        code.appendAsm(genOperation("srl", tmp, reg, reg));
+                        code.appendAsm(genOperation("srl", tmp, right.reg, reg));
                         break;
                     case "&&":
                         if(left == 0) {
@@ -497,7 +534,7 @@ public class MCRAPS extends AbstractMachine {
                         }
                         else {
                             // generates reg = (reg != 0)
-                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("cmp %r0, " + genLocation(right.reg));
                             code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
                             code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         }
@@ -505,7 +542,7 @@ public class MCRAPS extends AbstractMachine {
                     case "||":
                         if(left == 0) {
                             // generates reg = (reg != 0)
-                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("cmp %r0, " + genLocation(right.reg));
                             code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
                             code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         }
@@ -516,7 +553,7 @@ public class MCRAPS extends AbstractMachine {
                         break;
                     case "==":
                     case "!=":
-                        code.appendAsm(genImmediateOperation("subcc", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("subcc", right.reg, left, reg));
                         code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
                         code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
                         if (operator.equals("!="))
@@ -526,7 +563,7 @@ public class MCRAPS extends AbstractMachine {
                     case ">=":
                         tmp = allocator.getFreeReg();
                         code.appendAsm(genSet(left, tmp));
-                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(reg) + ", %r0");
+                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(right.reg) + ", %r0");
                         code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
                         code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
                         if(operator.equals(">="))
@@ -534,7 +571,7 @@ public class MCRAPS extends AbstractMachine {
                         break;
                     case ">":
                     case "<=":
-                        code.appendAsm(genImmediateOperation("subcc", reg, left, reg));
+                        code.appendAsm(genImmediateOperation("subcc", right.reg, left, reg));
                         code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
                         code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
                         if(operator.equals("<="))
@@ -552,42 +589,42 @@ public class MCRAPS extends AbstractMachine {
                 long right = rightOperand.getValue();
 
                 CodeValue left = forceAsm(leftOperand, leftType);
-                forceValue(left.code, left.reg, leftType);
+                forceValue(left, leftType);
                 Code code = left.code;
-                Location reg = left.reg;
+                Location reg = allocator.getFreeReg();
                 Location tmp;
                 allocator.push(reg);
 
                 code.prependAsm(genComment("left operand :"));
-                code.appendAsm(genComment(genLocation(reg) + " " + operator + " " + right));
+                code.appendAsm(genComment(genLocation(left.reg) + " " + operator + " " + right));
 
                 switch(operator) {
                     case "+":
-                        code.appendAsm(genImmediateOperation("add", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("add", left.reg, right, reg));
                         break;
                     case "-":
-                        code.appendAsm(genImmediateOperation("sub", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("sub", left.reg, right, reg));
                         break;
                     case "*":
-                        code.appendAsm(genImmediateOperation("umulcc", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("umulcc", left.reg, right, reg));
                         break;
                     case "/":
                     case "%":
                         throw new UnsupportedOperationException("CRAPS");
                     case "&":
-                        code.appendAsm(genImmediateOperation("and", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("and", left.reg, right, reg));
                         break;
                     case "|":
-                        code.appendAsm(genImmediateOperation("or", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("or", left.reg, right, reg));
                         break;
                     case "^":
-                        code.appendAsm(genImmediateOperation("xor", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("xor", left.reg, right, reg));
                         break;
                     case "<<":
-                        code.appendAsm(genImmediateOperation("sll", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("sll", left.reg, right, reg));
                         break;
                     case ">>":
-                        code.appendAsm(genImmediateOperation("srl", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("srl", left.reg, right, reg));
                         break;
                     case "&&":
                         if(right == 0) {
@@ -596,7 +633,7 @@ public class MCRAPS extends AbstractMachine {
                         }
                         else {
                             // generates reg = (reg != 0)
-                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("cmp %r0, " + genLocation(left.reg));
                             code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
                             code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         }
@@ -604,7 +641,7 @@ public class MCRAPS extends AbstractMachine {
                     case "||":
                         if(right == 0) {
                             // generates reg = (reg != 0)
-                            code.appendAsm("cmp %r0, " + genLocation(reg));
+                            code.appendAsm("cmp %r0, " + genLocation(left.reg));
                             code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
                             code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         }
@@ -615,7 +652,7 @@ public class MCRAPS extends AbstractMachine {
                         break;
                     case "==":
                     case "!=":
-                        code.appendAsm(genImmediateOperation("subcc", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("subcc", left.reg, right, reg));
                         code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
                         code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
                         if (operator.equals("!="))
@@ -623,7 +660,7 @@ public class MCRAPS extends AbstractMachine {
                         break;
                     case "<":
                     case ">=":
-                        code.appendAsm(genImmediateOperation("subcc", reg, right, reg));
+                        code.appendAsm(genImmediateOperation("subcc", left.reg, right, reg));
                         code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
                         code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
                         if(operator.equals(">="))
@@ -633,7 +670,7 @@ public class MCRAPS extends AbstractMachine {
                     case "<=":
                         tmp = allocator.getFreeReg();
                         code.appendAsm(genSet(right, tmp));
-                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(reg) + ", %r0");
+                        code.appendAsm("subcc " + genLocation(tmp) + ", " + genLocation(left.reg) + ", %r0");
                         code.appendAsm("and %r25, 128, " + genLocation(reg)); // 128 -> mask for N (= left < right)
                         code.appendAsm("srl " + genLocation(reg) + ", 7, " + genLocation(reg)); // normalization
                         if(operator.equals("<="))
@@ -646,32 +683,34 @@ public class MCRAPS extends AbstractMachine {
                 return code;
             }
             else {
-                CodeValue left, right;
-                Code code;
-                Location reg;
+                CodeValue right = forceAsm(rightOperand, rightType);
 
-                if(leftOperand.hasAsm()) {
-                    // so leftOperand has a register on the stack, and we are
-                    // sure that rightOperand don't use this register
-                    right = forceAsm(rightOperand, rightType);
-                    left = forceAsm(leftOperand, leftType);
-
-                    reg = right.reg;
-                    allocator.push(reg);
-                }
-                else {
-                    // rightOperand may has a register on the stack
-                    right = forceAsm(rightOperand, rightType);
-                    reg = right.reg;
-                    allocator.push(reg);
-                    left = forceAsm(leftOperand, leftType);
+                // in that case, we will need a new register
+                if(!leftOperand.hasAsm()) {
+                    allocator.push(right.reg);
                 }
 
-                forceValue(left.code, left.reg, leftType);
-                forceValue(right.code, right.reg, rightType);
+                CodeValue left = forceAsm(leftOperand, leftType);
+
+                if(!leftOperand.hasAsm()) {
+                    allocator.pop();
+                }
+
+                allocator.push(right.reg);
+                forceValue(left, leftType);
+                allocator.pop();
+
+                allocator.push(left.reg);
+                forceValue(right, rightType);
+                allocator.pop();
 
                 left.code.prependAsm(genComment("left operand :"));
                 right.code.prependAsm(genComment("right operand :"));
+
+                Code code;
+                Location reg = allocator.getFreeReg();
+                Location tmp;
+                allocator.push(reg);
 
                 if(leftOperand.hasAsm()) {
                     code = left.code;
@@ -716,15 +755,20 @@ public class MCRAPS extends AbstractMachine {
                         // "and" in craps is a bitwise operator.
                         // 0b10 and 0b100 = 0, too bad..
 
+                        // we need another register
+                        allocator.push(right.reg);
+                        tmp = allocator.getFreeReg();
+                        allocator.pop();
+
                         // generates left.reg = (left.reg != 0)
                         code.appendAsm("cmp %r0, " + genLocation(left.reg));
-                        code.appendAsm("and %r25, 16, " + genLocation(left.reg)); // 16 -> mask for C
+                        code.appendAsm("and %r25, 16, " + genLocation(tmp)); // 16 -> mask for C
 
                         // generates right.reg = (right.reg != 0)
                         code.appendAsm("cmp %r0, " + genLocation(right.reg));
-                        code.appendAsm("and %r25, 16, " + genLocation(right.reg)); // 16 -> mask for C
+                        code.appendAsm("and %r25, 16, " + genLocation(reg)); // 16 -> mask for C
 
-                        code.appendAsm(genOperation("and", left.reg, right.reg, reg));
+                        code.appendAsm(genOperation("and", tmp, reg, reg));
                         code.appendAsm("srl " + genLocation(reg) + ", 4, " + genLocation(reg)); // normalization
                         break;
                     case "||":
@@ -775,26 +819,30 @@ public class MCRAPS extends AbstractMachine {
         }
         else {
             CodeValue c = forceAsm(operand, type);
-            forceValue(c.code, c.reg, type);
+            forceValue(c, type);
+
+            Location reg = allocator.getFreeReg();
+            allocator.push(reg);
+
             c.code.appendAsm(genComment("operator " + operator));
 
             switch(operator) {
                 case "-":
-                    c.code.appendAsm("negcc " + genLocation(c.reg));
+                    c.code.appendAsm(genMovRegToReg(c.reg, reg));
+                    c.code.appendAsm("negcc " + genLocation(reg));
                     break;
                 case "!":
                     c.code.appendAsm("cmp " + genLocation(c.reg) + ", %r0");
-                    c.code.appendAsm("and %r25, 64, " + genLocation(c.reg)); // 64 -> mask for Z
-                    c.code.appendAsm("srl " + genLocation(c.reg) + ", 6, " + genLocation(c.reg)); // normalization
+                    c.code.appendAsm("and %r25, 64, " + genLocation(reg)); // 64 -> mask for Z
+                    c.code.appendAsm("srl " + genLocation(reg) + ", 6, " + genLocation(reg)); // normalization
                     break;
                 case "~":
-                    c.code.appendAsm("xor " + genLocation(c.reg) + ", -1, " + genLocation(c.reg));
+                    c.code.appendAsm("xor " + genLocation(c.reg) + ", -1, " + genLocation(reg));
                     break;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator);
             }
 
-            allocator.push(c.reg);
             return c.code;
         }
     }
@@ -807,7 +855,7 @@ public class MCRAPS extends AbstractMachine {
         }
         else {
             CodeValue c = forceAsm(castedCode, oldType);
-            forceValue(c.code, c.reg, oldType);
+            forceValue(c, oldType);
             allocator.push(c.reg);
             return c.code;
         }
@@ -850,7 +898,12 @@ public class MCRAPS extends AbstractMachine {
      * Declare a variable
      */
     public Code genDecl(INFOVAR info) {
-        return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
+        if(info.getLocation().isRegister()) {
+            return new Code("");
+        }
+        else {
+            return new Code("sub %sp, " + info.getType().getSize() + ", %sp");
+        }
     }
 
     /**
@@ -859,7 +912,13 @@ public class MCRAPS extends AbstractMachine {
      * @param value The code for the initial value
      */
     public Code genDecl(INFOVAR info, Code operand, TTYPE type) {
-        return genArg(operand, type);
+        if(info.getLocation().isRegister()) {
+            return genAffectation(Code.fromLocation(info.getLocation()),
+                                  operand, info.getType(), type);
+        }
+        else {
+            return genArg(operand, type);
+        }
     }
 
     /**
@@ -905,7 +964,7 @@ public class MCRAPS extends AbstractMachine {
         }
         else {
             CodeValue c = forceAsm(operand, type);
-            forceValue(c.code, c.reg, type);
+            forceValue(c, type);
             c.code.appendAsm(genPush(c.reg));
             return c.code;
         }
@@ -916,8 +975,8 @@ public class MCRAPS extends AbstractMachine {
 
         if(pointerCode.isAddress()) {
             CodeValue c = forceAsm(pointerCode, getPointerType(pointedType));
+            forceValue(c, getPointerType(pointedType));
             code = c.code;
-            forceValue(code, c.reg, getPointerType(pointedType));
             allocator.push(c.reg);
         }
         else {
@@ -940,21 +999,25 @@ public class MCRAPS extends AbstractMachine {
         }
         else {
             CodeValue c = forceAsm(posCode, getIntType());
+            forceValue(c, getIntType());
             code = c.code;
-            forceValue(code, c.reg, getIntType());
-            allocator.push(c.reg);
+
+            Location reg = allocator.getFreeReg();
+            allocator.push(reg);
 
             code.appendAsm(genComment("stack array access :"));
-            if(type.getElementsType().getSize() != 1)
-                code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getElementsType().getSize() + ", " + genLocation(c.reg));
+            if(type.getElementsType().getSize() != 1) {
+                code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getElementsType().getSize() + ", " + genLocation(reg));
+                c.reg = reg;
+            }
 
             if(info.getLocation().isStackFrame()) {
-                code.appendAsm("add " + genLocation(c.reg) + ", %fp, " + genLocation(c.reg));
-                code.appendAsm("sub " + genLocation(c.reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(c.reg));
+                code.appendAsm("add " + genLocation(c.reg) + ", %fp, " + genLocation(reg));
+                code.appendAsm("sub " + genLocation(reg) + ", " + (-info.getLocation().getOffset()) + ", " + genLocation(reg));
             }
             else { // info.getLocation().isAbsolute()
-                code.appendAsm("add " + genLocation(c.reg) + ", %r24, " + genLocation(c.reg));
-                code.appendAsm("add " + genLocation(c.reg) + ", " + info.getLocation().getOffset() + ", " + genLocation(c.reg));
+                code.appendAsm("add " + genLocation(c.reg) + ", %r24, " + genLocation(reg));
+                code.appendAsm("add " + genLocation(reg) + ", " + info.getLocation().getOffset() + ", " + genLocation(reg));
             }
 
             code.setAddress(true);
@@ -972,28 +1035,54 @@ public class MCRAPS extends AbstractMachine {
             Location reg = allocator.getFreeReg();
             allocator.push(reg);
 
-            code = new Code(genMovMemToReg(genLocation(info.getLocation()), reg)); // pointer value
-            code.appendAsm(genComment("pointer array access :"));
+            if(info.getLocation().isRegister()) {
+                if(offset > 0) {
+                    code = new Code("add " + genLocation(info.getLocation()) + ", " + offset + ", " + genLocation(reg));
+                }
+                else {
+                    code = new Code(genMovRegToReg(info.getLocation(), reg)); // TODO: optimized
+                }
+            }
+            else {
+                code = new Code(genMovMemToReg(genLocation(info.getLocation()), reg)); // pointer value
 
-            if(offset > 0)
-                code.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
+                if(offset > 0)
+                    code.appendAsm("add " + genLocation(reg) + ", " + offset + ", " + genLocation(reg));
+            }
         }
         else {
             CodeValue c = forceAsm(posCode, getIntType());
+            forceValue(c, getIntType());
             code = c.code;
-            forceValue(code, c.reg, getIntType());
-            allocator.push(c.reg);
 
-            Location pointerReg = allocator.getFreeReg();
-            code.appendAsm(genMovMemToReg(genLocation(info.getLocation()), pointerReg)); // pointer value
-            code.appendAsm(genComment("pointer array access :"));
+            Location reg = allocator.getFreeReg();
+            allocator.push(reg);
 
-            if(type.getType().getSize() != 1)
-                code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getType().getSize() + ", " + genLocation(c.reg));
+            if(info.getLocation().isRegister()) {
+                if(type.getType().getSize() != 1) {
+                    code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getType().getSize() + ", " + genLocation(reg));
+                    c.reg = reg;
+                }
 
-            code.appendAsm("add " + genLocation(pointerReg) + ", " + genLocation(c.reg) + ", " + genLocation(c.reg));
+                code.appendAsm("add " + genLocation(info.getLocation()) + ", " + genLocation(c.reg) + ", " + genLocation(reg));
+            }
+            else {
+                allocator.push(c.reg);
+                Location pointerReg = allocator.getFreeReg();
+                allocator.pop();
+
+                code.appendAsm(genMovMemToReg(genLocation(info.getLocation()), pointerReg)); // pointer value
+
+                if(type.getType().getSize() != 1) {
+                    code.appendAsm("umulcc " + genLocation(c.reg) + ", " + type.getType().getSize() + ", " + genLocation(reg));
+                    c.reg = reg;
+                }
+
+                code.appendAsm("add " + genLocation(pointerReg) + ", " + genLocation(c.reg) + ", " + genLocation(reg));
+            }
         }
 
+        code.prependAsm(genComment("pointer array access :"));
         code.setAddress(true);
         return code;
     }
@@ -1030,11 +1119,17 @@ public class MCRAPS extends AbstractMachine {
     public Code genPointerFieldAccess(TSTRUCT struct, FIELD field, Code operand) {
         int offset = struct.getFieldOffset(field.getName());
         CodeValue c = forceAsm(operand, getPointerType(struct));
-        forceValue(c.code, c.reg, getPointerType(struct));
+        forceValue(c, getPointerType(struct));
 
         c.code.appendAsm(genComment("field access :"));
-        if(offset > 0)
-            c.code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(c.reg));
+        if(offset > 0) {
+            Location reg = allocator.getFreeReg();
+            c.code.appendAsm("add " + genLocation(c.reg) + ", " + offset + ", " + genLocation(reg));
+            allocator.push(reg);
+        }
+        else {
+            allocator.push(c.reg);
+        }
 
         c.code.setAddress(true);
 
@@ -1043,7 +1138,6 @@ public class MCRAPS extends AbstractMachine {
             c.code.setAddress(false);
         }
 
-        allocator.push(c.reg);
         return c.code;
     }
 
@@ -1055,6 +1149,16 @@ public class MCRAPS extends AbstractMachine {
                                 && symbolsTable.getMother().getMother().getMother() == null;
         if(vl.getLocalOffset() != 0 && !isFunction) {
             instsCode.appendAsm("add %sp, " + (-vl.getLocalOffset()) + ", %sp " + genComment("removing local variables"));
+        }
+
+        // free register variables
+        for(INFO info : symbolsTable.values()) {
+            if(info instanceof INFOVAR) {
+                INFOVAR var = (INFOVAR) info;
+                if(var.getLocation().isRegister()) {
+                    allocator.remove(var.getLocation());
+                }
+            }
         }
 
         return instsCode;
@@ -1109,10 +1213,16 @@ public class MCRAPS extends AbstractMachine {
         return Code.fromValue(getCharFromString(c));
     }
 
+    public boolean fitInRegister(TTYPE type) {
+        return type.getSize() == 1 &&
+            !(type instanceof TARRAY) &
+            !(type instanceof TSTRUCT);
+    }
+
     /**
      * Generates the assembler for a lazy code
      *
-     * warning: the register is not pushed on the allocator
+     * warning: the register is not pushed on the allocator, and could be allocated
      */
     private CodeValue forceAsm(Code operand, TTYPE type) {
         Code code;
@@ -1121,6 +1231,10 @@ public class MCRAPS extends AbstractMachine {
         if(operand.hasValue()) {
             reg = allocator.getFreeReg();
             code = new Code(genSet(operand.getValue(), reg));
+        }
+        else if(operand.hasLocation() && operand.getLocation().isRegister()) {
+            reg = operand.getLocation();
+            code = new Code("");
         }
         else if(operand.hasLocation()) {
             reg = allocator.getFreeReg();
@@ -1152,16 +1266,19 @@ public class MCRAPS extends AbstractMachine {
     /**
      * Ensures the Code gives a value (dereference)
      *
-     * @param operand The code
-     * @param reg In which register is the value
+     * @param cv The code and register used
      * @param type The type of the value
+     *
+     * warning: the register is not pushed on the allocator, and could be allocated
      */
-    private void forceValue(Code operand, Location reg, TTYPE type) {
-        assert(!operand.hasValue() && !operand.hasLocation());
+    private void forceValue(CodeValue cv, TTYPE type) {
+        assert(!cv.code.hasValue() && !cv.code.hasLocation());
 
-        if(operand.isAddress()) {
-            operand.appendAsm(genMovMemToReg("[" + genLocation(reg) + "]", reg));
-            operand.setAddress(false);
+        if(cv.code.isAddress()) {
+            Location reg = allocator.getFreeReg();
+            cv.code.appendAsm(genMovMemToReg("[" + genLocation(cv.reg) + "]", reg));
+            cv.reg = reg;
+            cv.code.setAddress(false);
         }
     }
 
@@ -1201,6 +1318,21 @@ public class MCRAPS extends AbstractMachine {
     private String genMovMemToReg(String mem, Location reg) {
         assert(reg.isRegister());
         return "ld " + mem + ", " + genLocation(reg);
+    }
+
+    /**
+     * Generate a mov from register to register
+     */
+    private String genMovRegToReg(Location src, Location dest) {
+        assert(src.isRegister());
+        assert(dest.isRegister());
+
+        if(src.equals(dest)) {
+            return "";
+        }
+        else {
+            return "mov " + genLocation(src) + ", " + genLocation(dest);
+        }
     }
 
     /**

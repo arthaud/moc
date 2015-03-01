@@ -95,7 +95,7 @@ public class Mx86 extends AbstractMachine {
             super(offset);
         }
 
-        public Location generate(TTYPE param) {
+        public Location generate(TTYPE param, boolean register) {
             offset -= param.getSize();
             localOffset -= param.getSize();
 

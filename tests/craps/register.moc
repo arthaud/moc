@@ -1,0 +1,44 @@
+#include "lib/craps-header-kernelmode.moc"
+#include "lib/craps.moc"
+
+
+void sleep(int time) {
+    register int wait = 20000 * time;
+    while(wait != 0) {
+        wait = wait - 1;
+    }
+}
+
+
+int main() {
+    register int *ssegs = (int*) 0xA0000000; // adresse des 7 segs
+    register int tmp_ssegs = 0;
+    register int *anodes =  ssegs + 1;
+    register int tmp_anodes = 0;
+    *ssegs = tmp_ssegs;
+    *anodes = tmp_anodes;
+
+    register int n = 0;
+    
+    while(true) {
+        // Print the digit
+        tmp_ssegs = (tmp_ssegs * 16 + n);
+        tmp_anodes = (tmp_anodes * 2 + 1);
+        *ssegs = tmp_ssegs;
+        *anodes = tmp_anodes;
+        sleep(3);
+
+        // write splitters
+        tmp_ssegs = (tmp_ssegs * 16);
+        tmp_anodes = (tmp_anodes * 2);
+        *ssegs = tmp_ssegs;
+        *anodes = tmp_anodes;
+        sleep(3);
+
+        n = n + 1;
+        if(n >= 16) {
+            n = 0;
+        }
+    }
+}
+

@@ -57,6 +57,7 @@ inh hcode : Code for
 syn exported : boolean for EXPORT;
 inh hExported : boolean for GLOBAL_DECL;
 inh hstruct : TSTRUCT for STRUCT_FIELDS;
+syn register : boolean for REGISTER;
 
 -- to check subprogram call
 inh function : TFUNCTION for ARGS, ARGSX;
@@ -76,6 +77,7 @@ sugar if         is  "if" ;
 sugar else       is  "else" ;
 sugar while      is  "while" ;
 sugar t_for      is  "for" ;
+sugar register   is  "register" ;
 sugar struct     is  "struct" ;
 sugar void       is  "void" ;
 sugar asm        is  "asm" ;
@@ -437,9 +439,23 @@ INSTS -> INST INSTS #gen ;
     INSTS^code = c;
 }
 
+REGISTER -> #gen ;
+#gen {
+    REGISTER^register = false;
+}
+
+REGISTER -> register #gen ;
+#gen {
+    REGISTER^register = true;
+}
+
 -- local variable declaration with or without initialization
-INST -> TYPE ident #trans AFF semicolon #gen ;
+INST -> REGISTER TYPE ident #trans AFF semicolon #gen ;
 #trans {
+    if (REGISTER^register && !INST^machine.fitInRegister(TYPE^type)) {
+        error(REGISTER_unavailable, ident^txt, TYPE^type);
+    }
+
     AFF^htype = TYPE^type;
 
     -- check if the variable already exists
@@ -449,7 +465,7 @@ INST -> TYPE ident #trans AFF semicolon #gen ;
         error(VAR_exists, ident^txt);
     }
     else {
-        INFOVAR info = new INFOVAR(TYPE^type, INST^vlocator.generate(TYPE^type));
+        INFOVAR info = new INFOVAR(TYPE^type, INST^vlocator.generate(TYPE^type, REGISTER^register));
         INST^st.insert(ident^txt, info);
         AFF^hinfo = info;
     }
@@ -1084,6 +1100,11 @@ UNARY -> bit_and ident #gen ;
         match (i) {
             case INFOVAR {
                 INFOVAR info = i;
+
+                if(info.getLocation().isRegister()) {
+                    error(REGISTER_address_unavailable, ident^txt);
+                }
+
                 UNARY^type = new TPOINTER(info.getType(), UNARY^machine.getPointerSize());
                 UNARY^code = UNARY^machine.genAddress(info);
             }

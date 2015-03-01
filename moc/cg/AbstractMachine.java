@@ -16,6 +16,7 @@ import moc.compiler.MOCException;
 import moc.st.INFO;
 import moc.st.INFOVAR;
 import moc.st.ST;
+import moc.type.TTYPE;
 import moc.type.TFUNCTION;
 
 /**
@@ -190,6 +191,10 @@ public abstract class AbstractMachine implements IMachine {
 
     public AsmCode genGlobalAsm(String asmCode, ST symbolsTable) {
         return new AsmCode(genAsmImpl(asmCode, symbolsTable));
+    }
+
+    public boolean fitInRegister(TTYPE type) {
+        return false;
     }
 
     /**
